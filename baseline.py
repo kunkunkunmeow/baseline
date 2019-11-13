@@ -6,11 +6,13 @@ from tqdm import tqdm
 import time
 import logging
 
-# Loading data from Bigquery
-
+# Set start time
 start_time = time.time()
+
+# Loading data from Bigquery
 project_id = "gum-eroski-dev"
 
+# Set logger properties
 logger = logging.getLogger('baseline_calculation')
 logger.setLevel(logging.DEBUG)
 
@@ -20,7 +22,7 @@ fh.setLevel(logging.DEBUG)
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -31,47 +33,58 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+# Define key baseline parameters
+# Category level used to compute the baseline
+bl_l = "section"  
 
-# logger.basicConfig( filename = 'baseline/', filemode = 'a', format='%(asctime)s %(levelname)-8s %(message)s', level=logger.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+# Pull forward week 
+ext_day = 1  
 
+# Baseline % metrics
+metrics = {
+    'sale_amt':['sale_amt_np', 'total_sale_amt'],
+    'sale_qty':['sale_qty_np', 'total_sale_qty'],
+    'margin_amt':['margin_amt_np','total_margin_amt']
+}
+
+# Function to load aggregate_weekly_transaction_summary data at a sku level from bigquery
 def load_t1_from_bq():
+    
+    start_time = time.time()
+    
     summary_sql = """
     SELECT date, sku_root_id , area, section, category, subcategory , segment , total_sale_amt, total_sale_qty , total_margin_amt , promo_flag_binary, sale_amt_promo_flag, sale_qty_promo_flag, margin_amt_promo_flag
     FROM `ETL.aggregate_weekly_transaction_summary`
     WHERE category = "CONFECCION MUJER"   """
     start = time.time()
+    
     for i in tqdm(range(1), desc= 'loading summary table from bigquery'):
         summary_table = pandas_gbq.read_gbq(summary_sql, project_id = project_id)
-    # print('loading weekly summary data from bigquery took', round((time.time()-start)/60,1), 'minutes.')
-    #FROM `WIP.summary_weekly_test` 
-    logger.info("Loaded summary table from bigquery")
+    
+    total_time = round((time.time()-start_time)/60,1)
+    logger.info("Completed loading of summary table from bigquery in ", total_time,"mins...")
 
     return summary_table
 
+# Function to load aggregate_weekly_transaction_summary data at a sku level (for non-promotional periods) from bigquery
 def load_t2_from_bq():
+    
+    start_time = time.time()
+    
     weeklyagg_sql = """
     SELECT date, sku_root_id, area, section, category, subcategory, segment, sum(total_sale_amt) as sale_amt_np, sum(total_sale_qty) as sale_qty_np, sum(total_margin_amt) as margin_amt_np 
     FROM `ETL.aggregate_weekly_transaction_to_sku`    
     WHERE promo_flag = false
     AND category = "CONFECCION MUJER"
     group by date, sku_root_id, area, section, category, subcategory, segment """
-    start = time.time()
+
     for i in tqdm(range(1), desc= 'loading weekly transaction table from bigquery'):
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id = project_id)
-    print('loading weekly aggregated data from bigquery took', round((time.time()-start)/60,1), 'minutes.')
-    # FROM `WIP.agg_weekly_test`
-    logger.info("Loaded weekly_agg table from bigquery")
+
+    total_time = round((time.time()-start_time)/60,1)
+    logger.info("Completed loading of non-promotional summary table from bigquery in ", total_time,"mins...")
 
     return weekly_agg
-
-# define key parameters 
-bl_l = "section"
-ext_day = 1
-metrics = {
-    'sale_amt':['sale_amt_np', 'total_sale_amt'],
-    'sale_qty':['sale_qty_np', 'total_sale_qty'],
-    'margin_amt':['margin_amt_np','total_margin_amt']
-}
 
 
 # define function to aggregate table by defined level
