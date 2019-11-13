@@ -230,7 +230,8 @@ if __name__ == "__main__":
 #         pool.apply_async(baseline_sku, args=(sku, summary_table, agg_np), callback=collect_results)
 #     pool.close()
 #     pool.join()
-    for i in range(0, len(uniq_sku), 100):
+    batchsize = 100
+    for i in range(0, len(uniq_sku), batchsize):
         batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
         
         # do stuff with batch
