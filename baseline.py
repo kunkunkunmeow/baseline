@@ -230,31 +230,22 @@ if __name__ == "__main__":
 #         pool.apply_async(baseline_sku, args=(sku, summary_table, agg_np), callback=collect_results)
 #     pool.close()
 #     pool.join()
-
-    with Manager() as manager:
-        frame = manager.list()  # <-- can be shared between processes.
-        processes = []
-        for sku in uniq_sku[1:100]:
-            p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
-        final_df = pd.concat(frame)
-        final_df.reset_index(drop=True, inplace=True)
-    logger.info('Final df has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
-    with Manager() as manager:
-        frame = manager.list()  # <-- can be shared between processes.
-        processes = []
-        for sku in uniq_sku[100:200]:
-            p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
-        final_df = pd.concat(frame)
-        final_df.reset_index(drop=True, inplace=True)
-    logger.info('Final df has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
+    for i in xrange(0, len(uniq_sku), 100):
+        batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+        
+        # do stuff with batch
+        with Manager() as manager:
+            frame = manager.list()  # <-- can be shared between processes.
+            processes = []
+            for sku in batch:
+                p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
+                p.start()
+                processes.append(p)
+            for p in processes:
+                p.join()
+            final_df = pd.concat(frame)
+            final_df.reset_index(drop=True, inplace=True)
+        logger.info('Final df has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
     #df = pd.DataFrame(results)
 
     # final_df.reset_index(drop=True, inplace=True)
