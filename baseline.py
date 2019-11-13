@@ -143,7 +143,7 @@ def baseline_sku(sku: str, summary_table, agg_np):
 
 #     # produce baseline dataframe at desired level
 #     baseline = aggregate_sku(agg_np, bl_l)
-#     logger.info(f'{sku} - baseline table created')
+     logger.info(f'{sku} - being processed')
 
 #     # merge baseline, cannibalisation and sku table
 #     table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
