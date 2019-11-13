@@ -109,102 +109,106 @@ def baseline_sku(sku: str, summary_table, agg_np):
     Returns:
         final_df(pd.DataFrame): Final, preprocessed dataframe
     """
+    
+    #create a test dataframe
+    final_df=pd.DataFrame({'a':[1,2,3,4,5]})
+    
+    
+#     # get dataframe for the specific sku
+#     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
+#     logger.info(f'{sku} - sku table created')
 
-    # get dataframe for the specific sku
-    df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
-    logger.info(f'{sku} - sku table created')
+#     # define function to aggregate the sku into desired level and get change % over date
+#     def aggregate_sku(agg_np, level: str):
+#         """produce aggregated results of desired level and the change % of total sale quantity along the timeline
+#         Args:
+#             level(str): desired level for the sku to be grouped to
+#         Returns:
+#             agg_np_sku(pd.DataFrame): Final, preprocessed dataframe
+#         """
+#         # locate the group that needs to be aggregated
+#         sku_level = summary_table.loc[summary_table['sku_root_id'] == sku, level].iloc[0]
 
-    # define function to aggregate the sku into desired level and get change % over date
-    def aggregate_sku(agg_np, level: str):
-        """produce aggregated results of desired level and the change % of total sale quantity along the timeline
-        Args:
-            level(str): desired level for the sku to be grouped to
-        Returns:
-            agg_np_sku(pd.DataFrame): Final, preprocessed dataframe
-        """
-        # locate the group that needs to be aggregated
-        sku_level = summary_table.loc[summary_table['sku_root_id'] == sku, level].iloc[0]
+#         # get the aggregated none promotion data for the group that the SKU belongs to
+#         agg_np_sku = agg_np[agg_np[level] == sku_level].sort_values(by=['date']).reset_index(drop=True)
+#         for metric in metrics.keys():
+#             agg_np_sku[f'{metric}_pct'] = 1
+#             for i in range(1, len(agg_np_sku)):
+#                 if agg_np_sku.loc[i - 1, metrics[metric][0]] == 0:
+#                     agg_np_sku.loc[i, f'{metric}_pct'] = np.nan
+#                 else:
+#                     agg_np_sku.loc[i, f'{metric}_pct'] = float(
+#                         agg_np_sku.loc[i, metrics[metric][0]] / agg_np_sku.loc[i - 1, metrics[metric][0]])
+#         return agg_np_sku
 
-        # get the aggregated none promotion data for the group that the SKU belongs to
-        agg_np_sku = agg_np[agg_np[level] == sku_level].sort_values(by=['date']).reset_index(drop=True)
-        for metric in metrics.keys():
-            agg_np_sku[f'{metric}_pct'] = 1
-            for i in range(1, len(agg_np_sku)):
-                if agg_np_sku.loc[i - 1, metrics[metric][0]] == 0:
-                    agg_np_sku.loc[i, f'{metric}_pct'] = np.nan
-                else:
-                    agg_np_sku.loc[i, f'{metric}_pct'] = float(
-                        agg_np_sku.loc[i, metrics[metric][0]] / agg_np_sku.loc[i - 1, metrics[metric][0]])
-        return agg_np_sku
+#     # produce baseline dataframe at desired level
+#     baseline = aggregate_sku(agg_np, bl_l)
+#     logger.info(f'{sku} - baseline table created')
 
-    # produce baseline dataframe at desired level
-    baseline = aggregate_sku(agg_np, bl_l)
-    logger.info(f'{sku} - baseline table created')
+#     # merge baseline, cannibalisation and sku table
+#     table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
+#                              'total_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
+#                              'margin_amt_promo_flag']],
+#                      baseline[['date', bl_l, 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct']],
+#                      on=['date']).reset_index(drop=True)
+#     logger.info(f'{sku} - merged table created')
 
-    # merge baseline, cannibalisation and sku table
-    table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
-                             'total_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
-                             'margin_amt_promo_flag']],
-                     baseline[['date', bl_l, 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct']],
-                     on=['date']).reset_index(drop=True)
-    logger.info(f'{sku} - merged table created')
+#     # define change_flag to be the reference of baseline and cannibalisation calculation
+#     # set 1 : for the first day on promotion
+#     # set 2: for the rest days on promotion after first day
+#     # set 3: for the extension days of baseline calculation
+#     table['change_flag'] = table['promo_flag_binary']
+#     for i in range(1, len(table)):
+#         if table.loc[i, 'change_flag'] == 1:
+#             table.loc[i, 'change_flag'] = 2
+#     for i in range(0, len(table) - 1):
+#         if table.loc[i, 'change_flag'] == 0 and table.loc[i + 1, 'change_flag'] == 2:
+#             table.loc[i + 1, 'change_flag'] = 1
+#     for i in range(0, len(table) - ext_day):
+#         for j in range(1, ext_day + 1):
+#             if table.loc[i, 'change_flag'] == 2 and table.loc[i + j, 'change_flag'] == 0:
+#                 table.loc[i + j, 'change_flag'] = 3
+#     logger.info(f'{sku} - change flag done')
 
-    # define change_flag to be the reference of baseline and cannibalisation calculation
-    # set 1 : for the first day on promotion
-    # set 2: for the rest days on promotion after first day
-    # set 3: for the extension days of baseline calculation
-    table['change_flag'] = table['promo_flag_binary']
-    for i in range(1, len(table)):
-        if table.loc[i, 'change_flag'] == 1:
-            table.loc[i, 'change_flag'] = 2
-    for i in range(0, len(table) - 1):
-        if table.loc[i, 'change_flag'] == 0 and table.loc[i + 1, 'change_flag'] == 2:
-            table.loc[i + 1, 'change_flag'] = 1
-    for i in range(0, len(table) - ext_day):
-        for j in range(1, ext_day + 1):
-            if table.loc[i, 'change_flag'] == 2 and table.loc[i + j, 'change_flag'] == 0:
-                table.loc[i + j, 'change_flag'] = 3
-    logger.info(f'{sku} - change flag done')
+#     # produce baseline
+#     for metric in metrics.keys():
+#         table.loc[0, f'{metric}_bl'] = np.nan
+#         for i in range(1, len(table)):
+#             if table.loc[i, 'change_flag'] == 0:
+#                 table.loc[i, f'{metric}_bl'] = np.nan
+#             if table.loc[i, 'change_flag'] == 1 and table.loc[i - 1, 'change_flag'] in [0, 3]:
+#                 table.loc[i - 1, f'{metric}_bl'] = float(table.loc[i - 1, metrics[metric][1]])
+#             if table.loc[i, 'change_flag'] in [1, 2]:
+#                 table.loc[i, f'{metric}_bl'] = round(table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'],
+#                                                      2)
+#     logger.info(f'{sku} - baseline done')
 
-    # produce baseline
-    for metric in metrics.keys():
-        table.loc[0, f'{metric}_bl'] = np.nan
-        for i in range(1, len(table)):
-            if table.loc[i, 'change_flag'] == 0:
-                table.loc[i, f'{metric}_bl'] = np.nan
-            if table.loc[i, 'change_flag'] == 1 and table.loc[i - 1, 'change_flag'] in [0, 3]:
-                table.loc[i - 1, f'{metric}_bl'] = float(table.loc[i - 1, metrics[metric][1]])
-            if table.loc[i, 'change_flag'] in [1, 2]:
-                table.loc[i, f'{metric}_bl'] = round(table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'],
-                                                     2)
-    logger.info(f'{sku} - baseline done')
+#     # produce extended baseline
+#     for metric in metrics.keys():
+#         table.loc[0, f'{metric}_bl_ext'] = np.nan
+#         for i in range(1, len(table)):
+#             if table.loc[i, 'change_flag'] in [0, 1]:
+#                 table.loc[i, f'{metric}_bl_ext'] = np.nan
+#             if table.loc[i, 'change_flag'] == 3 and table.loc[i - 1, 'change_flag'] == 2:
+#                 table.loc[i - 1, f'{metric}_bl_ext'] = table.loc[i - 1, f'{metric}_bl']
+#             if table.loc[i, 'change_flag'] == 3:
+#                 table.loc[i, f'{metric}_bl_ext'] = round(
+#                     table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'], 2)
+#     logger.info(f'{sku} - extended baseline table created')
 
-    # produce extended baseline
-    for metric in metrics.keys():
-        table.loc[0, f'{metric}_bl_ext'] = np.nan
-        for i in range(1, len(table)):
-            if table.loc[i, 'change_flag'] in [0, 1]:
-                table.loc[i, f'{metric}_bl_ext'] = np.nan
-            if table.loc[i, 'change_flag'] == 3 and table.loc[i - 1, 'change_flag'] == 2:
-                table.loc[i - 1, f'{metric}_bl_ext'] = table.loc[i - 1, f'{metric}_bl']
-            if table.loc[i, 'change_flag'] == 3:
-                table.loc[i, f'{metric}_bl_ext'] = round(
-                    table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'], 2)
-    logger.info(f'{sku} - extended baseline table created')
+#     # defiine incremental sale
+#     table['incremental_sale'] = pd.to_numeric(table['total_sale_amt']) - table['sale_amt_bl']
+#     table['incremental_margin'] = pd.to_numeric(table['total_margin_amt']) - table['margin_amt_bl']
+#     table['ROI_weight'] = table['incremental_sale'] / sum(table['incremental_sale'])
 
-    # defiine incremental sale
-    table['incremental_sale'] = pd.to_numeric(table['total_sale_amt']) - table['sale_amt_bl']
-    table['incremental_margin'] = pd.to_numeric(table['total_margin_amt']) - table['margin_amt_bl']
-    table['ROI_weight'] = table['incremental_sale'] / sum(table['incremental_sale'])
+#     # define final dataframe
+#     final_df = table[
+#         ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
+#          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
+#          'incremental_sale', 'incremental_margin', 'ROI_weight', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
+#          'margin_amt_promo_flag']]
 
-    # define final dataframe
-    final_df = table[
-        ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
-         'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
-         'incremental_sale', 'incremental_margin', 'ROI_weight', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
-         'margin_amt_promo_flag']]
-
-    logger.info(f'{sku} - final table created')
+#     logger.info(f'{sku} - final table created')
 
     return final_df.values.tolist()
 
