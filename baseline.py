@@ -202,7 +202,7 @@ def baseline_sku(frame, sku: str, summary_table, agg_np):
          'margin_amt_promo_flag']]
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
-    frame.append(final_df)
+    #frame.append(final_df)
     
 if __name__ == "__main__":
 
