@@ -246,7 +246,7 @@ if __name__ == "__main__":
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
-        for sku in uniq_sku:
+        for sku in uniq_sku[1:1000]:
             p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
             p.start()
             processes.append(p)
