@@ -112,7 +112,7 @@ def baseline_sku(sku: str, summary_table, agg_np):
     
     #create a test dataframe
     final_df=pd.DataFrame({'a':[1,2,3,4,5]})
-    
+    time.sleep(2)
     
 #     # get dataframe for the specific sku
 #     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
@@ -236,6 +236,7 @@ if __name__ == "__main__":
     logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+    
     for sku in uniq_sku:
         pool.apply_async(baseline_sku, args=(sku, summary_table, agg_np), callback=collect_results)
     pool.close()
