@@ -62,7 +62,7 @@ def load_t1_from_bq():
         summary_table = pandas_gbq.read_gbq(summary_sql, project_id = project_id)
     
     total_time = round((time.time()-start_time)/60,1)
-    logger.info("Completed loading of summary table from bigquery in ", total_time,"mins...")
+    logger.info("Completed loading of summary table from bigquery in {a}mins...".format(a=total_time))
 
     return summary_table
 
@@ -82,15 +82,21 @@ def load_t2_from_bq():
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id = project_id)
 
     total_time = round((time.time()-start_time)/60,1)
-    logger.info("Completed loading of non-promotional summary table from bigquery in ", total_time,"mins...")
+    logger.info("Completed loading of summary table from bigquery in {a}mins...".format(a=total_time))
 
     return weekly_agg
 
 
 # define function to aggregate table by defined level
 def aggregate_np (weekly_agg, level):
+    start_time = time.time()
+    
     agg = weekly_agg.groupby(["date", level], as_index = False)['sale_amt_np','sale_qty_np','margin_amt_np'].sum()
-    logger.info("aggregate_np table created")
+    
+    
+    total_time = round((time.time()-start_time)/60,1)
+    logger.info("Completed aggregating non-promotional summary transactions in {a}mins...".format(a=total_time))
+    
     return agg
 
 
@@ -206,17 +212,24 @@ def baseline_sku(frame, sku:str, summary_table, agg_np):
 #     frame.append(df_bl)
 
 if __name__ == "__main__":
+    
     start_time = time.time()
     
-    logger.info("start of the script")
-
+    logger.info("Loading input tables from Bigquery....")
+    
+    logger.info("Loading summary transaction tables from Bigquery....")
     summary_table = load_t1_from_bq()
-
+    
+    logger.info("Loading summary non-promotional transaction table from Bigquery....")
     weekly_agg = load_t2_from_bq()
-
+    
+    logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
     agg_np = aggregate_np(weekly_agg, bl_l)
-
+    
+    logger.info("Computing no. of unique in-scope skus")
     uniq_sku = list(summary_table['sku_root_id'].unique())
+    logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku))
+
 
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
