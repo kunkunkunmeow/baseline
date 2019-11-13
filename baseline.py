@@ -112,7 +112,7 @@ def baseline_sku(sku: str, summary_table, agg_np):
     
     #create a test dataframe
     final_df=pd.DataFrame({'a':[1,2,3,4,5]})
-    time.sleep(2)
+    #time.sleep(2)
     logger.info(f'{sku} - being processed')
     
 #     # get dataframe for the specific sku
