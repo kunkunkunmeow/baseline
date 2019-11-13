@@ -230,7 +230,6 @@ if __name__ == "__main__":
     uniq_sku = list(summary_table['sku_root_id'].unique())
     logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku))
 
-
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
