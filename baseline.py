@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
     logger.info("Computing no. of unique in-scope skus")
     uniq_sku = list(summary_table['sku_root_id'].unique())
-    logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku))
+    logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     for sku in uniq_sku:
