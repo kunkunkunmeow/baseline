@@ -254,7 +254,19 @@ if __name__ == "__main__":
             p.join()
         final_df = pd.concat(frame)
         final_df.reset_index(drop=True, inplace=True)
-    
+    logger.info('Final df has {a} rows...'.format(a=final_df.shape[0]))
+    with Manager() as manager:
+        frame = manager.list()  # <-- can be shared between processes.
+        processes = []
+        for sku in uniq_sku[1000:2000]:
+            p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+        final_df = pd.concat(frame)
+        final_df.reset_index(drop=True, inplace=True)
+    logger.info('Final df has {a} rows...'.format(a=final_df.shape[0]))
     #df = pd.DataFrame(results)
 
     # final_df.reset_index(drop=True, inplace=True)
