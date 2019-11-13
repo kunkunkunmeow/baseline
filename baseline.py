@@ -202,7 +202,8 @@ def baseline_sku(frame, sku: str, summary_table, agg_np):
          'margin_amt_promo_flag']]
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
-    #frame.append(final_df)
+  
+    frame.append(final_df)
     
 if __name__ == "__main__":
 
@@ -233,7 +234,7 @@ if __name__ == "__main__":
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
-        for sku in uniq_sku[1:1000]:
+        for sku in uniq_sku[1:100]:
             p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
             p.start()
             processes.append(p)
@@ -245,7 +246,7 @@ if __name__ == "__main__":
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
-        for sku in uniq_sku[1000:2000]:
+        for sku in uniq_sku[100:200]:
             p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
             p.start()
             processes.append(p)
