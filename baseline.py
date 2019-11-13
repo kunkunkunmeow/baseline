@@ -1,5 +1,5 @@
 import pandas as pd
-import multiprocessing
+from multiprocessing import Process, Manager
 import pandas_gbq
 import numpy as np
 from tqdm import tqdm
@@ -102,7 +102,7 @@ def aggregate_np(weekly_agg, level):
 
 
 # define function to process baseline for one sku
-def baseline_sku(sku: str, summary_table, agg_np):
+def baseline_sku(frame, sku: str, summary_table, agg_np):
     """produce baseline and cannibalisation line for the sku
     Args:
         sku(str): sku_root_id
@@ -210,8 +210,8 @@ def baseline_sku(sku: str, summary_table, agg_np):
 #          'margin_amt_promo_flag']]
 
 #     logger.info(f'{sku} - final table created')
-
-    return final_df.values.tolist()
+    frame.append(final_df)
+    #return final_df.values.tolist()
 
 def collect_results(result):
     """Uses apply_async's callback to setup up a separate Queue for each process"""
@@ -236,14 +236,26 @@ if __name__ == "__main__":
     uniq_sku = list(summary_table['sku_root_id'].unique())
     logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
 
-    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+#     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     
-    for sku in uniq_sku:
-        pool.apply_async(baseline_sku, args=(sku, summary_table, agg_np), callback=collect_results)
-    pool.close()
-    pool.join()
+#     for sku in uniq_sku:
+#         pool.apply_async(baseline_sku, args=(sku, summary_table, agg_np), callback=collect_results)
+#     pool.close()
+#     pool.join()
+
+    with Manager() as manager:
+        frame = manager.list()  # <-- can be shared between processes.
+        processes = []
+        for sku in uniq_sku:
+            p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+        final_df = pd.concat(frame)
+        final_df.reset_index(drop=True, inplace=True)
     
-    df = pd.DataFrame(results)
+    #df = pd.DataFrame(results)
 
     # final_df.reset_index(drop=True, inplace=True)
     # 
