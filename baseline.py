@@ -294,7 +294,8 @@ if __name__ == "__main__":
     logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
     # upload the final dataframe onto '{sku} - final taBigquery
-    pandas_gbq.to_gbq(final_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
+    logger.info('Uploading baseline table to Bigquery...')
+    pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
     
     
     logger.info('Completed upload of baseline to Bigquery...')
