@@ -6,10 +6,10 @@ from tqdm import tqdm
 import time
 import logging
 
-# Set start time
-start_time = time.time()
+# Input global variables 
+# Reformat code to accept these variables as input
 
-# Loading data from Bigquery
+# Project ID
 project_id = "gum-eroski-dev"
 
 # Set logger properties
@@ -46,9 +46,6 @@ metrics = {
     'sale_qty': ['sale_qty_np', 'total_sale_qty'],
     'margin_amt': ['margin_amt_np', 'total_margin_amt']
 }
-
-# Final results
-results = []
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level from bigquery
 def load_t1_from_bq():
@@ -206,7 +203,10 @@ def baseline_sku(frame, sku: str, summary_table, agg_np):
     frame.append(final_df)
     
 if __name__ == "__main__":
-
+    
+    # Store final results here
+    results_df = pd.DataFrame()
+    
     start_time = time.time()
 
     logger.info("Loading input tables from Bigquery....")
@@ -248,7 +248,8 @@ if __name__ == "__main__":
                 p.join()
             final_df = pd.concat(frame)
             final_df.reset_index(drop=True, inplace=True)
-        #logger.info('Final df has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
+        results_df = results_df.append(final_df)
+        logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
     #df = pd.DataFrame(results)
 
     # final_df.reset_index(drop=True, inplace=True)
