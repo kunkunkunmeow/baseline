@@ -149,15 +149,15 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref):
     logger.debug(f'{sku} - being processed')
     
     # get dataframe for the specific sku
-    df_sku = summary_table.sort_values(by=['date']).reset_index(drop=True)
+    df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
     
      # locate the group that needs to be aggregated
-    sku_level = summary_table.loc[summary_table['sku_root_id'] == sku, bl_l].iloc[0]
+    sku_level = df_sku.loc[df_sku['sku_root_id'] == sku, bl_l].iloc[0]
     
     # produce baseline dataframe at desired level
     baseline = baseline_ref[baseline_ref[bl_l] == sku_level]
 
-    # merge baseline, cannibalisation and sku table
+    # merge baseline and sku table
     table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
                              'total_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
                              'margin_amt_promo_flag']],
@@ -310,7 +310,7 @@ if __name__ == "__main__":
                 batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
 
                 for sku in batch:
-                    p = Process(target=baseline_sku, args=(frame,sku,summary_table[summary_table.sku_root_id == sku], baseline_perc_df))  # Passing the list
+                    p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
