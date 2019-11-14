@@ -235,6 +235,7 @@ if __name__ == "__main__":
     # do stuff with batch
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
+        final_df = pd.DataFrame()
         processes = []
         batchsize = 50
         for i in range(0, len(uniq_sku), batchsize):
