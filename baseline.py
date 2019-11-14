@@ -254,6 +254,7 @@ if __name__ == "__main__":
             logger.info('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
             logger.info('Processed dataframe has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
             logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+            final_df = final_df.iloc[0:0]
     #df = pd.DataFrame(results)
 
     # final_df.reset_index(drop=True, inplace=True)
