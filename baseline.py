@@ -61,7 +61,7 @@ def load_t1_from_bq():
         summary_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
 
     total_time = round((time.time() - start_time) / 60, 1)
-    logger.info("Completed loading of summary table from bigquery in {a}mins...".format(a=total_time))
+    logger.info("Completed loading of summary table from bigquery in {a} mins...".format(a=total_time))
 
     return summary_table
 
@@ -81,7 +81,7 @@ def load_t2_from_bq():
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id=project_id)
 
     total_time = round((time.time() - start_time) / 60, 1)
-    logger.info("Completed loading of summary table from bigquery in {a}mins...".format(a=total_time))
+    logger.info("Completed loading of summary table from bigquery in {a} mins...".format(a=total_time))
 
     return weekly_agg
 
@@ -93,7 +93,7 @@ def aggregate_np(weekly_agg, level):
     agg = weekly_agg.groupby(["date", level], as_index=False)['sale_amt_np', 'sale_qty_np', 'margin_amt_np'].sum()
 
     total_time = round((time.time() - start_time) / 60, 1)
-    logger.info("Completed aggregating non-promotional summary transactions in {a}mins...".format(a=total_time))
+    logger.info("Completed aggregating non-promotional summary transactions in {a} mins...".format(a=total_time))
 
     return agg
 
@@ -236,8 +236,9 @@ if __name__ == "__main__":
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
-        batchsize = 20
+        batchsize = 50
         for i in range(0, len(uniq_sku), batchsize):
+            start_time_batch = time.time()
             batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
             processes[:] = []
             for sku in batch:
@@ -249,6 +250,8 @@ if __name__ == "__main__":
             final_df = pd.concat(frame)
             final_df.reset_index(drop=True, inplace=True)
             results_df = results_df.append(final_df)
+            total_time_batch = round((time.time() - start_time), 2)
+            logger.info('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch)
             logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
     #df = pd.DataFrame(results)
 
