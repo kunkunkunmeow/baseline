@@ -14,6 +14,7 @@ project_id = "gum-eroski-dev"
 
 # Define key baseline parameters
 # Category level used to compute the baseline
+# Need to be section level or below (i.e category, subcategory, etc)
 bl_l = "section"
 
 # Scope for the baseline (at an area level)
@@ -236,7 +237,11 @@ if __name__ == "__main__":
     logger.info("Unique sections include:")
     for section in unique_sections: logger.info("{a}".format(a=section))
     
-    for section in unique_sections: 
+    # Loop through sections
+    for i in range(0, len(unique_sections)):
+        
+        section_start_time = time.time()
+        section = unique_sections[i]
         
         logger.info("Processing section {a}...".format(a=section))
         
@@ -245,7 +250,7 @@ if __name__ == "__main__":
         summary_table = load_t1_from_bq(section)
 
         logger.info("Loading summary non-promotional transaction table from Bigquery....")
-        weekly_agg = load_t2_from_bq()
+        weekly_agg = load_t2_from_bq(section)
 
         logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
         agg_np = aggregate_np(weekly_agg, bl_l)
@@ -326,12 +331,19 @@ if __name__ == "__main__":
         results_df = results_df.where((pd.notnull(results_df)), None)
 
 
-        total_time = round((time.time() - start_time) / 60, 1)
+        total_time = round((time.time() - section_start_time) / 60, 1)
         logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
-        # upload the final dataframe onto '{sku} - final taBigquery
+        # upload the final dataframe onto Bigquery
         logger.info('Uploading baseline table to Bigquery...')
-        pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
+        
+        if (i = 0):
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
+        else:
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
 
 
-        logger.info('Completed upload of baseline to Bigquery...')
+        logger.info('Completed upload of section baseline to Bigquery...')
+    
+    total_time = round((time.time() - start_time) / 60, 1)
+    logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
