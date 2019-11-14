@@ -249,7 +249,8 @@ if __name__ == "__main__":
                 processes.append(p)
             for p in processes:
                 p.join()
-            baseline_perc_df = pd.concat([baseline_perc_df, frame], ignore_index=True, sort =False)
+            output = pd.concat(frame)
+            baseline_perc_df = pd.concat([baseline_perc_df, output], ignore_index=True, sort =False)
             baseline_perc_df.reset_index(drop=True, inplace=True)
             frame[:] = [] 
             
@@ -272,7 +273,8 @@ if __name__ == "__main__":
                 processes.append(p)
             for p in processes:
                 p.join()
-            results_df = pd.concat([results_df, frame], ignore_index=True, sort =False)
+            output = pd.concat(frame)
+            results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
             results_df.reset_index(drop=True, inplace=True)
             frame[:] = [] 
             
