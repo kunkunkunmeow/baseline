@@ -16,6 +16,9 @@ project_id = "gum-eroski-dev"
 # Category level used to compute the baseline
 bl_l = "section"
 
+# Scope for the baseline (at an area level)
+bl_s = "ALIMENTACION"
+
 # Pull forward week
 ext_day = 1
 
@@ -56,7 +59,7 @@ def load_t1_from_bq():
     summary_sql = """
     SELECT date, sku_root_id , area, section, category, subcategory , segment , total_sale_amt, total_sale_qty , total_margin_amt , promo_flag_binary, sale_amt_promo_flag, sale_qty_promo_flag, margin_amt_promo_flag
     FROM `ETL.aggregate_weekly_transaction_summary`
-    WHERE section = "DULCE"   """
+    WHERE area = "(%s)"   """ %(bl_s)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -76,8 +79,8 @@ def load_t2_from_bq():
     SELECT date, sku_root_id, area, section, category, subcategory, segment, sum(total_sale_amt) as sale_amt_np, sum(total_sale_qty) as sale_qty_np, sum(total_margin_amt) as margin_amt_np
     FROM `ETL.aggregate_weekly_transaction_to_sku`
     WHERE promo_flag = false
-    AND section = "DULCE"
-    group by date, sku_root_id, area, section, category, subcategory, segment """
+    AND area =  "(%s)"
+    group by date, sku_root_id, area, section, category, subcategory, segment """ %(bl_s)
 
     for i in tqdm(range(1), desc='Loading table...'):
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id=project_id)
