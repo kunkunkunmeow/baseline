@@ -99,32 +99,22 @@ def aggregate_np(weekly_agg, level):
 
     return agg
 
-# define function to determine % of total sale quantity 
-def aggregate_sku(agg_np, level: str):
-    """produce aggregated results of desired level and the change % of total sale quantity along the timeline
-    Args:
-        level(str): desired level for the sku to be grouped to
-    Returns:
-        agg_np_sku(pd.DataFrame): Final, preprocessed dataframe
-    """
-    # locate the group that needs to be aggregated
-    sku_level = summary_table.loc[summary_table['sku_root_id'] == sku, level].iloc[0]
-
+# get the percentage changes for all baseline level parameters
+def baseline_pct (frame, parameter:str, agg_np):        
     # get the aggregated none promotion data for the group that the SKU belongs to
-    agg_np_sku = agg_np[agg_np[level] == sku_level].sort_values(by=['date']).reset_index(drop=True)
+    df = agg_np[agg_np[bl_l] == parameter].sort_values(by = ['date']).reset_index(drop=True)
     for metric in metrics.keys():
-        agg_np_sku[f'{metric}_pct'] = 1
-        for i in range(1, len(agg_np_sku)):
-            if agg_np_sku.loc[i - 1, metrics[metric][0]] == 0:
-                agg_np_sku.loc[i, f'{metric}_pct'] = np.nan
+        df[f'{metric}_pct'] = 1
+        for i in range(1,len(df)):
+            if df.loc[i-1,metrics[metric][0]] == 0:
+                df.loc[i,f'{metric}_pct'] = np.nan
             else:
-                agg_np_sku.loc[i, f'{metric}_pct'] = float(
-                    agg_np_sku.loc[i, metrics[metric][0]] / agg_np_sku.loc[i - 1, metrics[metric][0]])
-    return agg_np_sku
-
+                df.loc[i,f'{metric}_pct'] = float(df.loc[i,metrics[metric][0]]/df.loc[i-1,metrics[metric][0]])
+    
+    frame.append(df)
 
 # define function to process baseline for one sku
-def baseline_sku(frame, sku: str, summary_table, agg_np):
+def baseline_sku(frame, sku: str, summary_table, baseline_ref):
     """produce baseline and cannibalisation line for the sku
     Args:
         sku(str): sku_root_id
@@ -135,9 +125,12 @@ def baseline_sku(frame, sku: str, summary_table, agg_np):
     
     # get dataframe for the specific sku
     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
-
+    
+     # locate the group that needs to be aggregated
+    sku_level = summary_table.loc[summary_table['sku_root_id'] == sku, bl_l].iloc[0]
+    
     # produce baseline dataframe at desired level
-    baseline = aggregate_sku(agg_np, bl_l)
+    baseline = baseline_ref[baseline_ref[bl_l] == sku_level]
 
     # merge baseline, cannibalisation and sku table
     table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
@@ -222,21 +215,58 @@ if __name__ == "__main__":
     logger.info("Computing no. of unique in-scope skus")
     uniq_sku = list(summary_table['sku_root_id'].unique())
     logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
-
+    
+    # Compute the % change values in each of the categories used in the baseline
+    logger.info("Calculating the % change in baseline values")
+    
+    baseline_ref = pd.DataFrame()
+    bl_parameter = list(agg_np[bl_l].unique())
+    logger.info("No. of in-scope categories: {a}".format(a=len(bl_parameter)))
 
     # Store the baseline results
+    baseline_perc_df = pd.DataFrame()
     results_df = pd.DataFrame()
     
     # Use the multiproc module to process in parallel
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
+        
+        #Compute the category level baseline metric changes
         for i in range(0, len(uniq_sku), batchsize):
+        
+            # Clear the processes list
+            processes[:] = []
+        
+            start_time_batch = time.time()
+            batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
+        
+            for category in batch:
+                p = Process(target=baseline_pct, args=(frame,category,agg_np))  # Passing the list
+                p.start()
+                processes.append(p)
+            for p in processes:
+                p.join()
+            
+            baseline_perc_df = pd.concat(frame)
+            baseline_perc_df.reset_index(drop=True, inplace=True)
+            frame[:] = [] 
+            
+            total_time_batch = round((time.time() - start_time), 2)
+            logger.debug('Processing category percs with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+            logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
+        
+        # Compute the SKU level baseline calculations
+        for i in range(0, len(uniq_sku), batchsize):
+            
+            # Clear the processes list
+            processes[:] = []
+            
             start_time_batch = time.time()
             batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
-            processes[:] = []
+            
             for sku in batch:
-                p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
+                p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np, baseline_perc_df))  # Passing the list
                 p.start()
                 processes.append(p)
             for p in processes:
