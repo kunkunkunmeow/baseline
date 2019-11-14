@@ -208,6 +208,7 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref):
 
     # define incremental sale
     table['incremental_sale'] = pd.to_numeric(table['total_sale_amt']) - table['sale_amt_bl']
+    table['incremental_qty'] = pd.to_numeric(table['total_sale_qty']) - table['sale_qty_bl']
     table['incremental_margin'] = pd.to_numeric(table['total_margin_amt']) - table['margin_amt_bl']
     table['ROI_weight'] = table['incremental_sale'] / sum(table['incremental_sale'])
 
@@ -215,7 +216,7 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref):
     final_df = table[
         ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
-         'incremental_sale', 'incremental_margin', 'ROI_weight', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
+         'incremental_sale', 'incremental_qty', 'incremental_margin', 'ROI_weight', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
          'margin_amt_promo_flag']]
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
