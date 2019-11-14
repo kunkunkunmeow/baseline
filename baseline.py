@@ -152,7 +152,7 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref):
     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
     
      # locate the group that needs to be aggregated
-    sku_level = df_sku.loc[df_sku['sku_root_id'] == sku, bl_l].iloc[0]
+    sku_level = df_sku[bl_l].iloc[0]
     
     # produce baseline dataframe at desired level
     baseline = baseline_ref[baseline_ref[bl_l] == sku_level]
