@@ -54,13 +54,13 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 # Function to load distinct section data at a sku level from bigquery
-def load_t0_from_bq():
+def load_t0_from_bq(area):
     start_time = time.time()
 
     summary_sql = """
     SELECT distinct section
     FROM `ETL.aggregate_weekly_transaction_summary`
-    WHERE area = "%s"   """ %(bl_s)
+    WHERE area = "%s"   """ %(area)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     logger.info("Loading input tables from Bigquery....")
     
     logger.info("Loading distinct sections table from Bigquery....")
-    section_table = load_t0_from_bq()
+    section_table = load_t0_from_bq(bl_s)
     
     # Unique sections in category include
     unique_sections = list(section_table["section"].unique())
