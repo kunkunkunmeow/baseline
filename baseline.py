@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     logger.info("Loading input tables from Bigquery....")
 
-    logger.info("Loading summary transaction tables from Bigquery....")
+    logger.info("Loading summary transaction table from Bigquery....")
     summary_table = load_t1_from_bq()
 
     logger.info("Loading summary non-promotional transaction table from Bigquery....")
