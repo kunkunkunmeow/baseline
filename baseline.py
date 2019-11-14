@@ -248,8 +248,8 @@ if __name__ == "__main__":
                 p.join()
             final_df = pd.concat(frame)
             final_df.reset_index(drop=True, inplace=True)
-        results_df = results_df.append(final_df)
-        logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+            results_df = results_df.append(final_df)
+            logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
     #df = pd.DataFrame(results)
 
     # final_df.reset_index(drop=True, inplace=True)
