@@ -239,10 +239,10 @@ if __name__ == "__main__":
     for section in unique_sections: logger.info("{a}".format(a=section))
     
     # Loop through sections
-    for i in range(0, len(unique_sections)):
+    for i_sec in range(0, len(unique_sections)):
         
         section_start_time = time.time()
-        section = unique_sections[i]
+        section = unique_sections[i_sec]
         
         logger.info("Processing section {a}...".format(a=section))
         
@@ -338,7 +338,7 @@ if __name__ == "__main__":
         # upload the final dataframe onto Bigquery
         logger.info('Uploading baseline table to Bigquery...')
         
-        if (i == 0):
+        if (i_sec == 0):
             pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
         else:
             pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
