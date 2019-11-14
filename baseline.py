@@ -250,6 +250,7 @@ if __name__ == "__main__":
                 p.join()
             final_df = pd.concat(frame)
             final_df.reset_index(drop=True, inplace=True)
+            frame[:] = [] 
             results_df = results_df.append(final_df)
             total_time_batch = round((time.time() - start_time), 2)
             logger.info('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
