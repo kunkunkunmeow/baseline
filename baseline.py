@@ -72,13 +72,13 @@ def load_t0_from_bq():
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level from bigquery
-def load_t1_from_bq():
+def load_t1_from_bq(section):
     start_time = time.time()
 
     summary_sql = """
     SELECT date, sku_root_id , area, section, category, subcategory , segment , total_sale_amt, total_sale_qty , total_margin_amt , promo_flag_binary, sale_amt_promo_flag, sale_qty_promo_flag, margin_amt_promo_flag
     FROM `ETL.aggregate_weekly_transaction_summary`
-    WHERE area = "%s"   """ %(bl_s)
+    WHERE section = "%s"   """ %(section)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -91,15 +91,15 @@ def load_t1_from_bq():
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level (for non-promotional periods) from bigquery
-def load_t2_from_bq():
+def load_t2_from_bq(section):
     start_time = time.time()
 
     weeklyagg_sql = """
     SELECT date, sku_root_id, area, section, category, subcategory, segment, sum(total_sale_amt) as sale_amt_np, sum(total_sale_qty) as sale_qty_np, sum(total_margin_amt) as margin_amt_np
     FROM `ETL.aggregate_weekly_transaction_to_sku`
     WHERE promo_flag = false
-    AND area =  "%s"
-    group by date, sku_root_id, area, section, category, subcategory, segment """ %(bl_s)
+    AND section =  "%s"
+    group by date, sku_root_id, area, section, category, subcategory, segment """ %(section)
 
     for i in tqdm(range(1), desc='Loading table...'):
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id=project_id)
@@ -234,14 +234,15 @@ if __name__ == "__main__":
     # Unique sections in category include
     unique_sections = list(section_table["section"].unique())
     logger.info("Unique sections include:")
+    for section in unique_sections: logger.info("{a}".format(a=section))
+    
     for section in unique_sections: 
         
-        logger.info("{a}...".format(a=section))
+        logger.info("Processing section {a}...".format(a=section))
         
-        # Compute the baseline for each section
-        
+        # Compute the baseline for each section     
         logger.info("Loading summary transaction table from Bigquery....")
-        summary_table = load_t1_from_bq()
+        summary_table = load_t1_from_bq(section)
 
         logger.info("Loading summary non-promotional transaction table from Bigquery....")
         weekly_agg = load_t2_from_bq()
