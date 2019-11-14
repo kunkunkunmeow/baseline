@@ -111,6 +111,8 @@ def baseline_pct (frame, parameter:str, agg_np):
             else:
                 df.loc[i,f'{metric}_pct'] = float(df.loc[i,metrics[metric][0]]/df.loc[i-1,metrics[metric][0]])
     
+    logger.info(f'{parameter} - completed baseline perc change calculation')
+    
     frame.append(df)
 
 # define function to process baseline for one sku
@@ -221,7 +223,7 @@ if __name__ == "__main__":
     
     baseline_ref = pd.DataFrame()
     bl_parameter = list(agg_np[bl_l].unique())
-    logger.info("No. of in-scope categories: {a}".format(a=len(bl_parameter)))
+    logger.info("No. of in-scope categories used in baseline analyses: {a}".format(a=len(bl_parameter)))
 
     # Store the baseline results
     baseline_perc_df = pd.DataFrame()
@@ -233,7 +235,7 @@ if __name__ == "__main__":
         processes = []
         
         #Compute the category level baseline metric changes
-        for i in range(0, len(uniq_sku), batchsize):
+        for i in range(0, len(bl_parameter), batchsize):
         
             # Clear the processes list
             processes[:] = []
