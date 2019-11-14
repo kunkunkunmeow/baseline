@@ -340,7 +340,7 @@ if __name__ == "__main__":
         if (i = 0):
             pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
 
 
         logger.info('Completed upload of section baseline to Bigquery...')
