@@ -203,7 +203,7 @@ def baseline_sku(frame, sku: str, summary_table, agg_np):
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
   
-    frame.append(final_df)
+    #frame.append(final_df)
     
 if __name__ == "__main__":
 
@@ -244,9 +244,9 @@ if __name__ == "__main__":
                 processes.append(p)
             for p in processes:
                 p.join()
-            final_df = pd.concat(frame)
-            final_df.reset_index(drop=True, inplace=True)
-        logger.info('Final df has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
+            #final_df = pd.concat(frame)
+            #final_df.reset_index(drop=True, inplace=True)
+        #logger.info('Final df has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
     #df = pd.DataFrame(results)
 
     # final_df.reset_index(drop=True, inplace=True)
