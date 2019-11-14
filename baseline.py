@@ -254,7 +254,7 @@ if __name__ == "__main__":
             baseline_perc_df.reset_index(drop=True, inplace=True)
             frame[:] = [] 
             
-            total_time_batch = round((time.time() - start_time), 2)
+            total_time_batch = round((time.time() - start_time_batch), 2)
             logger.debug('Processing category percs with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
             logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
         
@@ -268,7 +268,7 @@ if __name__ == "__main__":
             batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
             
             for sku in batch:
-                p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np, baseline_perc_df))  # Passing the list
+                p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df))  # Passing the list
                 p.start()
                 processes.append(p)
             for p in processes:
@@ -277,7 +277,7 @@ if __name__ == "__main__":
             results_df.reset_index(drop=True, inplace=True)
             frame[:] = [] 
             
-            total_time_batch = round((time.time() - start_time), 2)
+            total_time_batch = round((time.time() - start_time_batch), 2)
             logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
             
             logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
