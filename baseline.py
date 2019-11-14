@@ -12,6 +12,22 @@ import logging
 # Project ID
 project_id = "gum-eroski-dev"
 
+# Define key baseline parameters
+# Category level used to compute the baseline
+bl_l = "section"
+
+# Pull forward week
+ext_day = 1
+
+# Baseline % metrics
+metrics = {
+    'sale_amt': ['sale_amt_np', 'total_sale_amt'],
+    'sale_qty': ['sale_qty_np', 'total_sale_qty'],
+    'margin_amt': ['margin_amt_np', 'total_margin_amt']
+}
+# Set batch size
+batchsize = 50
+
 # Set logger properties
 logger = logging.getLogger('baseline_calculation')
 logger.setLevel(logging.DEBUG)
@@ -33,20 +49,6 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-# Define key baseline parameters
-# Category level used to compute the baseline
-bl_l = "section"
-
-# Pull forward week
-ext_day = 1
-
-# Baseline % metrics
-metrics = {
-    'sale_amt': ['sale_amt_np', 'total_sale_amt'],
-    'sale_qty': ['sale_qty_np', 'total_sale_qty'],
-    'margin_amt': ['margin_amt_np', 'total_margin_amt']
-}
-
 # Function to load aggregate_weekly_transaction_summary data at a sku level from bigquery
 def load_t1_from_bq():
     start_time = time.time()
@@ -54,7 +56,7 @@ def load_t1_from_bq():
     summary_sql = """
     SELECT date, sku_root_id , area, section, category, subcategory , segment , total_sale_amt, total_sale_qty , total_margin_amt , promo_flag_binary, sale_amt_promo_flag, sale_qty_promo_flag, margin_amt_promo_flag
     FROM `ETL.aggregate_weekly_transaction_summary`
-    WHERE category = "CONFECCION MUJER"   """
+    WHERE section = "DULCE"   """
     start = time.time()
 
     for i in tqdm(range(1), desc='loading summary table from bigquery'):
@@ -74,7 +76,7 @@ def load_t2_from_bq():
     SELECT date, sku_root_id, area, section, category, subcategory, segment, sum(total_sale_amt) as sale_amt_np, sum(total_sale_qty) as sale_qty_np, sum(total_margin_amt) as margin_amt_np
     FROM `ETL.aggregate_weekly_transaction_to_sku`
     WHERE promo_flag = false
-    AND category = "CONFECCION MUJER"
+    AND section = "DULCE"
     group by date, sku_root_id, area, section, category, subcategory, segment """
 
     for i in tqdm(range(1), desc='loading weekly transaction table from bigquery'):
@@ -204,9 +206,6 @@ def baseline_sku(frame, sku: str, summary_table, agg_np):
     
 if __name__ == "__main__":
     
-    # Store final results here
-    results_df = pd.DataFrame()
-    
     start_time = time.time()
 
     logger.info("Loading input tables from Bigquery....")
@@ -224,20 +223,14 @@ if __name__ == "__main__":
     uniq_sku = list(summary_table['sku_root_id'].unique())
     logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
 
-#     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    
-#     for sku in uniq_sku:
-#         pool.apply_async(baseline_sku, args=(sku, summary_table, agg_np), callback=collect_results)
-#     pool.close()
-#     pool.join()
 
-        
-    # do stuff with batch
+    # Store the baseline results
+    results_df = pd.DataFrame()
+    
+    # Use the multiproc module to process in parallel
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
-        final_df = pd.DataFrame()
         processes = []
-        batchsize = 50
         for i in range(0, len(uniq_sku), batchsize):
             start_time_batch = time.time()
             batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
@@ -248,27 +241,27 @@ if __name__ == "__main__":
                 processes.append(p)
             for p in processes:
                 p.join()
-            final_df = pd.concat(frame)
-            final_df.reset_index(drop=True, inplace=True)
+            results_df = pd.concat(frame)
+            results_df.reset_index(drop=True, inplace=True)
             frame[:] = [] 
-            results_df = results_df.append(final_df)
+            
             total_time_batch = round((time.time() - start_time), 2)
-            logger.info('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
-            logger.info('Processed dataframe has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
+            logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+            
             logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
-            final_df = final_df.iloc[0:0]
-    #df = pd.DataFrame(results)
 
-    # final_df.reset_index(drop=True, inplace=True)
-    # 
-    # for i in list(final_df.columns)[2:]:
-    #     final_df[i] = pd.to_numeric(final_df[i])
-    # 
-    # final_df = final_df.where((pd.notnull(final_df)), None)
+    for i in list(results_df.columns)[2:]:
+        results_df[i] = pd.to_numeric(results_df[i])
+   
+    # Convert all nulls to None
+    results_df = results_df.where((pd.notnull(results_df)), None)
+    
+    
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
-    # # upload the final dataframe onto '{sku} - final taBigquery
-    # pandas_gbq.to_gbq(final_df, 'WIP.bl_multi2_1113', project_id=project_id, if_exists='replace')
-    # logger.info('finished uploading onto Bigquery')
-    # print('the whole process took', round((time.time() - start_time) / 60, 1), 'minutes.')
+    # upload the final dataframe onto '{sku} - final taBigquery
+    pandas_gbq.to_gbq(final_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
+    
+    
+    logger.info('Completed upload of baseline to Bigquery...')
