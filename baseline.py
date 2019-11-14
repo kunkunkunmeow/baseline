@@ -29,7 +29,7 @@ metrics = {
     'margin_amt': ['margin_amt_np', 'total_margin_amt']
 }
 # Set batch size
-batchsize = 70
+batchsize = 40
 
 # Set logger properties
 logger = logging.getLogger('baseline_calculation')
