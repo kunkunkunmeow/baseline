@@ -230,20 +230,22 @@ if __name__ == "__main__":
 #         pool.apply_async(baseline_sku, args=(sku, summary_table, agg_np), callback=collect_results)
 #     pool.close()
 #     pool.join()
-#     batchsize = 100
-#     for i in range(0, len(uniq_sku), batchsize):
-#         batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+
         
     # do stuff with batch
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
-        for sku in uniq_sku:
-            p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
+        batchsize = 20
+        for i in range(0, len(uniq_sku), batchsize):
+            batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+            for sku in batch:
+                processes[:] = []
+                p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
+                p.start()
+                processes.append(p)
+            for p in processes:
+                p.join()
             #final_df = pd.concat(frame)
             #final_df.reset_index(drop=True, inplace=True)
         #logger.info('Final df has {a} rows and {b} cols...'.format(a=final_df.shape[0], b=final_df.shape[1]))
