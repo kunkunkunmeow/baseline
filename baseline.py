@@ -59,7 +59,7 @@ def load_t1_from_bq():
     WHERE section = "DULCE"   """
     start = time.time()
 
-    for i in tqdm(range(1), desc='loading summary table from bigquery'):
+    for i in tqdm(range(1), desc='Loading table...'):
         summary_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
 
     total_time = round((time.time() - start_time) / 60, 1)
@@ -79,7 +79,7 @@ def load_t2_from_bq():
     AND section = "DULCE"
     group by date, sku_root_id, area, section, category, subcategory, segment """
 
-    for i in tqdm(range(1), desc='loading weekly transaction table from bigquery'):
+    for i in tqdm(range(1), desc='Loading table...'):
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id=project_id)
 
     total_time = round((time.time() - start_time) / 60, 1)
