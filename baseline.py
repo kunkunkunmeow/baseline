@@ -239,8 +239,8 @@ if __name__ == "__main__":
         batchsize = 20
         for i in range(0, len(uniq_sku), batchsize):
             batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+            processes[:] = []
             for sku in batch:
-                processes[:] = []
                 p = Process(target=baseline_sku, args=(frame,sku,summary_table, agg_np))  # Passing the list
                 p.start()
                 processes.append(p)
