@@ -20,6 +20,9 @@ bl_l = "section"
 # Scope for the baseline (at an area level)
 bl_s = "ALIMENTACION"
 
+# Append or replace destination table (either 'append' or 'replace')
+bl_table_config = 'replace'
+
 # Pull forward week
 ext_day = 1
 
@@ -339,7 +342,7 @@ if __name__ == "__main__":
         logger.info('Uploading baseline table to Bigquery...')
         
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='replace')
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists=bl_table_config)
         else:
             pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
 
