@@ -24,9 +24,8 @@ bl_s = "ALIMENTACION"
 # Append or replace destination table (either 'append' or 'replace')
 bl_table_config = 'replace'
 
-# Pull forward week
-# TODO - need to test
-ext_day = 1
+# Use pull forward week
+use_ext_day = 1
 
 # Baseline % metrics
 metrics = {
@@ -58,21 +57,23 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-# Function to load distinct section data at a sku level from bigquery
+# Function to load distinct historic baseline section data at a sku level from bigquery
 def load_t0_from_bq(area, project_id):
     start_time = time.time()
 
     summary_sql = """
-    SELECT distinct section
-    FROM `ETL.aggregate_weekly_transaction_summary`
-    WHERE area = "%s"   """ %(area)
+    SELECT distinct sku.section 
+    FROM `gum-eroski-dev.baseline_performance.baseline` bline
+    INNER JOIN `gum-eroski-dev.ETL.root_sku` sku
+    ON sku.sku_root_id = bline.sku_root_id
+    WHERE sku.area = "%s"   """ %(area)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
         section_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
 
     total_time = round((time.time() - start_time) / 60, 1)
-    logger.info("Completed loading of distinct sections table from Bigquery {a} mins...".format(a=total_time))
+    logger.info("Completed loading of distinct historic sections table from Bigquery {a} mins...".format(a=total_time))
 
     return section_table
 
