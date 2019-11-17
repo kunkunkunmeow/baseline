@@ -1,8 +1,8 @@
-
 import pandas as pd
 from multiprocessing import Process, Manager
 import pandas_gbq
 import numpy as np
+from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 from tqdm import tqdm
 import time
 import logging
@@ -25,6 +25,7 @@ bl_s = "ALIMENTACION"
 bl_table_config = 'replace'
 
 # Pull forward week
+# TODO - need to test
 ext_day = 1
 
 # Baseline % metrics
@@ -58,7 +59,7 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 # Function to load distinct section data at a sku level from bigquery
-def load_t0_from_bq(area):
+def load_t0_from_bq(area, project_id):
     start_time = time.time()
 
     summary_sql = """
@@ -77,7 +78,7 @@ def load_t0_from_bq(area):
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level from bigquery
-def load_t1_from_bq(section):
+def load_t1_from_bq(section, project_id):
     start_time = time.time()
 
     summary_sql = """
@@ -96,7 +97,7 @@ def load_t1_from_bq(section):
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level (for non-promotional periods) from bigquery
-def load_t2_from_bq(section):
+def load_t2_from_bq(section, project_id):
     start_time = time.time()
 
     weeklyagg_sql = """
@@ -127,7 +128,7 @@ def aggregate_np(weekly_agg, level):
     return agg
 
 # get the percentage changes for all baseline level parameters
-def baseline_pct (frame, parameter:str, agg_np):        
+def baseline_pct (frame, parameter:str, agg_np, bl_l, metrics):        
     # get the aggregated none promotion data for the group that the SKU belongs to
     df = agg_np[agg_np[bl_l] == parameter].sort_values(by = ['date']).reset_index(drop=True)
     for metric in metrics.keys():
@@ -143,7 +144,7 @@ def baseline_pct (frame, parameter:str, agg_np):
     frame.append(df)
 
 # define function to process baseline for one sku
-def baseline_sku(frame, sku: str, summary_table, baseline_ref):
+def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ext_day):
     """produce baseline and cannibalisation line for the sku
     Args:
         sku(str): sku_root_id
@@ -235,7 +236,7 @@ if __name__ == "__main__":
     logger.info("Loading input tables from Bigquery....")
     
     logger.info("Loading distinct sections table from Bigquery....")
-    section_table = load_t0_from_bq(bl_s)
+    section_table = load_t0_from_bq(bl_s, project_id)
     
     # Unique sections in category include
     unique_sections = list(section_table["section"].unique())
@@ -252,10 +253,10 @@ if __name__ == "__main__":
         
         # Compute the baseline for each section     
         logger.info("Loading summary transaction table from Bigquery....")
-        summary_table = load_t1_from_bq(section)
+        summary_table = load_t1_from_bq(section, project_id)
 
         logger.info("Loading summary non-promotional transaction table from Bigquery....")
-        weekly_agg = load_t2_from_bq(section)
+        weekly_agg = load_t2_from_bq(section, project_id)
 
         logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
         agg_np = aggregate_np(weekly_agg, bl_l)
@@ -290,7 +291,7 @@ if __name__ == "__main__":
                 batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
 
                 for category in batch:
-                    p = Process(target=baseline_pct, args=(frame,category,agg_np))  # Passing the list
+                    p = Process(target=baseline_pct, args=(frame,category,agg_np, bl_l, metrics))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
@@ -314,7 +315,7 @@ if __name__ == "__main__":
                 batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
 
                 for sku in batch:
-                    p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df))  # Passing the list
+                    p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df, bl_l, metrics, ext_day))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
