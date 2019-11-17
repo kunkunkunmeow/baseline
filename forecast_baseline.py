@@ -141,6 +141,8 @@ def forward_looking_baseline_sku(frame, sku: str, summary_table, metrics, forwar
                                                                        x['margin_amt_bl_ext']),axis=1)
     
     
+    # Use Holt Winters multiplicative exponential smoothing method
+    fit_hist_baseline_sale_amt = ExponentialSmoothing(saledata, seasonal_periods=4, trend='add', seasonal='mul', damped=True).fit(use_boxcox=True)
     
     sku_level = df_sku[bl_l].iloc[0]
     
