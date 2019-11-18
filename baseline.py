@@ -346,6 +346,15 @@ if __name__ == "__main__":
         # upload the final dataframe onto Bigquery
         logger.info('Uploading baseline table to Bigquery...')
         
+        # specify the table schema
+#          ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
+#          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
+#          'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
+#          'margin_amt_promo_flag']]
+        
+        
+        #table_schema = [{'name': 'date', 'type': 'TIMESTAMP'}, {'name': 'col2', 'type': 'STRING'},]
+        
         if (i_sec == 0):
             pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists=bl_table_config)
         else:
