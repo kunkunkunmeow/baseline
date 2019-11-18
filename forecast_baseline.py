@@ -24,21 +24,15 @@ bl_table_config = 'replace'
 # Forward looking period (wks)
 forward_period = 12
 
-# Baseline % metrics
-metrics = {
-    'sale_amt': ['sale_amt_np', 'total_sale_amt'],
-    'sale_qty': ['sale_qty_np', 'total_sale_qty'],
-    'margin_amt': ['margin_amt_np', 'total_margin_amt']
-}
 # Set batch size
 batchsize = 50
 
 # Set logger properties
-logger = logging.getLogger('baseline_calculation')
+logger = logging.getLogger('forecast_baseline_calculation')
 logger.setLevel(logging.DEBUG)
 
 # create file handler which logs even debug messages
-fh = logging.FileHandler('baseline.log')
+fh = logging.FileHandler('forecast_baseline.log')
 fh.setLevel(logging.DEBUG)
 
 # create console handler with a higher log level
