@@ -140,9 +140,45 @@ def forward_looking_baseline_sku(frame, sku: str, summary_table, metrics, forwar
                                                                        x['margin_amt_bl'], 
                                                                        x['margin_amt_bl_ext']),axis=1)
     
+    # Split dataframe to 3 time series
+    df_sku_hist_baseline_sale_amt = df_sku[['date','hist_baseline_sale_amt']]
+    df_sku_hist_baseline_sale_amt = df_sku_hist_baseline_sale_amt.set_index('date', drop=True)
+    
+    df_sku_hist_baseline_sale_qty = df_sku[['date','hist_baseline_sale_qty']]
+    df_sku_hist_baseline_sale_qty = df_sku_hist_baseline_sale_qty.set_index('date', drop=True)
+    
+    df_sku_hist_baseline_margin_amt = df_sku[['date','hist_baseline_margin_amt']]
+    df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.set_index('date', drop=True)
+    
+    # Split to test and train datasets
+    # TODO
     
     # Use Holt Winters multiplicative exponential smoothing method
-    fit_hist_baseline_sale_amt = ExponentialSmoothing(saledata, seasonal_periods=4, trend='add', seasonal='mul', damped=True).fit(use_boxcox=True)
+    fit_hist_baseline_sale_amt = ExponentialSmoothing(df_sku_hist_baseline_sale_amt, seasonal_periods=52, trend='add', 
+                                                      seasonal='mul', damped=True).fit(use_boxcox=True)
+    
+    fit_hist_baseline_sale_qty = ExponentialSmoothing(df_sku_hist_baseline_sale_qty, seasonal_periods=52, trend='add', 
+                                                      seasonal='mul', damped=True).fit(use_boxcox=True)
+    
+    fit_hist_baseline_margin_amt = ExponentialSmoothing(df_sku_hist_baseline_margin_amt, seasonal_periods=52, trend='add', 
+                                                      seasonal='mul', damped=True).fit(use_boxcox=True)
+
+    
+    results_df = pd.DataFrame(index=[r"$\alpha$",r"$\beta$",r"$\phi$",r"$\gamma$",r"$l_0$","$b_0$","SSE"])
+    params = ['smoothing_level', 'smoothing_slope', 'damping_slope', 'smoothing_seasonal', 'initial_level', 'initial_slope']
+    
+    results["Multiplica Dam"] = [fit_hist_baseline_sale_amt.params[p] for p in params] + [fit_hist_baseline_sale_amt.sse]
+    
+    df = pd.DataFrame(np.c_[aust, fit1.level, fit1.slope, fit1.season, fit1.fittedvalues],
+                  columns=[r'$y_t$',r'$l_t$',r'$b_t$',r'$s_t$',r'$\hat{y}_t$'],index=aust.index)
+    df.append(fit1.forecast(8).rename(r'$\hat{y}_t$').to_frame(), sort=True)
+    
+    states1 = pd.DataFrame(np.c_[fit1.level, fit1.slope, fit1.season], columns=['level','slope','seasonal'], index=aust.index)
+    states2 = pd.DataFrame(np.c_[fit2.level, fit2.slope, fit2.season], columns=['level','slope','seasonal'], index=aust.index)
+    
+    
+    
+    
     
     sku_level = df_sku[bl_l].iloc[0]
     
@@ -260,37 +296,12 @@ if __name__ == "__main__":
         logger.info("No. of in-scope categories used in baseline analyses: {a}".format(a=len(bl_parameter)))
 
         # Store the baseline results
-        baseline_perc_df = pd.DataFrame()
         results_df = pd.DataFrame()
 
         # Use the multiproc module to process in parallel
         with Manager() as manager:
             frame = manager.list()  # <-- can be shared between processes.
             processes = []
-
-            #Compute the category level baseline metric changes
-            for i in range(0, len(bl_parameter), batchsize):
-
-                # Clear the processes list
-                processes[:] = []
-
-                start_time_batch = time.time()
-                batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
-
-                for category in batch:
-                    p = Process(target=baseline_pct, args=(frame,category,agg_np, bl_l, metrics))  # Passing the list
-                    p.start()
-                    processes.append(p)
-                for p in processes:
-                    p.join()
-                output = pd.concat(frame)
-                baseline_perc_df = pd.concat([baseline_perc_df, output], ignore_index=True, sort =False)
-                baseline_perc_df.reset_index(drop=True, inplace=True)
-                frame[:] = [] 
-
-                total_time_batch = round((time.time() - start_time_batch), 2)
-                logger.debug('Processing category percs with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
-                logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
 
             # Compute the SKU level baseline calculations
             for i in range(0, len(uniq_sku), batchsize):
