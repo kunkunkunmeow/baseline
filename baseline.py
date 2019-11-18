@@ -219,7 +219,7 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
     table['incremental_sale'] = pd.to_numeric(table['total_sale_amt']) - table['sale_amt_bl']
     table['incremental_qty'] = pd.to_numeric(table['total_sale_qty']) - table['sale_qty_bl']
     table['incremental_margin'] = pd.to_numeric(table['total_margin_amt']) - table['margin_amt_bl']
-    table['ROI_weight'] = table['incremental_sale'] / sum(table['incremental_sale'])
+    table['ROI_weight'] = table['incremental_sale']/ table['incremental_sale'].sum()
 
     # define final dataframe
     final_df = table[
