@@ -164,14 +164,59 @@ def forward_looking_baseline_sku(frame, sku: str, summary_table, metrics, forwar
                                                       seasonal='mul', damped=True).fit(use_boxcox=True)
 
     
-    results_df = pd.DataFrame(index=[r"$\alpha$",r"$\beta$",r"$\phi$",r"$\gamma$",r"$l_0$","$b_0$","SSE"])
+    results_df = pd.DataFrame(columns=['sku_root_id', 'alpha','beta','phi','gamme','l_0','b_0','SSE'])
     params = ['smoothing_level', 'smoothing_slope', 'damping_slope', 'smoothing_seasonal', 'initial_level', 'initial_slope']
+    param_list = [sku]
+    for p in params:
+        param_list.append(fit_hist_baseline_sale_amt.params[p])
     
-    results["Multiplica Dam"] = [fit_hist_baseline_sale_amt.params[p] for p in params] + [fit_hist_baseline_sale_amt.sse]
+    # add SSE
+    param_list.append(fit_hist_baseline_sale_amt.sse)
     
-    df = pd.DataFrame(np.c_[aust, fit1.level, fit1.slope, fit1.season, fit1.fittedvalues],
-                  columns=[r'$y_t$',r'$l_t$',r'$b_t$',r'$s_t$',r'$\hat{y}_t$'],index=aust.index)
-    df.append(fit1.forecast(8).rename(r'$\hat{y}_t$').to_frame(), sort=True)
+    # add to sku metrics dataframe 
+    metrics_series = pd.Series(param_list, index=results_df.columns)
+    results_df = results_df.append(metrics_series, ignore_index=True)
+    
+    # forecast x periods and view internals of the smoothing model
+    # sale amt
+    df_sku_pred_baseline_sale_amt = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_amt, 
+                                                       fit_hist_baseline_sale_amt.level, 
+                                                       fit_hist_baseline_sale_amt.slope, 
+                                                       fit_hist_baseline_sale_amt.season, 
+                                                       fit_hist_baseline_sale_amt.fittedvalues],
+                  columns=['y_t','l_t','b_t','s_t','y_hat_t'],index=df_sku_hist_baseline_sale_amt.index)
+    
+    df_sku_pred_baseline_sale_amt.append(fit_hist_baseline_sale_amt.forecast(forward_period).rename('y_hat_t').to_frame(), sort=True)
+    
+     # sale qty
+    df_sku_pred_baseline_sale_qty = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_qty, 
+                                                       fit_hist_baseline_sale_qty.level, 
+                                                       fit_hist_baseline_sale_qty.slope, 
+                                                       fit_hist_baseline_sale_qty.season, 
+                                                       fit_hist_baseline_sale_qty.fittedvalues],
+                  columns=['y_t','l_t','b_t','s_t','y_hat_t'],index=df_sku_hist_baseline_sale_qty.index)
+    
+    df_sku_pred_baseline_sale_qty.append(fit_hist_baseline_sale_qty.forecast(forward_period).rename('y_hat_t').to_frame(), sort=True)
+    
+    
+    # margin amt
+    df_sku_pred_baseline_sale_qty = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_qty, 
+                                                       fit_hist_baseline_sale_qty.level, 
+                                                       fit_hist_baseline_sale_qty.slope, 
+                                                       fit_hist_baseline_sale_qty.season, 
+                                                       fit_hist_baseline_sale_qty.fittedvalues],
+                  columns=['y_t','l_t','b_t','s_t','y_hat_t'],index=df_sku_hist_baseline_sale_qty.index)
+    
+    df_sku_pred_baseline_sale_qty.append(fit_hist_baseline_sale_qty.forecast(forward_period).rename('y_hat_t').to_frame(), sort=True)
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     states1 = pd.DataFrame(np.c_[fit1.level, fit1.slope, fit1.season], columns=['level','slope','seasonal'], index=aust.index)
     states2 = pd.DataFrame(np.c_[fit2.level, fit2.slope, fit2.season], columns=['level','slope','seasonal'], index=aust.index)
