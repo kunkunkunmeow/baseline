@@ -186,15 +186,20 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
 
     # produce baseline
     for metric in metrics.keys():
-        table.loc[0, f'{metric}_bl'] = np.nan
-        for i in range(1, len(table)):
-            if table.loc[i, 'change_flag'] == 0:
-                table.loc[i, f'{metric}_bl'] = np.nan
-            if table.loc[i, 'change_flag'] == 1 and table.loc[i - 1, 'change_flag'] in [0, 3]:
-                table.loc[i - 1, f'{metric}_bl'] = float(table.loc[i - 1, metrics[metric][1]])
-            if table.loc[i, 'change_flag'] in [1, 2]:
-                table.loc[i, f'{metric}_bl'] = round(table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'],
-                                                     2)
+        for i in range(0, len(table)):
+            if i==0:                                                                                 
+                if table.loc[i, 'change_flag'] == 1:
+                    table.loc[i, f'{metric}_bl'] = float(table.loc[i, metrics[metric][1]])
+                else:
+                    table.loc[i, f'{metric}_bl'] = np.nan
+            else:
+                if table.loc[i, 'change_flag'] == 0:
+                    table.loc[i, f'{metric}_bl'] = np.nan
+                if table.loc[i, 'change_flag'] == 1 and table.loc[i - 1, 'change_flag'] in [0, 3]:
+                    table.loc[i - 1, f'{metric}_bl'] = float(table.loc[i - 1, metrics[metric][1]])
+                if table.loc[i, 'change_flag'] in [1, 2]:
+                    table.loc[i, f'{metric}_bl'] = round(table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'],
+                                                         2)
     logger.debug(f'{sku} - completed baseline')
 
     # produce extended baseline
