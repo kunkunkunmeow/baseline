@@ -157,7 +157,6 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     
     logger.debug(f'{sku} - extracted sku data')
     logger.debug("{sku} - extracted sku data has {rcount} rows".format(sku=sku, rcount=df_sku.shape[0]))
-    print(df_sku.to_string())
     
     # get the input data for the training model
     def fw_baseline_input(sku, change_flag, actual, baseline, ext):
@@ -203,6 +202,11 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     df_sku_hist_baseline_margin_amt = df_sku[['date', 'hist_baseline_margin_amt']]
     df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.set_index('date', drop=True)
     print(df_sku_hist_baseline_margin_amt.to_string())
+    
+    # Convert all values to numeric
+    df_sku_hist_baseline_sale_amt['hist_baseline_sale_amt'] = pd.to_numeric(df_sku_hist_baseline_sale_amt['hist_baseline_sale_amt'])
+    df_sku_hist_baseline_sale_qty['hist_baseline_sale_qty'] = pd.to_numeric(df_sku_hist_baseline_sale_qty['hist_baseline_sale_qty'])
+    df_sku_hist_baseline_margin_amt['hist_baseline_margin_amt'] = pd.to_numeric(df_sku_hist_baseline_margin_amt['hist_baseline_margin_amt'])
     
     logger.debug(f'{sku} - split data into timeseries...')
 
