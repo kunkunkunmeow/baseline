@@ -150,11 +150,13 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     Returns:
         sku_pred_frame, sku_metric_frame
     """
-    logger.debug(f'{sku} - being processed...')
+    logger.info(f'{sku} - being processed...')
 
     # get dataframe for the specific sku
     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
-
+    
+    logger.info(f'{sku} - extracted sku data')
+    
     # get the input data for the training model
     def fw_baseline_input(sku, change_flag, actual, baseline, ext):
         if change_flag == 0:
