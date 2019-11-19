@@ -189,16 +189,20 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
                                                                                   x['margin_amt_bl_ext']), axis=1)
 
     logger.debug(f'{sku} - completed calculation of historic baseline values...')
+    
 
     # Split dataframe to 3 time series
     df_sku_hist_baseline_sale_amt = df_sku[['date', 'hist_baseline_sale_amt']]
     df_sku_hist_baseline_sale_amt = df_sku_hist_baseline_sale_amt.set_index('date', drop=True)
+    print(df_sku_hist_baseline_sale_amt.to_string())
 
     df_sku_hist_baseline_sale_qty = df_sku[['date', 'hist_baseline_sale_qty']]
     df_sku_hist_baseline_sale_qty = df_sku_hist_baseline_sale_qty.set_index('date', drop=True)
+    print(df_sku_hist_baseline_sale_qty.to_string())
 
     df_sku_hist_baseline_margin_amt = df_sku[['date', 'hist_baseline_margin_amt']]
     df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.set_index('date', drop=True)
+    print(df_sku_hist_baseline_margin_amt.to_string())
     
     logger.debug(f'{sku} - split data into timeseries...')
 
