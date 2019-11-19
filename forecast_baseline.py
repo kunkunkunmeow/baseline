@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import time
 import logging
+import warnings
 
 # Input global variables 
 # Reformat code to accept these variables as input
@@ -150,7 +151,7 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     Returns:
         sku_pred_frame, sku_metric_frame
     """
-    logger.info(f'{sku} - being processed...')
+    logger.debug(f'{sku} - being processed...')
 
     # get dataframe for the specific sku
     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
@@ -271,20 +272,22 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     # TODO
 
     # Use Holt Winters multiplicative exponential smoothing method
-    fit_hist_baseline_sale_amt = ExponentialSmoothing(df_sku_hist_baseline_sale_amt_u, seasonal_periods=seasonal_period,
-                                                      trend='add',
-                                                      seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
-                                                                                                  remove_bias=True)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        fit_hist_baseline_sale_amt = ExponentialSmoothing(df_sku_hist_baseline_sale_amt_u, seasonal_periods=seasonal_period,
+                                                          trend='add',
+                                                          seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
+                                                                                                      remove_bias=True)
 
-    fit_hist_baseline_sale_qty = ExponentialSmoothing(df_sku_hist_baseline_sale_qty_u, seasonal_periods=seasonal_period,
-                                                      trend='add',
-                                                      seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
-                                                                                                  remove_bias=True)
+        fit_hist_baseline_sale_qty = ExponentialSmoothing(df_sku_hist_baseline_sale_qty_u, seasonal_periods=seasonal_period,
+                                                          trend='add',
+                                                          seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
+                                                                                                      remove_bias=True)
 
-    fit_hist_baseline_margin_amt = ExponentialSmoothing(df_sku_hist_baseline_margin_amt_u, seasonal_periods=seasonal_period,
-                                                        trend='add',
-                                                        seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
-                                                                                                  remove_bias=True)
+        fit_hist_baseline_margin_amt = ExponentialSmoothing(df_sku_hist_baseline_margin_amt_u, seasonal_periods=seasonal_period,
+                                                            trend='add',
+                                                            seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
+                                                                                                      remove_bias=True)
 
     logger.debug(f'{sku} - completed fit of exponential smoothing model...')
 
