@@ -3,6 +3,7 @@ from multiprocessing import Process, Manager
 import pandas_gbq
 import numpy as np
 from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 import time
 import logging
@@ -22,7 +23,16 @@ bl_s = "ALIMENTACION"
 bl_table_config = 'replace'
 
 # Forward looking period (wks)
-forward_period = 12
+forward_period = 16
+
+# Seasonal period
+seasonal_period = 12
+
+# Frequency
+freq='W-MON'
+
+# Constant value to add to input data
+constant = 1000
 
 # Set batch size
 batchsize = 50
@@ -90,130 +100,262 @@ def load_t1_from_bq(section, project_id):
     return summary_table
 
 
+# define function to process metric for one sku
+def metric_baseline_sku(sku, measure, params, fit_baseline_metric, results_df_columns):
+    """produce summary metrics for baseline calculation for each SKU
+    :Args
+        sku(str): sku_root_id
+        measure(str): string identifying the measure i.e. sale_amt, sale_qty, etc
+        params(list): list of params
+        fit_baseline_metric(Exponential Smoothing class): Exponential smoothing class fitted on data
+        results_df(Index): column index of headers in result dataframe
+
+    :return:
+        metric_series(series): series of metrics for each measure
+    """
+    param_list = [sku, measure]
+    for p in params:
+        param_list.append(fit_baseline_metric.params[p])
+
+    # add SSE
+    param_list.append(fit_baseline_metric.sse)
+
+    # add MAE
+    param_list.append(fit_baseline_metric.resid.abs().mean())
+
+    # convergence flag
+    if np.isnan(fit_baseline_metric.sse):
+        param_list.append(0)
+    else:
+        param_list.append(1)
+
+
+    # add to sku metrics dataframe
+    metric_series = pd.Series(param_list, index=results_df_columns)
+    return metric_series
+
+
 # define function to process baseline for one sku
-def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku: str, summary_table, metrics, forward_period):
+def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_table,
+                                 seasonal_period, forward_period, freq, constant = 1000):
     """produce forward looking baseline for the sku
     Args:
+        sku_pred_frame(list): Multiproc manager list to store predicted baseline values
+        sku_metric_frame(list_: Multiproc manager list to store predicted baseline statistics
         sku(str): sku_root_id
+        summary_table(dataframe): dataframe of historic baseline values to train the model
+        seasonal_period: input seasonal period (in weeks)
+        forward_period: forward period to predict baseline values
+        constant(int): constant value added to input to train regression model
     Returns:
-        final_df(pd.DataFrame): Final, preprocessed dataframe
+        sku_pred_frame, sku_metric_frame
     """
     logger.debug(f'{sku} - being processed...')
-    
+
     # get dataframe for the specific sku
     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
-    
+
     # get the input data for the training model
     def fw_baseline_input(sku, change_flag, actual, baseline, ext):
         if change_flag == 0:
             return actual
-        elif change_flag in (1,2):
+        elif change_flag in (1, 2):
             return baseline
         elif change_flag == 3:
             return ext
         else:
-            logger.error(f'{sku} - unexpected value in change_flag column!')    
-    
-    df_sku['hist_baseline_sale_amt'] = df_sku.apply(lambda x: fw_baseline_input(x['sku_root_id'], 
-                                                                       x['change_flag'], 
-                                                                       x['total_sale_amt'], 
-                                                                       x['sale_amt_bl'], 
-                                                                       x['sale_amt_bl_ext']),axis=1)
-    
-    
-    df_sku['hist_baseline_sale_qty'] = df_sku.apply(lambda x: fw_baseline_input(x['sku_root_id'], 
-                                                                       x['change_flag'], 
-                                                                       x['total_sale_qty'], 
-                                                                       x['sale_qty_bl'], 
-                                                                       x['sale_qty_bl_ext']),axis=1)
-    
-    
-    df_sku['hist_baseline_margin_amt'] = df_sku.apply(lambda x: fw_baseline_input(x['sku_root_id'], 
-                                                                       x['change_flag'], 
-                                                                       x['total_margin_amt'], 
-                                                                       x['margin_amt_bl'], 
-                                                                       x['margin_amt_bl_ext']),axis=1)
-    
+            logger.error(f'{sku} - unexpected value in change_flag column!')
+
+    df_sku['hist_baseline_sale_amt'] = df_sku.apply(lambda x: fw_baseline_input(x['sku_root_id'],
+                                                                                x['change_flag'],
+                                                                                x['total_sale_amt'],
+                                                                                x['sale_amt_bl'],
+                                                                                x['sale_amt_bl_ext']), axis=1)
+
+    df_sku['hist_baseline_sale_qty'] = df_sku.apply(lambda x: fw_baseline_input(x['sku_root_id'],
+                                                                                x['change_flag'],
+                                                                                x['total_sale_qty'],
+                                                                                x['sale_qty_bl'],
+                                                                                x['sale_qty_bl_ext']), axis=1)
+
+    df_sku['hist_baseline_margin_amt'] = df_sku.apply(lambda x: fw_baseline_input(x['sku_root_id'],
+                                                                                  x['change_flag'],
+                                                                                  x['total_margin_amt'],
+                                                                                  x['margin_amt_bl'],
+                                                                                  x['margin_amt_bl_ext']), axis=1)
+
     logger.debug(f'{sku} - completed calculation of historic baseline values...')
-    
+
     # Split dataframe to 3 time series
-    df_sku_hist_baseline_sale_amt = df_sku[['date','hist_baseline_sale_amt']]
+    df_sku_hist_baseline_sale_amt = df_sku[['date', 'hist_baseline_sale_amt']]
     df_sku_hist_baseline_sale_amt = df_sku_hist_baseline_sale_amt.set_index('date', drop=True)
-    
-    df_sku_hist_baseline_sale_qty = df_sku[['date','hist_baseline_sale_qty']]
+
+    df_sku_hist_baseline_sale_qty = df_sku[['date', 'hist_baseline_sale_qty']]
     df_sku_hist_baseline_sale_qty = df_sku_hist_baseline_sale_qty.set_index('date', drop=True)
-    
-    df_sku_hist_baseline_margin_amt = df_sku[['date','hist_baseline_margin_amt']]
+
+    df_sku_hist_baseline_margin_amt = df_sku[['date', 'hist_baseline_margin_amt']]
     df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.set_index('date', drop=True)
-    
+
+    # Box-cox transformations and exponential smoothing multiplicative methods require strictly positive values
+    # As a workaround, for each time series, we find the smallest value and add that to the overall time series
+    # We then subtract the value from the final series
+    hist_baseline_sale_amt_constant = df_sku_hist_baseline_sale_amt.min()[0]
+    hist_baseline_sale_qty_constant = df_sku_hist_baseline_sale_qty.min()[0]
+    hist_baseline_margin_amt_constant = df_sku_hist_baseline_margin_amt.min()[0]
+
+    # ensure min is at least 1000 (need to configure)
+    if hist_baseline_sale_amt_constant > constant:
+        hist_baseline_sale_amt_constant = 0
+    elif (hist_baseline_sale_amt_constant < constant) and (hist_baseline_sale_amt_constant >= 0):
+        hist_baseline_sale_amt_constant = constant
+    elif hist_baseline_sale_amt_constant < 0:
+        hist_baseline_sale_amt_constant = hist_baseline_sale_amt_constant*-1 + constant
+
+    if hist_baseline_sale_qty_constant > constant:
+        hist_baseline_sale_qty_constant = 0
+    elif (hist_baseline_sale_qty_constant < constant) and (hist_baseline_sale_qty_constant >= 0):
+        hist_baseline_sale_qty_constant = constant
+    elif hist_baseline_sale_qty_constant < 0:
+        hist_baseline_sale_qty_constant = hist_baseline_sale_qty_constant*-1 + constant
+
+    if hist_baseline_margin_amt_constant > constant:
+        hist_baseline_margin_amt_constant = 0
+    elif (hist_baseline_margin_amt_constant < constant) and (hist_baseline_margin_amt_constant >= 0):
+        hist_baseline_margin_amt_constant = constant
+    elif hist_baseline_margin_amt_constant < 0:
+        hist_baseline_margin_amt_constant = hist_baseline_margin_amt_constant*-1 + constant
+
+    # Add constants to each value in series
+    df_sku_hist_baseline_sale_amt_u = df_sku_hist_baseline_sale_amt.copy()
+    df_sku_hist_baseline_sale_qty_u= df_sku_hist_baseline_sale_qty.copy()
+    df_sku_hist_baseline_margin_amt_u = df_sku_hist_baseline_margin_amt.copy()
+
+    df_sku_hist_baseline_sale_amt_u['hist_baseline_sale_amt'] += hist_baseline_sale_amt_constant
+    df_sku_hist_baseline_sale_qty_u['hist_baseline_sale_qty'] += hist_baseline_sale_qty_constant
+    df_sku_hist_baseline_margin_amt_u['hist_baseline_margin_amt'] += hist_baseline_margin_amt_constant
+
+#     # Test - visualise the data
+#     ax = df_sku_hist_baseline_sale_amt.plot(marker='o', color='black', figsize=(12, 8))
+#     df_sku_hist_baseline_sale_amt_u.plot(marker='x', ax=ax, color='blue', legend=True)
+#     df_sku_hist_baseline_sale_qty.plot(marker='o', ax=ax, color='green', legend=True)
+#     df_sku_hist_baseline_sale_qty_u.plot(marker='x', ax=ax, color='red', legend=True)
+#     df_sku_hist_baseline_margin_amt.plot(marker='o', ax=ax, color='yellow', legend=True)
+#     df_sku_hist_baseline_margin_amt_u.plot(marker='x', ax=ax, color='cyan', legend=True)
+#     plt.show()
+
     # Split to test and train datasets
     # TODO
-    
+
     # Use Holt Winters multiplicative exponential smoothing method
-    fit_hist_baseline_sale_amt = ExponentialSmoothing(df_sku_hist_baseline_sale_amt, seasonal_periods=52, trend='add', 
-                                                      seasonal='mul', damped=True).fit(use_boxcox=True)
-    
-    fit_hist_baseline_sale_qty = ExponentialSmoothing(df_sku_hist_baseline_sale_qty, seasonal_periods=52, trend='add', 
-                                                      seasonal='mul', damped=True).fit(use_boxcox=True)
-    
-    fit_hist_baseline_margin_amt = ExponentialSmoothing(df_sku_hist_baseline_margin_amt, seasonal_periods=52, trend='add', 
-                                                      seasonal='mul', damped=True).fit(use_boxcox=True)
-    
+    fit_hist_baseline_sale_amt = ExponentialSmoothing(df_sku_hist_baseline_sale_amt_u, seasonal_periods=seasonal_period,
+                                                      trend='add',
+                                                      seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
+                                                                                                  remove_bias=True)
+
+    fit_hist_baseline_sale_qty = ExponentialSmoothing(df_sku_hist_baseline_sale_qty_u, seasonal_periods=seasonal_period,
+                                                      trend='add',
+                                                      seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
+                                                                                                  remove_bias=True)
+
+    fit_hist_baseline_margin_amt = ExponentialSmoothing(df_sku_hist_baseline_margin_amt_u, seasonal_periods=seasonal_period,
+                                                        trend='add',
+                                                        seasonal='add', damped=True, freq=freq).fit(use_boxcox=False,
+                                                                                                  remove_bias=True)
+
     logger.debug(f'{sku} - completed fit of exponential smoothing model...')
-    
-    results_df = pd.DataFrame(columns=['sku_root_id', 'alpha','beta','phi','gamme','l_0','b_0','SSE'])
-    params = ['smoothing_level', 'smoothing_slope', 'damping_slope', 'smoothing_seasonal', 'initial_level', 'initial_slope']
-    param_list = [sku]
-    for p in params:
-        param_list.append(fit_hist_baseline_sale_amt.params[p])
-    
-    # add SSE
-    param_list.append(fit_hist_baseline_sale_amt.sse)
-    
-    # add to sku metrics dataframe 
-    metrics_series = pd.Series(param_list, index=results_df.columns)
-    results_df = results_df.append(metrics_series, ignore_index=True)
-    
+
+    metrics_results_df = pd.DataFrame(columns=['sku_root_id', 'metric', 'alpha', 'beta',
+                                               'phi', 'gamma', 'l_0', 'b_0', 'SSE', 'MAE', 'convergence_flag'])
+    params = ['smoothing_level', 'smoothing_slope', 'damping_slope', 'smoothing_seasonal', 'initial_level',
+              'initial_slope']
+
+    metric_series_sale_amt = metric_baseline_sku(sku, 'pred_baseline_sale_amt', params,
+                                                 fit_hist_baseline_sale_amt, metrics_results_df.columns)
+    metric_series_sale_qty = metric_baseline_sku(sku, 'pred_baseline_sale_qty', params,
+                                                 fit_hist_baseline_sale_qty, metrics_results_df.columns)
+    metric_series_margin_amt = metric_baseline_sku(sku, 'pred_baseline_margin_amt', params,
+                                                 fit_hist_baseline_margin_amt, metrics_results_df.columns)
+
+    # add to sku metrics dataframe
+    metrics_results_df = metrics_results_df.append(metric_series_sale_amt, ignore_index=True)
+    metrics_results_df = metrics_results_df.append(metric_series_sale_qty, ignore_index=True)
+    metrics_results_df = metrics_results_df.append(metric_series_margin_amt, ignore_index=True)
+
     # forecast x periods and view internals of the smoothing model
     # sale amt
-    df_sku_pred_baseline_sale_amt = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_amt, 
-                                                       fit_hist_baseline_sale_amt.level, 
-                                                       fit_hist_baseline_sale_amt.slope, 
-                                                       fit_hist_baseline_sale_amt.season, 
+    df_sku_pred_baseline_sale_amt = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_amt,
+                                                       fit_hist_baseline_sale_amt.level,
+                                                       fit_hist_baseline_sale_amt.slope,
+                                                       fit_hist_baseline_sale_amt.season,
                                                        fit_hist_baseline_sale_amt.fittedvalues],
-                  columns=['y_t_sale_amt','l_t_sale_amt','b_t_sale_amt','s_t_sale_amt','y_hat_t_sale_amt'],index=df_sku_hist_baseline_sale_amt.index)
-    
-    df_sku_pred_baseline_sale_amt.append(fit_hist_baseline_sale_amt.forecast(forward_period).rename('y_hat_t_sale_amt').to_frame(), sort=True)
-    
-     # sale qty
-    df_sku_pred_baseline_sale_qty = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_qty, 
-                                                       fit_hist_baseline_sale_qty.level, 
-                                                       fit_hist_baseline_sale_qty.slope, 
-                                                       fit_hist_baseline_sale_qty.season, 
+                                                 columns=['y_t_sale_amt', 'l_t_sale_amt', 'b_t_sale_amt',
+                                                          's_t_sale_amt', 'y_hat_t_sale_amt'],
+                                                 index=df_sku_hist_baseline_sale_amt.index)
+
+    df_sku_pred_baseline_sale_amt = df_sku_pred_baseline_sale_amt.append(
+        fit_hist_baseline_sale_amt.forecast(forward_period).rename('y_hat_t_sale_amt').to_frame(), sort=True)
+    #subtract constant from y_hat_t where non-null
+    df_sku_pred_baseline_sale_amt['y_hat_t_sale_amt'] -= hist_baseline_sale_amt_constant
+
+
+    # sale qty
+    df_sku_pred_baseline_sale_qty = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_qty,
+                                                       fit_hist_baseline_sale_qty.level,
+                                                       fit_hist_baseline_sale_qty.slope,
+                                                       fit_hist_baseline_sale_qty.season,
                                                        fit_hist_baseline_sale_qty.fittedvalues],
-                  columns=['y_t_sale_qty','l_t_sale_qty','b_t_sale_qty','s_t_sale_qty','y_hat_t_sale_qty'],index=df_sku_hist_baseline_sale_qty.index)
-    
-    df_sku_pred_baseline_sale_qty.append(fit_hist_baseline_sale_qty.forecast(forward_period).rename('y_hat_t_sale_qty').to_frame(), sort=True)
-    
-    
+                                                 columns=['y_t_sale_qty', 'l_t_sale_qty', 'b_t_sale_qty',
+                                                          's_t_sale_qty', 'y_hat_t_sale_qty'],
+                                                 index=df_sku_hist_baseline_sale_qty.index)
+
+    df_sku_pred_baseline_sale_qty = df_sku_pred_baseline_sale_qty.append(
+        fit_hist_baseline_sale_qty.forecast(forward_period).rename('y_hat_t_sale_qty').to_frame(), sort=True)
+    # subtract constant from y_hat_t where non-null
+    df_sku_pred_baseline_sale_qty['y_hat_t_sale_qty'] -= hist_baseline_sale_qty_constant
+
+
     # margin amt
-    df_sku_pred_baseline_margin_amt = pd.DataFrame(np.c_[df_sku_hist_baseline_margin_amt, 
-                                                       fit_hist_baseline_margin_amt.level, 
-                                                       fit_hist_baseline_margin_amt.slope, 
-                                                       fit_hist_baseline_margin_amt.season, 
-                                                       fit_hist_baseline_margin_amt.fittedvalues],
-                  columns=['y_t_margin_amt','l_t_margin_amt','b_t_margin_amt','s_t_margin_amt','y_hat_t_margin_amt'],index=df_sku_hist_baseline_margin_amt.index)
-    
-    df_sku_pred_baseline_margin_amt.append(fit_hist_baseline_margin_amt.forecast(forward_period).rename('y_hat_t_margin_amt').to_frame(), sort=True)
-    
+    df_sku_pred_baseline_margin_amt = pd.DataFrame(np.c_[df_sku_hist_baseline_margin_amt,
+                                                         fit_hist_baseline_margin_amt.level,
+                                                         fit_hist_baseline_margin_amt.slope,
+                                                         fit_hist_baseline_margin_amt.season,
+                                                         fit_hist_baseline_margin_amt.fittedvalues],
+                                                   columns=['y_t_margin_amt', 'l_t_margin_amt', 'b_t_margin_amt',
+                                                            's_t_margin_amt', 'y_hat_t_margin_amt'],
+                                                   index=df_sku_hist_baseline_margin_amt.index)
+
+    df_sku_pred_baseline_margin_amt = df_sku_pred_baseline_margin_amt.append(
+        fit_hist_baseline_margin_amt.forecast(forward_period).rename('y_hat_t_margin_amt').to_frame(), sort=True)
+    # subtract constant from y_hat_t where non-null
+    df_sku_pred_baseline_margin_amt['y_hat_t_margin_amt'] -= hist_baseline_margin_amt_constant
+
+#     # Test - visualise the data
+#     ax = df_sku_hist_baseline_sale_amt.plot(marker='o', color='black', figsize=(12, 8))
+#     df_sku_pred_baseline_sale_amt['y_hat_t_sale_amt'].plot(marker='x', ax=ax, color='blue', legend=True)
+
+#     df_sku_hist_baseline_sale_qty.plot(marker='o', ax=ax, color='green', legend=True)
+#     df_sku_pred_baseline_sale_qty['y_hat_t_sale_qty'].plot(marker='x', ax=ax, color='red', legend=True)
+
+#     df_sku_hist_baseline_margin_amt.plot(marker='o', ax=ax, color='yellow', legend=True)
+#     df_sku_pred_baseline_margin_amt['y_hat_t_margin_amt'].plot(marker='x', ax=ax, color='cyan', legend=True)
+#     plt.show()
+
+
+    # join all predicted dataframes on index
+    sku_pred_baseline_df= pd.merge(df_sku_pred_baseline_sale_amt, df_sku_pred_baseline_sale_qty,
+                                   left_index=True, right_index=True)
+    sku_pred_baseline_df = pd.merge(sku_pred_baseline_df, df_sku_pred_baseline_margin_amt,
+                                    left_index=True, right_index=True)
+
     logger.debug(f'{sku} - completed prediction of exponential smoothing model...')
-    
+
     # obtain strength of seasonal and trend components
     # TODO
-    
+
     logger.info(f'{sku} - completed forecast baseline calculation')
-    
-    frame.append(final_df)
+
+    sku_pred_frame.append(sku_pred_baseline_df)
+    sku_metric_frame.append(metrics_results_df)
     
 if __name__ == "__main__":
     
@@ -239,32 +381,21 @@ if __name__ == "__main__":
         logger.info("Processing section {a}...".format(a=section))
         
         # Compute the baseline for each section     
-        logger.info("Loading summary transaction table from Bigquery....")
+        logger.info("Loading summary baseline table from Bigquery....")
         summary_table = load_t1_from_bq(section, project_id)
-
-        logger.info("Loading summary non-promotional transaction table from Bigquery....")
-        weekly_agg = load_t2_from_bq(section, project_id)
-
-        logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
-        agg_np = aggregate_np(weekly_agg, bl_l)
 
         logger.info("Computing no. of unique in-scope skus")
         uniq_sku = list(summary_table['sku_root_id'].unique())
         logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
 
-        # Compute the % change values in each of the categories used in the baseline
-        logger.info("Calculating the % change in baseline values")
-
-        baseline_ref = pd.DataFrame()
-        bl_parameter = list(agg_np[bl_l].unique())
-        logger.info("No. of in-scope categories used in baseline analyses: {a}".format(a=len(bl_parameter)))
-
-        # Store the baseline results
+        # Store the forward looking baseline results and metrics table
         results_df = pd.DataFrame()
+        metrics_df = pd.DataFrame()
 
         # Use the multiproc module to process in parallel
         with Manager() as manager:
-            frame = manager.list()  # <-- can be shared between processes.
+            sku_pred_frame = manager.list()  # <-- can be shared between processes.
+            sku_metric_frame = manager.list()  # <-- can be shared between processes.
             processes = []
 
             # Compute the SKU level baseline calculations
@@ -276,16 +407,25 @@ if __name__ == "__main__":
                 start_time_batch = time.time()
                 batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
 
-                for sku in batch:
-                    p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df, bl_l, metrics, ext_day))  # Passing the list
+                for sku in batch:                  
+                    p = Process(target=forward_looking_baseline_sku, args=(sku_pred_frame,
+                                                                           sku_metric_frame,
+                                                                           sku,summary_table, 
+                                                                           seasonal_period, 
+                                                                           forward_period, 
+                                                                           freq, constant))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
                     p.join()
-                output = pd.concat(frame)
-                results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
+                output_pred = pd.concat(sku_pred_frame)
+                output_metric = pd.concat(sku_metric_frame)
+                results_df = pd.concat([results_df, output_pred], ignore_index=True, sort =False)
                 results_df.reset_index(drop=True, inplace=True)
-                frame[:] = [] 
+                metrics_df = pd.concat([metrics_df, output_metric], ignore_index=True, sort =False)
+                metrics_df.reset_index(drop=True, inplace=True)
+                sku_pred_frame[:] = [] 
+                sku_metric_frame[:] = [] 
 
                 total_time_batch = round((time.time() - start_time_batch), 2)
                 logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
