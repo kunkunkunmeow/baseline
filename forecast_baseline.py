@@ -508,7 +508,7 @@ if __name__ == "__main__":
         logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
         # upload the final dataframe onto Bigquery
-        logger.info('Uploading baseline table to Bigquery...')
+        logger.info('Uploading forecast baseline table to Bigquery...')
         
         if (i_sec == 0):
             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists=bl_table_config)
@@ -517,7 +517,7 @@ if __name__ == "__main__":
             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists='append')
             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, if_exists='append')
 
-        logger.info('Completed upload of section baseline to Bigquery...')
+        logger.info('Completed upload of section forecast baseline to Bigquery...')
     
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed forecast baseline processing in {a} mins...'.format(a=total_time))
