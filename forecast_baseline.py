@@ -186,7 +186,7 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
                                                                                   x['margin_amt_bl'],
                                                                                   x['margin_amt_bl_ext']), axis=1)
 
-    logger.debug(f'{sku} - completed calculation of historic baseline values...')
+    logger.info(f'{sku} - completed calculation of historic baseline values...')
 
     # Split dataframe to 3 time series
     df_sku_hist_baseline_sale_amt = df_sku[['date', 'hist_baseline_sale_amt']]
@@ -197,6 +197,8 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
 
     df_sku_hist_baseline_margin_amt = df_sku[['date', 'hist_baseline_margin_amt']]
     df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.set_index('date', drop=True)
+    
+    logger.info(f'{sku} - split data into timeseries...')
 
     # Box-cox transformations and exponential smoothing multiplicative methods require strictly positive values
     # As a workaround, for each time series, we find the smallest value and add that to the overall time series
