@@ -209,9 +209,9 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     # Box-cox transformations and exponential smoothing multiplicative methods require strictly positive values
     # As a workaround, for each time series, we find the smallest value and add that to the overall time series
     # We then subtract the value from the final series
-    hist_baseline_sale_amt_constant = df_sku_hist_baseline_sale_amt['hist_baseline_sale_amt'].min()[0]
-    hist_baseline_sale_qty_constant = df_sku_hist_baseline_sale_qty['hist_baseline_sale_qty'].min()[0]
-    hist_baseline_margin_amt_constant = df_sku_hist_baseline_margin_amt['hist_baseline_margin_amt'].min()[0]
+    hist_baseline_sale_amt_constant = df_sku_hist_baseline_sale_amt['hist_baseline_sale_amt'].min()
+    hist_baseline_sale_qty_constant = df_sku_hist_baseline_sale_qty['hist_baseline_sale_qty'].min()
+    hist_baseline_margin_amt_constant = df_sku_hist_baseline_margin_amt['hist_baseline_margin_amt'].min()
     
     logger.debug(f'{sku} - computed min values for measures...')
     logger.debug("{sku} - sale_amt min value calculated to be {constant}".format(sku=sku, constant=hist_baseline_sale_amt_constant))
