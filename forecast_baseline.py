@@ -351,6 +351,10 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
 
     # obtain strength of seasonal and trend components
     # TODO
+    
+    # finalise baseline and metric table
+    sku_pred_baseline_df['date'] = sku_pred_baseline_df.index
+    sku_pred_baseline_df['sku_root_id'] = sku
 
     logger.info(f'{sku} - completed forecast baseline calculation')
 
@@ -432,13 +436,47 @@ if __name__ == "__main__":
 
                 logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
-        for i in list(results_df.columns)[2:]:
-            results_df[i] = pd.to_numeric(results_df[i])
+        # Convert cols to numeric 
+        results_df[b_t_sale_amt] = pd.to_numeric(results_df[b_t_sale_amt])
+        results_df[l_t_sale_amt] = pd.to_numeric(results_df[l_t_sale_amt])
+        results_df[s_t_sale_amt] = pd.to_numeric(results_df[s_t_sale_amt])
+        results_df[y_hat_t_sale_amt] = pd.to_numeric(results_df[y_hat_t_sale_amt])
+        results_df[y_t_sale_amt] = pd.to_numeric(results_df[y_t_sale_amt])
+        
+        results_df[b_t_sale_qty] = pd.to_numeric(results_df[b_t_sale_qty])
+        results_df[l_t_sale_qty] = pd.to_numeric(results_df[l_t_sale_qty])
+        results_df[s_t_sale_qty] = pd.to_numeric(results_df[s_t_sale_qty])
+        results_df[y_hat_t_sale_qty] = pd.to_numeric(results_df[y_hat_t_sale_qty])
+        results_df[y_t_sale_qty] = pd.to_numeric(results_df[y_t_sale_qty])
+        
+        results_df[b_t_margin_amt] = pd.to_numeric(results_df[b_t_margin_amt])
+        results_df[l_t_margin_amt] = pd.to_numeric(results_df[l_t_margin_amt])
+        results_df[s_t_margin_amt] = pd.to_numeric(results_df[s_t_margin_amt])
+        results_df[y_hat_t_margin_amt] = pd.to_numeric(results_df[y_hat_t_margin_amt])
+        results_df[y_t_margin_amt] = pd.to_numeric(results_df[y_t_margin_amt])
+        
+        results_df['sku_root_id'] = results_df['sku_root_id'].astype(str)
 
         # Convert all nulls to None
         results_df = results_df.where((pd.notnull(results_df)), None)
-
-
+        
+        
+        
+        # Convert cols to numeric 
+        metrics_df[alpha] = pd.to_numeric(metrics_df[alpha])
+        metrics_df[beta] = pd.to_numeric(metrics_df[beta])
+        metrics_df[phi] = pd.to_numeric(metrics_df[phi])
+        metrics_df[gamma] = pd.to_numeric(metrics_df[gamma])
+        metrics_df[l_0] = pd.to_numeric(metrics_df[l_0])
+        metrics_df[b_0] = pd.to_numeric(metrics_df[b_0])
+        metrics_df[SSE] = pd.to_numeric(metrics_df[SSE])
+        metrics_df[MAE] = pd.to_numeric(metrics_df[MAE])
+        metrics_df[convergence_flag] = pd.to_numeric(metrics_df[convergence_flag])
+        metrics_df['sku_root_id'] = metrics_df['sku_root_id'].astype(str)
+       
+        # Convert all nulls to None
+        metrics_df = metrics_df.where((pd.notnull(metrics_df)), None)
+        
         total_time = round((time.time() - section_start_time) / 60, 1)
         logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
@@ -446,12 +484,12 @@ if __name__ == "__main__":
         logger.info('Uploading baseline table to Bigquery...')
         
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists='append')
 
 
         logger.info('Completed upload of section baseline to Bigquery...')
     
     total_time = round((time.time() - start_time) / 60, 1)
-    logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+    logger.info('Completed forecast baseline processing in {a} mins...'.format(a=total_time))
