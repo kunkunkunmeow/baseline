@@ -47,7 +47,7 @@ fh.setLevel(logging.DEBUG)
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -155,7 +155,8 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     # get dataframe for the specific sku
     df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
     
-    logger.info(f'{sku} - extracted sku data')
+    logger.debug(f'{sku} - extracted sku data')
+    logger.debug("{sku} - extracted sku data has {rcount} rows".format(sku=sku, rcount=df_sku.shape[0]))
     
     # get the input data for the training model
     def fw_baseline_input(sku, change_flag, actual, baseline, ext):
@@ -186,7 +187,7 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
                                                                                   x['margin_amt_bl'],
                                                                                   x['margin_amt_bl_ext']), axis=1)
 
-    logger.info(f'{sku} - completed calculation of historic baseline values...')
+    logger.debug(f'{sku} - completed calculation of historic baseline values...')
 
     # Split dataframe to 3 time series
     df_sku_hist_baseline_sale_amt = df_sku[['date', 'hist_baseline_sale_amt']]
@@ -198,7 +199,7 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     df_sku_hist_baseline_margin_amt = df_sku[['date', 'hist_baseline_margin_amt']]
     df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.set_index('date', drop=True)
     
-    logger.info(f'{sku} - split data into timeseries...')
+    logger.debug(f'{sku} - split data into timeseries...')
 
     # Box-cox transformations and exponential smoothing multiplicative methods require strictly positive values
     # As a workaround, for each time series, we find the smallest value and add that to the overall time series
@@ -206,6 +207,8 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     hist_baseline_sale_amt_constant = df_sku_hist_baseline_sale_amt.min()[0]
     hist_baseline_sale_qty_constant = df_sku_hist_baseline_sale_qty.min()[0]
     hist_baseline_margin_amt_constant = df_sku_hist_baseline_margin_amt.min()[0]
+    
+    logger.debug(f'{sku} - computed min values for measures...')
 
     # ensure min is at least 1000 (need to configure)
     if hist_baseline_sale_amt_constant > constant:
@@ -228,7 +231,9 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
         hist_baseline_margin_amt_constant = constant
     elif hist_baseline_margin_amt_constant < 0:
         hist_baseline_margin_amt_constant = hist_baseline_margin_amt_constant*-1 + constant
-
+    
+    logger.debug(f'{sku} - computed constant values for measures...')
+    
     # Add constants to each value in series
     df_sku_hist_baseline_sale_amt_u = df_sku_hist_baseline_sale_amt.copy()
     df_sku_hist_baseline_sale_qty_u= df_sku_hist_baseline_sale_qty.copy()
