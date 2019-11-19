@@ -437,23 +437,23 @@ if __name__ == "__main__":
                 logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
         # Convert cols to numeric 
-        results_df[b_t_sale_amt] = pd.to_numeric(results_df[b_t_sale_amt])
-        results_df[l_t_sale_amt] = pd.to_numeric(results_df[l_t_sale_amt])
-        results_df[s_t_sale_amt] = pd.to_numeric(results_df[s_t_sale_amt])
-        results_df[y_hat_t_sale_amt] = pd.to_numeric(results_df[y_hat_t_sale_amt])
-        results_df[y_t_sale_amt] = pd.to_numeric(results_df[y_t_sale_amt])
+        results_df['b_t_sale_amt'] = pd.to_numeric(results_df['b_t_sale_amt'])
+        results_df['l_t_sale_amt'] = pd.to_numeric(results_df['l_t_sale_amt'])
+        results_df['s_t_sale_amt'] = pd.to_numeric(results_df['s_t_sale_amt'])
+        results_df['y_hat_t_sale_amt'] = pd.to_numeric(results_df['y_hat_t_sale_amt'])
+        results_df['y_t_sale_amt'] = pd.to_numeric(results_df['y_t_sale_amt'])
         
-        results_df[b_t_sale_qty] = pd.to_numeric(results_df[b_t_sale_qty])
-        results_df[l_t_sale_qty] = pd.to_numeric(results_df[l_t_sale_qty])
-        results_df[s_t_sale_qty] = pd.to_numeric(results_df[s_t_sale_qty])
-        results_df[y_hat_t_sale_qty] = pd.to_numeric(results_df[y_hat_t_sale_qty])
-        results_df[y_t_sale_qty] = pd.to_numeric(results_df[y_t_sale_qty])
+        results_df['b_t_sale_qty'] = pd.to_numeric(results_df['b_t_sale_qty'])
+        results_df['l_t_sale_qty'] = pd.to_numeric(results_df['l_t_sale_qty'])
+        results_df['s_t_sale_qty'] = pd.to_numeric(results_df['s_t_sale_qty'])
+        results_df['y_hat_t_sale_qty'] = pd.to_numeric(results_df['y_hat_t_sale_qty'])
+        results_df['y_t_sale_qty'] = pd.to_numeric(results_df['y_t_sale_qty'])
         
-        results_df[b_t_margin_amt] = pd.to_numeric(results_df[b_t_margin_amt])
-        results_df[l_t_margin_amt] = pd.to_numeric(results_df[l_t_margin_amt])
-        results_df[s_t_margin_amt] = pd.to_numeric(results_df[s_t_margin_amt])
-        results_df[y_hat_t_margin_amt] = pd.to_numeric(results_df[y_hat_t_margin_amt])
-        results_df[y_t_margin_amt] = pd.to_numeric(results_df[y_t_margin_amt])
+        results_df['b_t_margin_amt'] = pd.to_numeric(results_df['b_t_margin_amt'])
+        results_df['l_t_margin_amt'] = pd.to_numeric(results_df['l_t_margin_amt'])
+        results_df['s_t_margin_amt'] = pd.to_numeric(results_df['s_t_margin_amt'])
+        results_df['y_hat_t_margin_amt'] = pd.to_numeric(results_df['y_hat_t_margin_amt'])
+        results_df['y_t_margin_amt'] = pd.to_numeric(results_df['y_t_margin_amt'])
         
         results_df['sku_root_id'] = results_df['sku_root_id'].astype(str)
 
@@ -463,15 +463,15 @@ if __name__ == "__main__":
         
         
         # Convert cols to numeric 
-        metrics_df[alpha] = pd.to_numeric(metrics_df[alpha])
-        metrics_df[beta] = pd.to_numeric(metrics_df[beta])
-        metrics_df[phi] = pd.to_numeric(metrics_df[phi])
-        metrics_df[gamma] = pd.to_numeric(metrics_df[gamma])
-        metrics_df[l_0] = pd.to_numeric(metrics_df[l_0])
-        metrics_df[b_0] = pd.to_numeric(metrics_df[b_0])
-        metrics_df[SSE] = pd.to_numeric(metrics_df[SSE])
-        metrics_df[MAE] = pd.to_numeric(metrics_df[MAE])
-        metrics_df[convergence_flag] = pd.to_numeric(metrics_df[convergence_flag])
+        metrics_df['alpha'] = pd.to_numeric(metrics_df['alpha'])
+        metrics_df['beta'] = pd.to_numeric(metrics_df['beta'])
+        metrics_df['phi'] = pd.to_numeric(metrics_df['phi'])
+        metrics_df['gamma'] = pd.to_numeric(metrics_df['gamma'])
+        metrics_df['l_0'] = pd.to_numeric(metrics_df['l_0'])
+        metrics_df['b_0'] = pd.to_numeric(metrics_df['b_0'])
+        metrics_df['SSE'] = pd.to_numeric(metrics_df['SSE'])
+        metrics_df['MAE'] = pd.to_numeric(metrics_df['MAE'])
+        metrics_df['convergence_flag'] = pd.to_numeric(metrics_df['convergence_flag'])
         metrics_df['sku_root_id'] = metrics_df['sku_root_id'].astype(str)
        
         # Convert all nulls to None
