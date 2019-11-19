@@ -238,6 +238,12 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     df_sku_hist_baseline_sale_amt_u = df_sku_hist_baseline_sale_amt.copy()
     df_sku_hist_baseline_sale_qty_u= df_sku_hist_baseline_sale_qty.copy()
     df_sku_hist_baseline_margin_amt_u = df_sku_hist_baseline_margin_amt.copy()
+    
+    logger.debug(f'{sku} - copied updated measure dataframes...')
+    
+    logger.debug("{sku} - sale_amt_constant calculated to be {constant}".format(sku=sku, constant=hist_baseline_sale_amt_constant))
+    logger.debug("{sku} - sale_qty_constant calculated to be {constant}".format(sku=sku, constant=hist_baseline_sale_qty_constant))
+    logger.debug("{sku} - margin_amt_constant calculated to be {constant}".format(sku=sku, constant=hist_baseline_margin_amt_constant))
 
     df_sku_hist_baseline_sale_amt_u['hist_baseline_sale_amt'] += hist_baseline_sale_amt_constant
     df_sku_hist_baseline_sale_qty_u['hist_baseline_sale_qty'] += hist_baseline_sale_qty_constant
