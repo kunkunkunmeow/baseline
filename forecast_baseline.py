@@ -509,7 +509,7 @@ if __name__ == "__main__":
                                            {'name': 'sku_root_id', 'type': 'STRING'}])
         else:
             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists='append',
-                             ,table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
+                             table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
                                            {'name': 'l_t_sale_amt', 'type': 'NUMERIC'},
                                            {'name': 's_t_sale_amt', 'type': 'NUMERIC'},
                                            {'name': 'y_hat_t_sale_amt', 'type': 'NUMERIC'},
