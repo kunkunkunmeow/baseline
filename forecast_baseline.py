@@ -209,6 +209,9 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     hist_baseline_margin_amt_constant = df_sku_hist_baseline_margin_amt.min()[0]
     
     logger.debug(f'{sku} - computed min values for measures...')
+    logger.debug("{sku} - sale_amt min value calculated to be {constant}".format(sku=sku, constant=hist_baseline_sale_amt_constant))
+    logger.debug("{sku} - sale_qty min value calculated to be {constant}".format(sku=sku, constant=hist_baseline_sale_qty_constant))
+    logger.debug("{sku} - margin_amt min value calculated to be {constant}".format(sku=sku, constant=hist_baseline_margin_amt_constant))
 
     # ensure min is at least 1000 (need to configure)
     if hist_baseline_sale_amt_constant > constant:
