@@ -477,69 +477,82 @@ if __name__ == "__main__":
         [{'name': 'col1', 'type': 'STRING'},...]
         
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists=bl_table_config, 
-                             table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'l_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 's_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_hat_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'b_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'l_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 's_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'y_hat_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'y_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'b_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'l_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 's_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_hat_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'date', 'type': 'TIMESTAMP'},
-                                           {'name': 'sku_root_id', 'type': 'STRING'}])
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists=bl_table_config)
             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, 
-                              if_exists=bl_table_config, table_schema=[{'name': 'alpha', 'type': 'NUMERIC'},
-                                           {'name': 'beta', 'type': 'NUMERIC'},
-                                           {'name': 'phi', 'type': 'NUMERIC'},
-                                           {'name': 'gamma', 'type': 'NUMERIC'},
-                                           {'name': 'l_0', 'type': 'NUMERIC'},
-                                           {'name': 'b_0', 'type': 'NUMERIC'},
-                                           {'name': 'SSE', 'type': 'NUMERIC'},
-                                           {'name': 'MAE', 'type': 'NUMERIC'},
-                                           {'name': 'convergence_flag', 'type': 'INTEGER'},
-                                           {'name': 'metric', 'type': 'STRING'},
-                                           {'name': 'sku_root_id', 'type': 'STRING'}])
+                              if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists='append',
-                             table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'l_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 's_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_hat_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_t_sale_amt', 'type': 'NUMERIC'},
-                                           {'name': 'b_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'l_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 's_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'y_hat_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'y_t_sale_qty', 'type': 'NUMERIC'},
-                                           {'name': 'b_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'l_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 's_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_hat_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'y_t_margin_amt', 'type': 'NUMERIC'},
-                                           {'name': 'date', 'type': 'TIMESTAMP'},
-                                           {'name': 'sku_root_id', 'type': 'STRING'}])
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists='append')
             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, 
-                              if_exists='append', table_schema=[{'name': 'alpha', 'type': 'NUMERIC'},
-                                           {'name': 'beta', 'type': 'NUMERIC'},
-                                           {'name': 'phi', 'type': 'NUMERIC'},
-                                           {'name': 'gamma', 'type': 'NUMERIC'},
-                                           {'name': 'l_0', 'type': 'NUMERIC'},
-                                           {'name': 'b_0', 'type': 'NUMERIC'},
-                                           {'name': 'SSE', 'type': 'NUMERIC'},
-                                           {'name': 'MAE', 'type': 'NUMERIC'},
-                                           {'name': 'convergence_flag', 'type': 'INTEGER'},
-                                           {'name': 'metric', 'type': 'STRING'},
-                                           {'name': 'sku_root_id', 'type': 'STRING'}])
+                              if_exists='append')
 
         logger.info('Completed upload of section forecast baseline to Bigquery...')
+    
+    
+    # Code to append in correct format - to fix issues
+    # TODO
+#     if (i_sec == 0):
+#             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists=bl_table_config, 
+#                              table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'l_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 's_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_hat_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'b_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'l_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 's_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'y_hat_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'y_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'b_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'l_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 's_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_hat_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'date', 'type': 'TIMESTAMP'},
+#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
+#             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, 
+#                               if_exists=bl_table_config, table_schema=[{'name': 'alpha', 'type': 'NUMERIC'},
+#                                            {'name': 'beta', 'type': 'NUMERIC'},
+#                                            {'name': 'phi', 'type': 'NUMERIC'},
+#                                            {'name': 'gamma', 'type': 'NUMERIC'},
+#                                            {'name': 'l_0', 'type': 'NUMERIC'},
+#                                            {'name': 'b_0', 'type': 'NUMERIC'},
+#                                            {'name': 'SSE', 'type': 'NUMERIC'},
+#                                            {'name': 'MAE', 'type': 'NUMERIC'},
+#                                            {'name': 'convergence_flag', 'type': 'INTEGER'},
+#                                            {'name': 'metric', 'type': 'STRING'},
+#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
+#         else:
+#             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists='append',
+#                              table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'l_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 's_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_hat_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_t_sale_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'b_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'l_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 's_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'y_hat_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'y_t_sale_qty', 'type': 'NUMERIC'},
+#                                            {'name': 'b_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'l_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 's_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_hat_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'y_t_margin_amt', 'type': 'NUMERIC'},
+#                                            {'name': 'date', 'type': 'TIMESTAMP'},
+#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
+#             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, 
+#                               if_exists='append', table_schema=[{'name': 'alpha', 'type': 'NUMERIC'},
+#                                            {'name': 'beta', 'type': 'NUMERIC'},
+#                                            {'name': 'phi', 'type': 'NUMERIC'},
+#                                            {'name': 'gamma', 'type': 'NUMERIC'},
+#                                            {'name': 'l_0', 'type': 'NUMERIC'},
+#                                            {'name': 'b_0', 'type': 'NUMERIC'},
+#                                            {'name': 'SSE', 'type': 'NUMERIC'},
+#                                            {'name': 'MAE', 'type': 'NUMERIC'},
+#                                            {'name': 'convergence_flag', 'type': 'INTEGER'},
+#                                            {'name': 'metric', 'type': 'STRING'},
+#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
+    
     
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed forecast baseline processing in {a} mins...'.format(a=total_time))
