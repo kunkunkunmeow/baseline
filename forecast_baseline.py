@@ -35,7 +35,7 @@ freq='W-MON'
 constant = 1000
 
 # Set batch size
-batchsize = 1
+batchsize = 50
 
 # Set logger properties
 logger = logging.getLogger('forecast_baseline_calculation')
@@ -47,7 +47,7 @@ fh.setLevel(logging.DEBUG)
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -193,15 +193,12 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     # Split dataframe to 3 time series
     df_sku_hist_baseline_sale_amt = df_sku[['date', 'hist_baseline_sale_amt']]
     df_sku_hist_baseline_sale_amt = df_sku_hist_baseline_sale_amt.set_index('date', drop=True)
-    print(df_sku_hist_baseline_sale_amt.to_string())
 
     df_sku_hist_baseline_sale_qty = df_sku[['date', 'hist_baseline_sale_qty']]
     df_sku_hist_baseline_sale_qty = df_sku_hist_baseline_sale_qty.set_index('date', drop=True)
-    print(df_sku_hist_baseline_sale_qty.to_string())
 
     df_sku_hist_baseline_margin_amt = df_sku[['date', 'hist_baseline_margin_amt']]
     df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.set_index('date', drop=True)
-    print(df_sku_hist_baseline_margin_amt.to_string())
     
     # Convert all values to numeric
     df_sku_hist_baseline_sale_amt['hist_baseline_sale_amt'] = pd.to_numeric(df_sku_hist_baseline_sale_amt['hist_baseline_sale_amt'])
