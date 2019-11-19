@@ -35,7 +35,7 @@ freq='W-MON'
 constant = 1000
 
 # Set batch size
-batchsize = 50
+batchsize = 1
 
 # Set logger properties
 logger = logging.getLogger('forecast_baseline_calculation')
