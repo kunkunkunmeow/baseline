@@ -554,5 +554,28 @@ if __name__ == "__main__":
 #                                            {'name': 'sku_root_id', 'type': 'STRING'}])
     
     
+#     CREATE OR REPLACE TABLE
+#   `gum-eroski-dev.baseline_performance.forecast_baseline`  AS
+# SELECT 
+# DATE(date) as date,
+# sku_root_id,
+# CAST( b_t_sale_amt AS NUMERIC) as b_t_sale_amt,
+# CAST( l_t_sale_amt AS NUMERIC) as l_t_sale_amt,
+# CAST( s_t_sale_amt AS NUMERIC) as s_t_sale_amt,
+# CAST( y_hat_t_sale_amt AS NUMERIC) as y_hat_t_sale_amt,
+# CAST( y_t_sale_amt AS NUMERIC) as y_t_sale_amt,
+# CAST( b_t_sale_qty AS NUMERIC) as b_t_sale_qty,
+# CAST( l_t_sale_qty AS NUMERIC) as l_t_sale_qty,
+# CAST( s_t_sale_qty AS NUMERIC) as s_t_sale_qty,
+# CAST( y_hat_t_sale_qty AS NUMERIC) as y_hat_t_sale_qty,
+# CAST( y_t_sale_qty AS NUMERIC) as y_t_sale_qty,
+# CAST( b_t_margin_amt AS NUMERIC) as b_t_margin_amt,
+# CAST( l_t_margin_amt AS NUMERIC) as l_t_margin_amt,
+# CAST( s_t_margin_amt AS NUMERIC) as s_t_margin_amt,
+# CAST( y_hat_t_margin_amt AS NUMERIC) as y_hat_t_margin_amt,
+# CAST( y_t_margin_amt AS NUMERIC) as y_t_margin_amt
+
+# FROM `gum-eroski-dev.baseline_performance.forecast_baseline` 
+    
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed forecast baseline processing in {a} mins...'.format(a=total_time))
