@@ -576,6 +576,22 @@ if __name__ == "__main__":
 # CAST( y_t_margin_amt AS NUMERIC) as y_t_margin_amt
 
 # FROM `gum-eroski-dev.baseline_performance.forecast_baseline` 
+
+# CREATE OR REPLACE TABLE
+#   `gum-eroski-dev.baseline_performance.forecast_baseline_metrics` AS
+# SELECT 
+# sku_root_id,
+# metric,
+# CAST( alpha AS NUMERIC) as alpha,
+# CAST( beta AS NUMERIC) as beta,
+# CAST( phi AS NUMERIC) as phi,
+# CAST( gamma AS NUMERIC) as gamma,
+# CAST( l_0 AS NUMERIC) as l_0,
+# CAST( b_0 AS NUMERIC) as b_0,
+# CAST( SSE AS NUMERIC) as SSE,
+# CAST( MAE AS NUMERIC) as MAE,
+# CAST( convergence_flag as INT64) as convergence_flag
+# FROM `gum-eroski-dev.baseline_performance.forecast_baseline_metrics`
     
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed forecast baseline processing in {a} mins...'.format(a=total_time))
