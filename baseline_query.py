@@ -21,7 +21,7 @@ with agg_weekly as
 from `ETL.aggregate_weekly_transaction_summary` 
 WHERE area = "ALIMENTACION"),
 
-baseline as (
+baseline_temp as (
 SELECT 
 cast(DATE(date) AS DATE) AS date,
 sku_root_id ,
@@ -44,15 +44,25 @@ CAST(incremental_margin   AS NUMERIC) AS incremental_margin_amt,
 CAST(incremental_qty   AS NUMERIC) AS incremental_sale_qty
 FROM `baseline_performance.baseline`  ),
 
+baseline as (
+SELECT *,
+CASE WHEN change_flag =3 THEN total_sale_amt - sale_amt_bl_ext ELSE incremental_sale_amt END AS ttl_inc_sale_amt,
+CASE WHEN change_flag =3 THEN total_sale_qty - sale_qty_bl_ext ELSE incremental_sale_qty END AS ttl_inc_sale_qty,
+CASE WHEN change_flag =3 THEN total_margin_amt - margin_amt_bl_ext ELSE incremental_margin_amt END AS ttl_inc_margin_amt,
+CASE WHEN change_flag=3 THEN sale_amt_bl_ext ELSE sale_amt_bl END as ttl_sale_amt_bl,
+CASE WHEN change_flag=3 THEN sale_qty_bl_ext ELSE sale_qty_bl END as ttl_sale_qty_bl,
+CASE WHEN change_flag=3 THEN margin_amt_bl_ext ELSE margin_amt_bl END as ttl_margin_amt_bl
+FROM baseline_temp),
+
 brand AS(
 SELECT sku_root_id, brand_name , eroskibrand_flag 
 FROM `ETL.root_sku`)
 
 SELECT * EXCEPT (total_discount),
 CASE WHEN total_discount <0 THEN 0 ELSE total_discount END AS discount,
-CASE WHEN change_flag =3 THEN total_sale_amt - sale_amt_bl_ext ELSE incremental_sale_amt END AS ttl_inc_sale_amt,
-CASE WHEN change_flag =3 THEN total_sale_qty - sale_qty_bl_ext ELSE incremental_sale_qty END AS ttl_inc_sale_qty,
-CASE WHEN change_flag =3 THEN total_margin_amt - margin_amt_bl_ext ELSE incremental_margin_amt END AS ttl_inc_margin_amt
+ttl_inc_sale_amt/NULLIF(ttl_sale_amt_bl,0) as pct_inc_sale,
+ttl_inc_sale_qty/NULLIF(ttl_sale_qty_bl,0) as pct_inc_qty,
+ttl_inc_margin_amt/NULLIF(ttl_margin_amt_bl,0) as pct_inc_margin
 FROM agg_weekly
 INNER JOIN baseline
 USING (date, sku_root_id)
@@ -89,9 +99,9 @@ baseline_date as (
 baseline as(
           SELECT 
           bl_date.sku_root_id, bl_date.date_new as date, description, area, section, category, subcategory, segment, promo_flag_binary, change_flag, brand_name, eroskibrand_flag, discount,
-          total_sale_amt,   CASE WHEN change_flag=3 THEN sale_amt_bl_ext ELSE sale_amt_bl END as ttl_sale_amt_bl,       ttl_inc_sale_amt,
-          total_sale_qty,   CASE WHEN change_flag=3 THEN sale_qty_bl_ext ELSE sale_qty_bl END as ttl_sale_qty_bl,       ttl_inc_sale_qty, 
-          total_margin_amt, CASE WHEN change_flag=3 THEN margin_amt_bl_ext ELSE margin_amt_bl END as ttl_margin_amt_bl, ttl_inc_margin_amt   
+          total_sale_amt,   ttl_sale_amt_bl,       ttl_inc_sale_amt,     pct_inc_sale,
+          total_sale_qty,   ttl_sale_qty_bl,       ttl_inc_sale_qty,     pct_inc_qty,
+          total_margin_amt, ttl_margin_amt_bl,     ttl_inc_margin_amt,   pct_inc_margin
           from `baseline_performance.baseline_dashboard` baseline
           INNER JOIN baseline_date bl_date
           USING(date, sku_root_id)
@@ -111,15 +121,15 @@ total_margin_amt /promo_weight as p_margin_amt,
 ttl_inc_sale_amt /promo_weight as p_ttl_inc_sale_amt,
 ttl_inc_sale_qty /promo_weight as  p_ttl_inc_sale_qty,
 ttl_inc_margin_amt /promo_weight as p_ttl_inc_margin_amt,
-ttl_inc_sale_amt/NULLIF(ttl_sale_amt_bl,0) as pct_inc_sale,
-ttl_inc_sale_qty/NULLIF(ttl_sale_qty_bl,0) as pct_inc_qty,
-ttl_inc_margin_amt/NULLIF(ttl_margin_amt_bl,0) as pct_inc_margin
+pct_inc_sale,
+pct_inc_qty,
+pct_inc_margin
 FROM promo
 INNER JOIN baseline bl
 USING(sku_root_id, date)
 LEFT JOIN `ETL.promo_mechanic` pm
 ON promo.promo_mechanic  = pm.Promo_mechanic_id 
-ORDER BY sku_root_id, date;
+;
 
 
 
