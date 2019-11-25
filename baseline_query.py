@@ -366,4 +366,3 @@ def baseline_dashboard():
         """
 
         pandas_gbq.read_gbq(baseline_dashboard_sql, project_id = project_id)
-        print('finished creating baseline dashboard table')
