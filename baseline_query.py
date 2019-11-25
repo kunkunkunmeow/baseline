@@ -72,7 +72,7 @@ USING (sku_root_id)
 
 
 # create baseline_promo table
-create or replace table `baseline_performance.baseline_promo` 
+create or replace table `baseline_performance.baseline_promo_2` 
 
 partition by date
 cluster by sku_root_id, promo_id, promo_mechanic
