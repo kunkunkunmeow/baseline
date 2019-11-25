@@ -365,8 +365,8 @@ if __name__ == "__main__":
         logger.info('Completed upload of section baseline to Bigquery...')
         
         # call function to run query in Bigquery to create baseline related tables
-        baseline_dashboard()
-        logger.info('Completed creating baseline tables in Bigquery...')
+    baseline_dashboard()
+    logger.info('Completed creating baseline tables in Bigquery...')
     
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
