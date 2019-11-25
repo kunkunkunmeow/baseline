@@ -60,9 +60,9 @@ FROM `ETL.root_sku`)
 
 SELECT * EXCEPT (total_discount),
 CASE WHEN total_discount <0 THEN 0 ELSE total_discount END AS discount,
-ttl_inc_sale_amt/NULLIF(ttl_sale_amt_bl,0) as pct_inc_sale,
-ttl_inc_sale_qty/NULLIF(ttl_sale_qty_bl,0) as pct_inc_qty,
-ttl_inc_margin_amt/NULLIF(ttl_margin_amt_bl,0) as pct_inc_margin
+ttl_inc_sale_amt/NULLIF(ABS(ttl_sale_amt_bl),0) as pct_inc_sale,
+ttl_inc_sale_qty/NULLIF(ABS(ttl_sale_qty_bl),0) as pct_inc_qty,
+ttl_inc_margin_amt/NULLIF(ABS(ttl_margin_amt_bl),0) as pct_inc_margin
 FROM agg_weekly
 INNER JOIN baseline
 USING (date, sku_root_id)
