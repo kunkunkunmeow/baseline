@@ -364,7 +364,8 @@ if __name__ == "__main__":
 
         logger.info('Completed upload of section baseline to Bigquery...')
         
-        # call function to run query in Bigquery to create baseline related tables
+    # call function to run query in Bigquery to create baseline related tables
+    logger.info('Creating baseline tables in Bigquery...')
     baseline_dashboard()
     logger.info('Completed creating baseline tables in Bigquery...')
     
