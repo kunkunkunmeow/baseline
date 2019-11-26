@@ -65,6 +65,9 @@ def baseline_dashboard(project_id):
         LEFT JOIN brand
         USING (sku_root_id)
         ;
+        """
+        
+        promo_dashboard_sql = """
 
 
         # create baseline_promo table
@@ -174,6 +177,9 @@ def baseline_dashboard(project_id):
         INNER JOIN baseline bl
         USING(sku_root_id, date)
         ;
+        """
+        
+        pareto_section_sku_sql = """
 
 
 
@@ -259,6 +265,10 @@ def baseline_dashboard(project_id):
         USING (sec_cat, percentile_rank_inc)
 
         order by sec_cat, percentile_rank_inc desc;
+        
+        """
+        
+        pareto_sku_table_sql = """
 
         # Create pareto sku table
         CREATE OR REPLACE TABLE `baseline_performance.pareto_sku_table`  AS
@@ -289,6 +299,10 @@ def baseline_dashboard(project_id):
         USING (sku_root_id)
 
         order by section, sku_root_id desc;
+        
+        """
+        
+        pareto_promo_sql = """
 
 
         # Create promo pareto graph ranking by promo id
@@ -366,7 +380,10 @@ def baseline_dashboard(project_id):
         USING (promo_id,promo_year, percentile_rank_inc)
 
         order by promo_id, promo_year, percentile_rank_inc desc;
-
+        
+        """
+        
+        pareto_promo_table_sql = """
 
         # Create pareto promo table 
         CREATE OR REPLACE TABLE `baseline_performance.pareto_promo_table`  AS
@@ -410,6 +427,13 @@ def baseline_dashboard(project_id):
         """
 
         pandas_gbq.read_gbq(baseline_dashboard_sql, project_id = project_id)
+        pandas_gbq.read_gbq(promo_dashboard_sql, project_id = project_id)
+        pandas_gbq.read_gbq(pareto_section_sku_sql, project_id = project_id)
+        pandas_gbq.read_gbq(pareto_sku_table_sql, project_id = project_id)
+        pandas_gbq.read_gbq(pareto_promo_sql, project_id = project_id)
+        pandas_gbq.read_gbq(pareto_promo_table_sql, project_id = project_id)
+
+
         
 def test(project_id):
         test_sql = """
