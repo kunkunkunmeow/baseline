@@ -416,8 +416,8 @@ if __name__ == "__main__":
         
 #     # call function to run query in Bigquery to create baseline related tables
     logger.info('Creating baseline tables in Bigquery...')
-    test(project_id)
-#     baseline_dashboard(project_id)
+    #test(project_id)
+    baseline_dashboard(project_id)
     logger.info('Completed creating baseline tables in Bigquery...')
     
 #     total_time = round((time.time() - start_time) / 60, 1)
