@@ -281,144 +281,144 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
 if __name__ == "__main__":
     
     
-#     start_time = time.time()
+    start_time = time.time()
 
-#     logger.info("Loading input tables from Bigquery....")
+    logger.info("Loading input tables from Bigquery....")
     
-#     logger.info("Loading distinct sections table from Bigquery....")
-#     section_table = load_t0_from_bq(bl_s, project_id)
+    logger.info("Loading distinct sections table from Bigquery....")
+    section_table = load_t0_from_bq(bl_s, project_id)
     
-#     # Unique sections in category include
-#     unique_sections = list(section_table["section"].unique())
-#     logger.info("Unique sections include:")
-#     for section in unique_sections: logger.info("{a}".format(a=section))
+    # Unique sections in category include
+    unique_sections = list(section_table["section"].unique())
+    logger.info("Unique sections include:")
+    for section in unique_sections: logger.info("{a}".format(a=section))
     
-#     # Loop through sections
-#     for i_sec in range(0, len(unique_sections)):
+    # Loop through sections
+    for i_sec in range(0, len(unique_sections)):
         
-#         section_start_time = time.time()
-#         section = unique_sections[i_sec]
+        section_start_time = time.time()
+        section = unique_sections[i_sec]
         
-#         logger.info("Processing section {a}...".format(a=section))
+        logger.info("Processing section {a}...".format(a=section))
         
-#         # Compute the baseline for each section     
-#         logger.info("Loading summary transaction table from Bigquery....")
-#         summary_table = load_t1_from_bq(section, project_id)
+        # Compute the baseline for each section     
+        logger.info("Loading summary transaction table from Bigquery....")
+        summary_table = load_t1_from_bq(section, project_id)
 
-#         logger.info("Loading summary non-promotional transaction table from Bigquery....")
-#         weekly_agg = load_t2_from_bq(section, project_id)
+        logger.info("Loading summary non-promotional transaction table from Bigquery....")
+        weekly_agg = load_t2_from_bq(section, project_id)
 
-#         logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
-#         agg_np = aggregate_np(weekly_agg, bl_l)
+        logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
+        agg_np = aggregate_np(weekly_agg, bl_l)
         
-#         logger.info("Defining cannabalisation flag at {a} level".format(a=cb_l))
-#         cb_flag= summary_table[['date', cb_l, 'promo_flag_binary']].groupby(["date", cb_l], as_index=False).sum()
-#         cb_flag.columns = ['date',cb_l,'cb_flag_temp']
-#         summary_table = pd.merge(summary_table, cb_flag, on=['date',cb_l])
+        logger.info("Defining cannabalisation flag at {a} level".format(a=cb_l))
+        cb_flag= summary_table[['date', cb_l, 'promo_flag_binary']].groupby(["date", cb_l], as_index=False).sum()
+        cb_flag.columns = ['date',cb_l,'cb_flag_temp']
+        summary_table = pd.merge(summary_table, cb_flag, on=['date',cb_l])
 
-#         logger.info("Computing no. of unique in-scope skus")
-#         uniq_sku = list(summary_table['sku_root_id'].unique())
-#         logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
+        logger.info("Computing no. of unique in-scope skus")
+        uniq_sku = list(summary_table['sku_root_id'].unique())
+        logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
 
-#         # Compute the % change values in each of the categories used in the baseline
-#         logger.info("Calculating the % change in baseline values")
+        # Compute the % change values in each of the categories used in the baseline
+        logger.info("Calculating the % change in baseline values")
 
-#         baseline_ref = pd.DataFrame()
-#         bl_parameter = list(agg_np[bl_l].unique())
-#         logger.info("No. of in-scope categories used in baseline analyses: {a}".format(a=len(bl_parameter)))
+        baseline_ref = pd.DataFrame()
+        bl_parameter = list(agg_np[bl_l].unique())
+        logger.info("No. of in-scope categories used in baseline analyses: {a}".format(a=len(bl_parameter)))
 
-#         # Store the baseline results
-#         baseline_perc_df = pd.DataFrame()
-#         results_df = pd.DataFrame()
+        # Store the baseline results
+        baseline_perc_df = pd.DataFrame()
+        results_df = pd.DataFrame()
 
-#         # Use the multiproc module to process in parallel
-#         with Manager() as manager:
-#             frame = manager.list()  # <-- can be shared between processes.
-#             processes = []
+        # Use the multiproc module to process in parallel
+        with Manager() as manager:
+            frame = manager.list()  # <-- can be shared between processes.
+            processes = []
 
-#             #Compute the category level baseline metric changes
-#             for i in range(0, len(bl_parameter), batchsize):
+            #Compute the category level baseline metric changes
+            for i in range(0, len(bl_parameter), batchsize):
 
-#                 # Clear the processes list
-#                 processes[:] = []
+                # Clear the processes list
+                processes[:] = []
 
-#                 start_time_batch = time.time()
-#                 batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
+                start_time_batch = time.time()
+                batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
 
-#                 for category in batch:
-#                     p = Process(target=baseline_pct, args=(frame,category,agg_np, bl_l, metrics))  # Passing the list
-#                     p.start()
-#                     processes.append(p)
-#                 for p in processes:
-#                     p.join()
-#                 output = pd.concat(frame)
-#                 baseline_perc_df = pd.concat([baseline_perc_df, output], ignore_index=True, sort =False)
-#                 baseline_perc_df.reset_index(drop=True, inplace=True)
-#                 frame[:] = [] 
+                for category in batch:
+                    p = Process(target=baseline_pct, args=(frame,category,agg_np, bl_l, metrics))  # Passing the list
+                    p.start()
+                    processes.append(p)
+                for p in processes:
+                    p.join()
+                output = pd.concat(frame)
+                baseline_perc_df = pd.concat([baseline_perc_df, output], ignore_index=True, sort =False)
+                baseline_perc_df.reset_index(drop=True, inplace=True)
+                frame[:] = [] 
 
-#                 total_time_batch = round((time.time() - start_time_batch), 2)
-#                 logger.debug('Processing category percs with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
-#                 logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
+                total_time_batch = round((time.time() - start_time_batch), 2)
+                logger.debug('Processing category percs with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+                logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
 
-#             # Compute the SKU level baseline calculations
-#             for i in range(0, len(uniq_sku), batchsize):
+            # Compute the SKU level baseline calculations
+            for i in range(0, len(uniq_sku), batchsize):
 
-#                 # Clear the processes list
-#                 processes[:] = []
+                # Clear the processes list
+                processes[:] = []
 
-#                 start_time_batch = time.time()
-#                 batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+                start_time_batch = time.time()
+                batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
 
-#                 for sku in batch:
-#                     p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df, bl_l, metrics, ext_day))  # Passing the list
-#                     p.start()
-#                     processes.append(p)
-#                 for p in processes:
-#                     p.join()
-#                 output = pd.concat(frame)
-#                 results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
-#                 results_df.reset_index(drop=True, inplace=True)
-#                 frame[:] = [] 
+                for sku in batch:
+                    p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df, bl_l, metrics, ext_day))  # Passing the list
+                    p.start()
+                    processes.append(p)
+                for p in processes:
+                    p.join()
+                output = pd.concat(frame)
+                results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
+                results_df.reset_index(drop=True, inplace=True)
+                frame[:] = [] 
 
-#                 total_time_batch = round((time.time() - start_time_batch), 2)
-#                 logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+                total_time_batch = round((time.time() - start_time_batch), 2)
+                logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
 
-#                 logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+                logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
-#         for i in list(results_df.columns)[2:]:
-#             results_df[i] = pd.to_numeric(results_df[i])
+        for i in list(results_df.columns)[2:]:
+            results_df[i] = pd.to_numeric(results_df[i])
 
-#         # Convert all nulls to None
-#         results_df = results_df.where((pd.notnull(results_df)), None)
+        # Convert all nulls to None
+        results_df = results_df.where((pd.notnull(results_df)), None)
 
 
-#         total_time = round((time.time() - section_start_time) / 60, 1)
-#         logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+        total_time = round((time.time() - section_start_time) / 60, 1)
+        logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
-#         # upload the final dataframe onto Bigquery
-#         logger.info('Uploading baseline table to Bigquery...')
+        # upload the final dataframe onto Bigquery
+        logger.info('Uploading baseline table to Bigquery...')
         
-#         # specify the table schema
-# #          ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
-# #          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
-# #          'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
-# #          'margin_amt_promo_flag']]
+        # specify the table schema
+#          ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
+#          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
+#          'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
+#          'margin_amt_promo_flag']]
         
         
-#         #table_schema = [{'name': 'date', 'type': 'TIMESTAMP'}, {'name': 'col2', 'type': 'STRING'},]
+        #table_schema = [{'name': 'date', 'type': 'TIMESTAMP'}, {'name': 'col2', 'type': 'STRING'},]
         
-#         if (i_sec == 0):
-#             pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline2', project_id=project_id, if_exists=bl_table_config)
-#         else:
-#             pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline2', project_id=project_id, if_exists='append')
+        if (i_sec == 0):
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline2', project_id=project_id, if_exists=bl_table_config)
+        else:
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline2', project_id=project_id, if_exists='append')
 
 
-#         logger.info('Completed upload of section baseline to Bigquery...')
+        logger.info('Completed upload of section baseline to Bigquery...')
         
-#     # call function to run query in Bigquery to create baseline related tables
+    # call function to run query in Bigquery to create baseline related tables
     logger.info('Creating baseline tables in Bigquery...')
     baseline_query.baseline_dashboard(project_id, dataset_id)
     logger.info('Completed creating baseline tables in Bigquery...')
     
-#     total_time = round((time.time() - start_time) / 60, 1)
-#     logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+    total_time = round((time.time() - start_time) / 60, 1)
+    logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
