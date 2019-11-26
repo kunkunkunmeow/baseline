@@ -1,18 +1,20 @@
 import pandas as pd
 import pandas_gbq
+from google.cloud import bigquery
 
 
 
-def baseline_dashboard(project_id):
+def baseline_dashboard(project_id, dataset_id):
+        
+        # Load client
+        client = bigquery.Client()
+
+        job_config = bigquery.QueryJobConfig()
+        
         baseline_dashboard_sql = """
 
         # Create baseline dashboard
-        CREATE OR REPLACE TABLE baseline_performance.baseline_dashboard 
-        partition by date
-        cluster by sku_root_id, section, promo_flag_binary, change_flag
-        AS
-
-        with agg_weekly as 
+        WITH agg_weekly as 
         (SELECT date, sku_root_id, description, area, section, category, subcategory, segment, 
                 CASE WHEN promo_flag_binary = 1 THEN (total_price_if_sku_std_price  - total_sale_amt) ELSE NULL END AS total_discount
         from `ETL.aggregate_weekly_transaction_summary`),
@@ -71,12 +73,6 @@ def baseline_dashboard(project_id):
 
 
         # create baseline_promo table
-        create or replace table `baseline_performance.baseline_promo` 
-
-        partition by date
-        cluster by sku_root_id, promo_id, promo_mechanic
-        AS
-
         WITH 
         promo as (
                   select * 
@@ -184,8 +180,6 @@ def baseline_dashboard(project_id):
 
 
         # Create pareto graph ranking by section and category
-        CREATE OR REPLACE TABLE `baseline_performance.pareto_section_sku`  AS
-
         WITH 
 
         sku_agg AS (
@@ -271,8 +265,7 @@ def baseline_dashboard(project_id):
         pareto_sku_table_sql = """
 
         # Create pareto sku table
-        CREATE OR REPLACE TABLE `baseline_performance.pareto_sku_table`  AS
-        WITH 
+         WITH 
         sale_amt_rank as (
         SELECT sec_cat, percentile_rank_inc as sale_rank, sale.sku_root_id as sku_root_id, sale.incremental_sale_amt as inc_sale_amt
         FROM `baseline_performance.pareto_section_sku`, UNNEST(sale) as sale), 
@@ -306,9 +299,7 @@ def baseline_dashboard(project_id):
 
 
         # Create promo pareto graph ranking by promo id
-        CREATE OR REPLACE TABLE `baseline_performance.pareto_promo`  
-        AS
-        WITH 
+         WITH 
         promo_agg AS (
           SELECT promo_id, promo_year,sku_root_id,
           SUM(p_ttl_inc_sale_amt) as inc_sale_amt,
@@ -386,9 +377,7 @@ def baseline_dashboard(project_id):
         pareto_promo_table_sql = """
 
         # Create pareto promo table 
-        CREATE OR REPLACE TABLE `baseline_performance.pareto_promo_table`  AS
-
-        WITH 
+         WITH 
         promo_sale_rank as (
         SELECT promo_id, promo_year, percentile_rank_inc as sale_rank, sale.sku_root_id as sku_root_id, sale.inc_sale_amt as inc_sale_amt
         FROM `baseline_performance.pareto_promo` , UNNEST(sale) as sale), 
@@ -425,176 +414,26 @@ def baseline_dashboard(project_id):
         ORDER BY promo_id , promo_year, sku_root_id ;
 
         """
-
-        pandas_gbq.read_gbq(baseline_dashboard_sql, project_id = project_id)
-        pandas_gbq.read_gbq(promo_dashboard_sql, project_id = project_id)
-        pandas_gbq.read_gbq(pareto_section_sku_sql, project_id = project_id)
-        pandas_gbq.read_gbq(pareto_sku_table_sql, project_id = project_id)
-        pandas_gbq.read_gbq(pareto_promo_sql, project_id = project_id)
-        pandas_gbq.read_gbq(pareto_promo_table_sql, project_id = project_id)
-
-
         
-def test(project_id):
-        test_sql = """
-
-        ##Create an ETL dataset (to do)
-        ##Create date and week start parameters (to do)
-
-        ##Create a calendar table
-        CREATE OR REPLACE TABLE
-          `WIP.calendar` AS
-        SELECT
-          day AS date,
-          CASE EXTRACT(DAYOFWEEK
-          FROM
-            day)
-            WHEN 1 THEN 'Sunday'
-            WHEN 2 THEN 'Monday'
-            WHEN 3 THEN 'Tuesday'
-            WHEN 4 THEN 'Wednesday'
-            WHEN 5 THEN 'Thursday'
-            WHEN 6 THEN 'Friday'
-            WHEN 7 THEN 'Saturday'
-        END
-          AS day,
-          #extracts week that begins on Monday
-          EXTRACT(ISOWEEK
-          FROM
-            day) AS week,
-          CONCAT(CAST(EXTRACT(YEAR
-              FROM
-                day) AS STRING),'SEM', FORMAT("%02d",(EXTRACT(ISOWEEK
-                FROM
-                  day)))) AS year_sem,
-          CASE EXTRACT(MONTH
-          FROM
-            day)
-            WHEN 1 THEN 'Jan'
-            WHEN 2 THEN 'Feb'
-            WHEN 3 THEN 'Mar'
-            WHEN 4 THEN 'Apr'
-            WHEN 5 THEN 'May'
-            WHEN 6 THEN 'Jun'
-            WHEN 7 THEN 'Jul'
-            WHEN 8 THEN 'Aug'
-            WHEN 9 THEN 'Sept'
-            WHEN 10 THEN 'Oct'
-            WHEN 11 THEN 'Nov'
-            WHEN 12 THEN 'Dec'
-        END
-          AS month,
-          CASE EXTRACT(DAYOFWEEK
-          FROM
-            day)
-            WHEN 1 THEN TRUE
-            WHEN 2 THEN FALSE
-            WHEN 3 THEN FALSE
-            WHEN 4 THEN FALSE
-            WHEN 5 THEN FALSE
-            WHEN 6 THEN FALSE
-            WHEN 7 THEN TRUE
-        END
-          AS weekend,
-          #is it a weekend
-          EXTRACT(YEAR
-          FROM
-            day) AS year,
-          EXTRACT(QUARTER
-          FROM
-            day) AS quarter,
-          NULL AS national_holiday_1,
-          NULL AS national_holiday_2,
-          NULL AS national_holiday_3,
-          NULL AS national_event_1,
-          NULL AS national_event_2,
-          NULL AS national_event_3
-        FROM (
-          SELECT
-            day
-          FROM
-            UNNEST( GENERATE_DATE_ARRAY(DATE('2017-10-02'), DATE('2019-10-06'), INTERVAL 1 DAY) ) AS day )
-        ORDER BY
-          date ASC
-          
-        """
+        # Create a disctionary to loop over all destination tables and scripts
+        baseline_tables = {'baseline_dashboard':baseline_dashboard_sql, 'baseline_promo': promo_dashboard_sql, 
+                           'pareto_section_sku': pareto_section_sku_sql, 'pareto_sku_table': pareto_sku_table_sql,
+                           'pareto_promo': pareto_promo_sql, 'pareto_promo_table_sql': pareto_promo_table_sql} 
         
-        sql = """
-        CREATE OR REPLACE TABLE
-          WIP.calendar AS
-        SELECT
-          day AS date,
-          CASE EXTRACT(DAYOFWEEK
-          FROM
-            day)
-            WHEN 1 THEN 'Sunday'
-            WHEN 2 THEN 'Monday'
-            WHEN 3 THEN 'Tuesday'
-            WHEN 4 THEN 'Wednesday'
-            WHEN 5 THEN 'Thursday'
-            WHEN 6 THEN 'Friday'
-            WHEN 7 THEN 'Saturday'
-        END
-          AS day,
-          #extracts week that begins on Monday
-          EXTRACT(ISOWEEK
-          FROM
-            day) AS week,
-          CONCAT(CAST(EXTRACT(YEAR
-              FROM
-                day) AS STRING),'SEM', FORMAT("%02d",(EXTRACT(ISOWEEK
-                FROM
-                  day)))) AS year_sem,
-          CASE EXTRACT(MONTH
-          FROM
-            day)
-            WHEN 1 THEN 'Jan'
-            WHEN 2 THEN 'Feb'
-            WHEN 3 THEN 'Mar'
-            WHEN 4 THEN 'Apr'
-            WHEN 5 THEN 'May'
-            WHEN 6 THEN 'Jun'
-            WHEN 7 THEN 'Jul'
-            WHEN 8 THEN 'Aug'
-            WHEN 9 THEN 'Sept'
-            WHEN 10 THEN 'Oct'
-            WHEN 11 THEN 'Nov'
-            WHEN 12 THEN 'Dec'
-        END
-          AS month,
-          CASE EXTRACT(DAYOFWEEK
-          FROM
-            day)
-            WHEN 1 THEN TRUE
-            WHEN 2 THEN FALSE
-            WHEN 3 THEN FALSE
-            WHEN 4 THEN FALSE
-            WHEN 5 THEN FALSE
-            WHEN 6 THEN FALSE
-            WHEN 7 THEN TRUE
-        END
-          AS weekend,
-          #is it a weekend
-          EXTRACT(YEAR
-          FROM
-            day) AS year,
-          EXTRACT(QUARTER
-          FROM
-            day) AS quarter,
-          NULL AS national_holiday_1,
-          NULL AS national_holiday_2,
-          NULL AS national_holiday_3,
-          NULL AS national_event_1,
-          NULL AS national_event_2,
-          NULL AS national_event_3
-        FROM (
-          SELECT
-            day
-          FROM
-            UNNEST( GENERATE_DATE_ARRAY(DATE('2017-10-02'), DATE('2019-10-06'), INTERVAL 1 DAY) ) AS day )
-        ORDER BY
-          date ASC;
-        """
-        test = pandas_gbq.read_gbq(sql, project_id = project_id)
-    
-        #pandas_gbq.read_gbq(test_sql, project_id = project_id)
+        job_config.write_disposition = "WRITE_TRUNCATE"
+        for key in baseline_tables:
+                
+                # Set the destination table
+                table_ref_baseline_dashboard = client.dataset(dataset_id).table(key)
+                job_config.destination = table_ref_baseline_dashboard
+     
+                # Start the query, passing in the extra configuration.
+                query_job = client.query(
+                    baseline_tables[key],
+                    # Location must match that of the dataset(s) referenced in the query
+                    # and of the destination table.
+                    location='europe-west3',
+                    job_config=job_config)  # API request - starts the query
+
+                query_job.result()  # Waits for the query to finish
+                logger.info("Completed writing {a} table...".format(a=key))
