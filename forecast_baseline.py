@@ -8,12 +8,14 @@ from tqdm import tqdm
 import time
 import logging
 import warnings
+import forecast_baseline_query
 
 # Input global variables 
 # Reformat code to accept these variables as input
 
 # Project ID
 project_id = "gum-eroski-dev"
+dataset_id = "baseline_performance"
 
 # Define key forward baseline parameters
 
@@ -551,47 +553,11 @@ if __name__ == "__main__":
 
         logger.info('Completed upload of section forecast baseline to Bigquery...')
     
-    
-   
-    
-#     CREATE OR REPLACE TABLE
-#   `gum-eroski-dev.baseline_performance.forecast_baseline`  AS
-# SELECT 
-# DATE(date) as date,
-# sku_root_id,
-# CAST( b_t_sale_amt AS NUMERIC) as b_t_sale_amt,
-# CAST( l_t_sale_amt AS NUMERIC) as l_t_sale_amt,
-# CAST( s_t_sale_amt AS NUMERIC) as s_t_sale_amt,
-# CAST( y_hat_t_sale_amt AS NUMERIC) as y_hat_t_sale_amt,
-# CAST( y_t_sale_amt AS NUMERIC) as y_t_sale_amt,
-# CAST( b_t_sale_qty AS NUMERIC) as b_t_sale_qty,
-# CAST( l_t_sale_qty AS NUMERIC) as l_t_sale_qty,
-# CAST( s_t_sale_qty AS NUMERIC) as s_t_sale_qty,
-# CAST( y_hat_t_sale_qty AS NUMERIC) as y_hat_t_sale_qty,
-# CAST( y_t_sale_qty AS NUMERIC) as y_t_sale_qty,
-# CAST( b_t_margin_amt AS NUMERIC) as b_t_margin_amt,
-# CAST( l_t_margin_amt AS NUMERIC) as l_t_margin_amt,
-# CAST( s_t_margin_amt AS NUMERIC) as s_t_margin_amt,
-# CAST( y_hat_t_margin_amt AS NUMERIC) as y_hat_t_margin_amt,
-# CAST( y_t_margin_amt AS NUMERIC) as y_t_margin_amt
 
-# FROM `gum-eroski-dev.baseline_performance.forecast_baseline` 
-
-# CREATE OR REPLACE TABLE
-#   `gum-eroski-dev.baseline_performance.forecast_baseline_metrics` AS
-# SELECT 
-# sku_root_id,
-# metric,
-# CAST( alpha AS NUMERIC) as alpha,
-# CAST( beta AS NUMERIC) as beta,
-# CAST( phi AS NUMERIC) as phi,
-# CAST( gamma AS NUMERIC) as gamma,
-# CAST( l_0 AS NUMERIC) as l_0,
-# CAST( b_0 AS NUMERIC) as b_0,
-# CAST( SSE AS NUMERIC) as SSE,
-# CAST( MAE AS NUMERIC) as MAE,
-# CAST( convergence_flag as INT64) as convergence_flag
-# FROM `gum-eroski-dev.baseline_performance.forecast_baseline_metrics`
+    # call function to run query in Bigquery to create baseline related tables
+    logger.info('Creating forecast baseline tables in Bigquery...')
+    forecast_baseline_query.fcast_baseline_dashboard(project_id, dataset_id)
+    logger.info('Completed creating forecast baseline tables in Bigquery...')
     
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed forecast baseline processing in {a} mins...'.format(a=total_time))
