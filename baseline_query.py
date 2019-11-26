@@ -3,9 +3,7 @@ import pandas_gbq
 
 
 
-def baseline_dashboard():
-        project_id = "gum-eroski-dev"
-
+def baseline_dashboard(project_id):
         baseline_dashboard_sql = """
 
         # Create baseline dashboard
