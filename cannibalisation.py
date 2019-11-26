@@ -188,7 +188,7 @@ if __name__ == "__main__":
                 processes[:] = []
 
                 start_time_batch = time.time()
-                batch = uniq_cb_l[i:i+batchsize] # the result might be shorter than batchsize at the end
+                batch = unique_cb_l[i:i+batchsize] # the result might be shorter than batchsize at the end
 
                 for cb_level in batch:
                     p = Process(target=cannibalisation, args=(frame, agg_np, cb_table, cb_l, cb_level))  # Passing the list
