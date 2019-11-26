@@ -1,5 +1,6 @@
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import pandas_gbq
@@ -15,12 +16,13 @@ import logging
 
 
 
-def train_promotion_prediction_model(input_data, learning_rate, max_depth, subsample, colsample_bytree, n_estimators, objective,
+def train_promotion_prediction_model(X, y, learning_rate, max_depth, subsample, colsample_bytree, n_estimators, objective,
                                      gamma, alpha, lambda, test_size_perc, test_months_exclusion):
 
     """train the promotion model during the promotion weeks
     :Args
-        input_data(dataframe): dataframe containing the input data to train the model 
+        X(dataframe): dataframe containing the input data to train the model 
+        y(dataframe): dataframe containing the output values to train the model on
         learning_rate(float): step size shrinkage used to prevent overfitting. Range is [0,1]
         max_depth(int): determines how deeply each tree is allowed to grow during any boosting round
         subsample(float): percentage of samples used per tree. Low value can lead to underfitting
@@ -36,5 +38,11 @@ def train_promotion_prediction_model(input_data, learning_rate, max_depth, subsa
         xgboost model(model): xgboost ML model
     """
     
+    # Create one hot encoded features on the training data
+    cat_columns = ["sku_root_id", "segment", "subcategory", "category", "section", "area", "brand_name", "flag_healthy",
+                  "innovation_flag", "tourism_flag", "local_flag", "regional_flag", "Promo_mechanic_en", "customer_profile_type",
+                  "marketing_type", ]
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
     
 
