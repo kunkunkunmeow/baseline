@@ -42,14 +42,48 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+# def load_section_from_bq(project_id):
+#     start_time = time.time()
+
+#     summary_sql = """
+#     SELECT distinct section
+#     FROM `baseline_performance.baseline` 
+#     LEFT JOIN (SELECT sku_root_id, section FROM `ETL.root_sku`) 
+#     USING(sku_root_id) """
+#     start = time.time()
+
+#     for i in tqdm(range(1), desc='Loading table...'):
+#         section_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
+
+#     total_time = round((time.time() - start_time) / 60, 1)
+#     logger.info("Completed loading of distinct sections table from Bigquery {a} mins...".format(a=total_time))
+
+#     return section_table
+
+# def load_bl_from_bq(project_id, section, level):
+#     start_time = time.time()
+
+#     summary_sql = """
+#     SELECT date, sku_root_id, section, segment, promo_flag_binary, incremental_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
+#     FROM `baseline_performance.baseline`
+#     LEFT JOIN (SELECT sku_root_id, section, segment FROM `ETL.root_sku`) 
+#     USING(sku_root_id)
+#     WHERE section = "%s"   """ %(section)
+
+#     for i in tqdm(range(1), desc='Loading table...'):
+#         baseline_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
+
+#     total_time = round((time.time() - start_time) / 60, 1)
+#     logger.info("Completed loading of baseline table from Bigquery {a} mins...".format(a=total_time))
+
+#     return baseline_table
+
 def load_section_from_bq(project_id):
     start_time = time.time()
 
     summary_sql = """
     SELECT distinct section
-    FROM `baseline_performance.baseline` 
-    LEFT JOIN (SELECT sku_root_id, section FROM `ETL.root_sku`) 
-    USING(sku_root_id) """
+    FROM `WIP.baseline_dashboard`  """
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -64,10 +98,8 @@ def load_bl_from_bq(project_id, section, level):
     start_time = time.time()
 
     summary_sql = """
-    SELECT date, sku_root_id, section, segment, promo_flag_binary, incremental_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
-    FROM `baseline_performance.baseline`
-    LEFT JOIN (SELECT sku_root_id, section, segment FROM `ETL.root_sku`) 
-    USING(sku_root_id)
+    SELECT date, sku_root_id, section, segment, promo_flag_binary, incremental_sale_qty as incremental_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
+    FROM `WIP.baseline_dashboard` 
     WHERE section = "%s"   """ %(section)
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -77,6 +109,8 @@ def load_bl_from_bq(project_id, section, level):
     logger.info("Completed loading of baseline table from Bigquery {a} mins...".format(a=total_time))
 
     return baseline_table
+
+
 
 # define the calculation of cannibalisation for certain date
 def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
