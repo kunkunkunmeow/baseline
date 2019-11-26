@@ -521,7 +521,7 @@ def test(project_id):
         
         sql = """
         CREATE OR REPLACE TABLE
-          `WIP.calendar` AS
+          WIP.calendar AS
         SELECT
           day AS date,
           CASE EXTRACT(DAYOFWEEK
