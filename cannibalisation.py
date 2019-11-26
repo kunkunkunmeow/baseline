@@ -40,11 +40,11 @@ def load_bl_from_bq(project_id, cb_l):
     start_time = time.time()
 
     summary_sql = """
-    SELECT date, sku_root_id, sku."%s", promo_flag_binary, incremental_sale_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
+    SELECT date, sku_root_id, sku.segment, promo_flag_binary, incremental_sale_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
     FROM `WIP.baseline_dashboard`
-    LEFT JOIN (SELECT sku_root_id, "%s" FROM `ETL.root_sku`) sku
+    LEFT JOIN (SELECT sku_root_id, segment FROM `ETL.root_sku`) sku
     USING(sku_root_id)
-    """ %(cb_l)
+    """ 
 
     for i in tqdm(range(1), desc='Loading table...'):
         baseline_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
