@@ -42,7 +42,7 @@ def load_bl_from_bq(project_id, level):
     summary_sql = """
     SELECT cast(DATE(date) AS DATE) AS date, sku_root_id, sku.segment, promo_flag_binary, incremental_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
     FROM `baseline_performance.baseline` 
-    LEFT JOIN (SELECT sku_root_id, "%s" FROM `ETL.root_sku`) sku
+    LEFT JOIN (SELECT sku_root_id, %s FROM `ETL.root_sku`) sku
     USING(sku_root_id)
     """%(level)
 
