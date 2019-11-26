@@ -529,7 +529,7 @@ def test(project_id):
                CREATE OR REPLACE TABLE WIP.test3 AS
                SELECT * FROM `gum-eroski-dev.WIP.baseline_dashboard` 
                WHERE {word} = {date};"""
-       
-        test = pandas_gbq.read_gbq(sql, project_id=project_id)  
+
+        test = pandas_gbq.read_gbq(sql, project_id=project_id)
 
         #pandas_gbq.read_gbq(test_sql, project_id = project_id)
