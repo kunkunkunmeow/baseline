@@ -8,7 +8,6 @@ def baseline_dashboard():
 
         baseline_dashboard_sql = """
 
-
         # Create baseline dashboard
         CREATE OR REPLACE TABLE baseline_performance.baseline_dashboard 
         partition by date
@@ -18,8 +17,7 @@ def baseline_dashboard():
         with agg_weekly as 
         (SELECT date, sku_root_id, description, area, section, category, subcategory, segment, 
                 CASE WHEN promo_flag_binary = 1 THEN (total_price_if_sku_std_price  - total_sale_amt) ELSE NULL END AS total_discount
-        from `ETL.aggregate_weekly_transaction_summary` 
-        WHERE area = "ALIMENTACION"),
+        from `ETL.aggregate_weekly_transaction_summary`),
 
         baseline_temp as (
         SELECT 
@@ -55,7 +53,7 @@ def baseline_dashboard():
         FROM baseline_temp),
 
         brand AS(
-        SELECT sku_root_id, brand_name , eroskibrand_flag 
+        SELECT sku_root_id, brand_name , eroskibrand_flag, eroskibrand_label 
         FROM `ETL.root_sku`)
 
         SELECT * EXCEPT (total_discount),
@@ -72,7 +70,7 @@ def baseline_dashboard():
 
 
         # create baseline_promo table
-        create or replace table `baseline_performance.baseline_promo_2` 
+        create or replace table `baseline_performance.baseline_promo` 
 
         partition by date
         cluster by sku_root_id, promo_id, promo_mechanic
@@ -98,7 +96,7 @@ def baseline_dashboard():
 
         baseline as(
                   SELECT 
-                  bl_date.sku_root_id, bl_date.date_new as date, description, area, section, category, subcategory, segment, promo_flag_binary, change_flag, brand_name, eroskibrand_flag, discount,
+                  bl_date.sku_root_id, bl_date.date_new as date, promo_flag_binary, change_flag, discount,
                   total_sale_amt,   ttl_sale_amt_bl,       ttl_inc_sale_amt,     pct_inc_sale,
                   total_sale_qty,   ttl_sale_qty_bl,       ttl_inc_sale_qty,     pct_inc_qty,
                   total_margin_amt, ttl_margin_amt_bl,     ttl_inc_margin_amt,   pct_inc_margin
@@ -108,9 +106,59 @@ def baseline_dashboard():
                   where change_flag in (1,2,3)
                   )
 
-        SELECT date, sku_root_id, bl.description, bl.area, bl.section , bl.category , bl.subcategory , bl.segment , bl.brand_name, bl.eroskibrand_flag,
-        promo.promo_id, promo.promo_year, promo.promo_mechanic, pm.Promo_mechanic_en,promo.name, promo.type, promo.start_date, promo.end_date, promo.duration, promo.no_to_buy , promo.no_to_pay ,promo.promo_weight ,
-        bl.promo_flag_binary, bl.change_flag, 
+        SELECT date, 
+        sku_root_id, 
+        promo.description, 
+        promo.area, 
+        promo.section , 
+        promo.category , 
+        promo.subcategory , 
+        promo.segment , 
+        promo.brand_name, 
+        promo.eroskibrand_flag,
+        promo.eroskibrand_label,
+        promo.wealthy_range_flag,
+        promo.flag_healthy,
+        promo.innovation_flag,
+        promo.tourism_flag,
+        promo.local_flag,
+        promo.regional_flag,
+        promo.wow_flag,
+        promo.no_impacted_stores,
+        promo.no_impacted_regions,
+        promo.store_format,
+        promo.avg_store_size,
+        promo.promo_id, 
+        promo.promo_year, 
+        promo.promo_mechanic, 
+        promo.promo_mechanic_description as Promo_mechanic_en,
+        promo.name, 
+        promo.type, 
+        promo.start_date, 
+        promo.end_date, 
+        promo.class,
+        promo.customer_profile_type,
+        promo.marketing_type,
+        promo.duration, 
+        promo.includes_weekend,
+        promo.campaign_start_day,
+        promo.campaign_start_month,
+        promo.campaign_start_quarter,
+        promo.campaign_start_week,
+        promo.no_to_buy , 
+        promo.no_to_pay ,
+        promo.discounted_price_promo,
+        promo.leaflet_cover,
+        promo.leaflet_priv_space,
+        promo.in_leaflet_flag,
+        promo.in_gondola_flag,
+        promo.in_both_leaflet_gondola_flag,
+        promo.std_price,
+        promo.discount_depth,
+        promo.discount_depth_rank,
+        promo.promo_weight ,
+        bl.promo_flag_binary, 
+        bl.change_flag, 
         LAST_VALUE(bl.discount IGNORE NULLS) OVER (ORDER BY sku_root_id, date)/promo_weight as p_discount,
         ttl_sale_amt_bl /promo_weight as p_sale_bl,
         ttl_sale_qty_bl /promo_weight as p_qty_bl,
@@ -127,8 +175,6 @@ def baseline_dashboard():
         FROM promo
         INNER JOIN baseline bl
         USING(sku_root_id, date)
-        LEFT JOIN `ETL.promo_mechanic` pm
-        ON promo.promo_mechanic  = pm.Promo_mechanic_id 
         ;
 
 
@@ -361,7 +407,7 @@ def baseline_dashboard():
         USING (promo_id, promo_year,sku_root_id)
         INNER JOIN sku_detail 
         USING(sku_root_id)
-        ORDER BY promo_id , promo_year, sku_root_id 
+        ORDER BY promo_id , promo_year, sku_root_id ;
 
         """
 
