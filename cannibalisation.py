@@ -36,7 +36,7 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-def load_bl_from_bq(project_id, level):
+def load_bl_from_bq(project_id, cb_l):
     start_time = time.time()
 
     summary_sql = """
@@ -44,7 +44,7 @@ def load_bl_from_bq(project_id, level):
     FROM `WIP.baseline_dashboard`
     LEFT JOIN (SELECT sku_root_id, "%s" FROM `ETL.root_sku`) sku
     USING(sku_root_id)
-    """ %(level)
+    """ %(cb_l)
 
     for i in tqdm(range(1), desc='Loading table...'):
         baseline_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
