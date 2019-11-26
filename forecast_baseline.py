@@ -170,8 +170,8 @@ def metric_baseline_sku(sku, measure, params, hist_values, fcast_values,
 
 # define function to process baseline for one sku
 def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_table,
-                                 seasonal_period, forward_period, freq, constant = 1000, 
-                                 smoothing_window=4, start_date, end_date):
+                                 seasonal_period, forward_period, freq, constant, 
+                                 smoothing_window, start_date, end_date):
     """produce forward looking baseline for the sku
     Args:
         sku_pred_frame(list): Multiproc manager list to store predicted baseline values
