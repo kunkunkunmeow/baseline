@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import time
 import logging
-from baseline_query import baseline_dashboard
+import baseline_query
 
 # Input global variables 
 # Reformat code to accept these variables as input
@@ -417,7 +417,7 @@ if __name__ == "__main__":
         
 #     # call function to run query in Bigquery to create baseline related tables
     logger.info('Creating baseline tables in Bigquery...')
-    baseline_dashboard(project_id, dataset_id)
+    baseline_query.baseline_dashboard(project_id, dataset_id)
     logger.info('Completed creating baseline tables in Bigquery...')
     
 #     total_time = round((time.time() - start_time) / 60, 1)
