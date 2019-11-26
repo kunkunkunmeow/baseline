@@ -539,9 +539,7 @@ if __name__ == "__main__":
 
         # upload the final dataframe onto Bigquery
         logger.info('Uploading forecast baseline table to Bigquery...')
-        
-        [{'name': 'col1', 'type': 'STRING'},...]
-        
+                
         if (i_sec == 0):
             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists=bl_table_config)
             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, 
