@@ -4,12 +4,15 @@ import pandas_gbq
 # Project ID
 project_id = "gum-eroski-dev"
 
-word = "date"
-date = "'2019-04-15'"
+from google.cloud import bigquery
+client = bigquery.Client()
+dataset_id = 'WIP'
 
-sql = """  CREATE OR REPLACE TABLE
-          WIP.calendar AS
-        SELECT
+job_config = bigquery.QueryJobConfig()
+# Set the destination table
+table_ref = client.dataset(dataset_id).table('calendar_2')
+job_config.destination = table_ref
+sql = """  SELECT
           day AS date,
           CASE EXTRACT(DAYOFWEEK
           FROM
@@ -81,6 +84,19 @@ sql = """  CREATE OR REPLACE TABLE
             UNNEST( GENERATE_DATE_ARRAY(DATE('2017-10-02'), DATE('2019-10-06'), INTERVAL 1 DAY) ) AS day )
         ORDER BY
           date ASC;"""
+
+# Start the query, passing in the extra configuration.
+query_job = client.query(
+    sql,
+    # Location must match that of the dataset(s) referenced in the query
+    # and of the destination table.
+    location='europe-west3',
+    job_config=job_config)  # API request - starts the query
+
+query_job.result()  # Waits for the query to finish
+print('Query results loaded to table {}'.format(table_ref.path))
+
+
        
-test = pandas_gbq.read_gbq(sql, project_id=project_id) 
-print(test)
+#test = pandas_gbq.read_gbq(sql, project_id=project_id) 
+#print(test)
