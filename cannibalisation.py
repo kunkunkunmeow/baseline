@@ -116,7 +116,7 @@ if __name__ == "__main__":
         results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
         results_df.reset_index(drop=True, inplace=True)
 
-        total_time = round((time.time() - start_time_batch), 2)
+        total_time = round((time.time() - start_time), 2)
         logger.debug('Processing took {b} secs...'.format(b=total_time))
         logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
       
