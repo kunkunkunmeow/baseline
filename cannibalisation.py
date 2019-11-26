@@ -98,11 +98,7 @@ if __name__ == "__main__":
     
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
-#         processes = []
-        
-#         for i in range(0, len(dates)):
-#              # Clear the processes list
-#             processes[:] = []
+        processes = []
 
         start_time = time.time()
 
@@ -116,7 +112,6 @@ if __name__ == "__main__":
         output = pd.concat(frame)
         results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
         results_df.reset_index(drop=True, inplace=True)
-#         frame[:] = [] 
 
         total_time = round((time.time() - start_time_batch), 2)
         logger.debug('Processing took {b} secs...'.format(b=total_time))
