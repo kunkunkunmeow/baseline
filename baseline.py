@@ -271,7 +271,7 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
         ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'cb_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
          'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_cb_bl', 'sale_qty_cb_bl', 'margin_amt_cb_bl', 
-         'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag', 'margin_amt_promo_flag']]
+         'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt', 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct', 'sale_amt_promo_flag', 'sale_qty_promo_flag', 'margin_amt_promo_flag']]
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
   
