@@ -518,5 +518,18 @@ def test(project_id):
           date ASC
           
         """
+        
+        word = "date"
+        date = "'2019-04-15'"
 
-        pandas_gbq.read_gbq(test_sql, project_id = project_id)
+        sql = f""" CREATE OR REPLACE TABLE WIP.test2 AS
+               SELECT * FROM `gum-eroski-dev.WIP.baseline_dashboard` 
+               WHERE {word} = {date}; 
+
+               CREATE OR REPLACE TABLE WIP.test3 AS
+               SELECT * FROM `gum-eroski-dev.WIP.baseline_dashboard` 
+               WHERE {word} = {date};"""
+       
+        test = pandas_gbq.read_gbq(sql, project_id=project_id)  
+
+        #pandas_gbq.read_gbq(test_sql, project_id = project_id)
