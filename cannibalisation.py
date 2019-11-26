@@ -135,7 +135,7 @@ def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
 if __name__ == "__main__":
     start_time = time.time()
     logger.info("Loading baseline tables from Bigquery....")
-    section_table = load_t0_from_bq(bl_s, project_id)
+    section_table = load_section_from_bq(project_id)
 
     # Unique sections in category include
     unique_sections = list(section_table["section"].unique())
