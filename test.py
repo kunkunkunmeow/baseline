@@ -83,3 +83,4 @@ sql = """  CREATE OR REPLACE TABLE
           date ASC;"""
        
 test = pandas_gbq.read_gbq(sql, project_id=project_id) 
+print(test)
