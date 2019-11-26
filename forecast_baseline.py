@@ -29,11 +29,16 @@ forward_period = 16
 # Seasonal period
 seasonal_period = 12
 
+# Set the start and end dates for average forecast
+start_date = '01-01-2020'
+end_date = '31-01-2020'
+
 # Frequency
 freq='W-MON'
 
 # Constant value to add to input data
 constant = 1000
+smoothing_window=4
 
 # Set batch size
 batchsize = 50
@@ -102,14 +107,19 @@ def load_t1_from_bq(section, project_id):
 
 
 # define function to process metric for one sku
-def metric_baseline_sku(sku, measure, params, fit_baseline_metric, results_df_columns):
+def metric_baseline_sku(sku, measure, params, hist_values, fcast_values,
+                        fit_baseline_metric, results_df_columns, start_date, end_date):
     """produce summary metrics for baseline calculation for each SKU
     :Args
         sku(str): sku_root_id
         measure(str): string identifying the measure i.e. sale_amt, sale_qty, etc
         params(list): list of params
+        hist_values(series): series of historic values
+        fcast_values(series): series of fitted values
         fit_baseline_metric(Exponential Smoothing class): Exponential smoothing class fitted on data
         results_df(Index): column index of headers in result dataframe
+        start_date(str): start date of period to compute avg values for
+        end_date(str) end date of period ot compute avg values for
 
     :return:
         metric_series(series): series of metrics for each measure
@@ -118,14 +128,34 @@ def metric_baseline_sku(sku, measure, params, fit_baseline_metric, results_df_co
     for p in params:
         param_list.append(fit_baseline_metric.params[p])
 
-    # add SSE
-    param_list.append(fit_baseline_metric.sse)
+    # add SSE - this will be based on the non-smoothed time series
+    param_list.append(np.square(hist_values.subtract(fcast_values)).sum())
 
-    # add MAE
-    param_list.append(fit_baseline_metric.resid.abs().mean())
+    # add MSE - this will be based on the non-smoothed time series
+    param_list.append(np.square(hist_values.subtract(fcast_values)).mean())
+
+    # add RMSE - this will be based on the non-smoothed time series
+    param_list.append(np.sqrt(np.square(hist_values.subtract(fcast_values)).mean()))
+
+    # add MAE - this will be based on the non-smoothed time series
+    param_list.append(hist_values.subtract(fcast_values).abs().mean())
+
+    # add the average value of the fcast baseline for the period of interest
+    fcast_values_filtered = fcast_values.loc[(fcast_values.index > start_date) & (fcast_values.index <= end_date)]
+
+    if fcast_values_filtered.isnull().all():
+
+        # take the mean value of the historic series
+        avg_value = hist_values.mean()
+
+    else:
+        avg_value = fcast_values_filtered.mean()
+
+    # add to list
+    param_list.append(avg_value)
 
     # convergence flag
-    if np.isnan(fit_baseline_metric.sse):
+    if fcast_values.isnull().any():
         param_list.append(0)
     else:
         param_list.append(1)
@@ -138,7 +168,8 @@ def metric_baseline_sku(sku, measure, params, fit_baseline_metric, results_df_co
 
 # define function to process baseline for one sku
 def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_table,
-                                 seasonal_period, forward_period, freq, constant = 1000):
+                                 seasonal_period, forward_period, freq, constant = 1000, 
+                                 smoothing_window=4, start_date, end_date):
     """produce forward looking baseline for the sku
     Args:
         sku_pred_frame(list): Multiproc manager list to store predicted baseline values
@@ -148,6 +179,9 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
         seasonal_period: input seasonal period (in weeks)
         forward_period: forward period to predict baseline values
         constant(int): constant value added to input to train regression model
+        smoothing_window(int): smoothing window for smoothing input data
+        start_date(str): start date to compute avg fcast values for
+        end_date(str): end date to compute avg fcast values for
     Returns:
         sku_pred_frame, sku_metric_frame
     """
@@ -258,6 +292,25 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     df_sku_hist_baseline_sale_amt_u['hist_baseline_sale_amt'] += hist_baseline_sale_amt_constant
     df_sku_hist_baseline_sale_qty_u['hist_baseline_sale_qty'] += hist_baseline_sale_qty_constant
     df_sku_hist_baseline_margin_amt_u['hist_baseline_margin_amt'] += hist_baseline_margin_amt_constant
+    
+    # Smooth the data
+    df_sku_hist_baseline_sale_amt_u = df_sku_hist_baseline_sale_amt_u.rolling(window=smoothing_window)
+    df_sku_hist_baseline_sale_amt_u = df_sku_hist_baseline_sale_amt_u.mean()
+    df_sku_hist_baseline_sale_amt_u.dropna(inplace=True)
+    df_sku_hist_baseline_sale_amt = df_sku_hist_baseline_sale_amt.drop(df_sku_hist_baseline_sale_amt.index[0:smoothing_window - 1])
+
+    df_sku_hist_baseline_sale_qty_u = df_sku_hist_baseline_sale_qty_u.rolling(window=smoothing_window)
+    df_sku_hist_baseline_sale_qty_u = df_sku_hist_baseline_sale_qty_u.mean()
+    df_sku_hist_baseline_sale_qty_u.dropna(inplace=True)
+    df_sku_hist_baseline_sale_qty = df_sku_hist_baseline_sale_qty.drop(df_sku_hist_baseline_sale_qty.index[0:smoothing_window - 1])
+
+
+    df_sku_hist_baseline_margin_amt_u = df_sku_hist_baseline_margin_amt_u.rolling(window=smoothing_window)
+    df_sku_hist_baseline_margin_amt_u = df_sku_hist_baseline_margin_amt_u.mean()
+    df_sku_hist_baseline_margin_amt_u.dropna(inplace=True)
+    df_sku_hist_baseline_margin_amt = df_sku_hist_baseline_margin_amt.drop(df_sku_hist_baseline_margin_amt.index[0:smoothing_window - 1])
+
+
 
 #     # Test - visualise the data
 #     ax = df_sku_hist_baseline_sale_amt.plot(marker='o', color='black', figsize=(12, 8))
@@ -291,23 +344,6 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
 
     logger.debug(f'{sku} - completed fit of exponential smoothing model...')
 
-    metrics_results_df = pd.DataFrame(columns=['sku_root_id', 'metric', 'alpha', 'beta',
-                                               'phi', 'gamma', 'l_0', 'b_0', 'SSE', 'MAE', 'convergence_flag'])
-    params = ['smoothing_level', 'smoothing_slope', 'damping_slope', 'smoothing_seasonal', 'initial_level',
-              'initial_slope']
-
-    metric_series_sale_amt = metric_baseline_sku(sku, 'pred_baseline_sale_amt', params,
-                                                 fit_hist_baseline_sale_amt, metrics_results_df.columns)
-    metric_series_sale_qty = metric_baseline_sku(sku, 'pred_baseline_sale_qty', params,
-                                                 fit_hist_baseline_sale_qty, metrics_results_df.columns)
-    metric_series_margin_amt = metric_baseline_sku(sku, 'pred_baseline_margin_amt', params,
-                                                 fit_hist_baseline_margin_amt, metrics_results_df.columns)
-
-    # add to sku metrics dataframe
-    metrics_results_df = metrics_results_df.append(metric_series_sale_amt, ignore_index=True)
-    metrics_results_df = metrics_results_df.append(metric_series_sale_qty, ignore_index=True)
-    metrics_results_df = metrics_results_df.append(metric_series_margin_amt, ignore_index=True)
-
     # forecast x periods and view internals of the smoothing model
     # sale amt
     df_sku_pred_baseline_sale_amt = pd.DataFrame(np.c_[df_sku_hist_baseline_sale_amt,
@@ -321,8 +357,10 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
 
     df_sku_pred_baseline_sale_amt = df_sku_pred_baseline_sale_amt.append(
         fit_hist_baseline_sale_amt.forecast(forward_period).rename('y_hat_t_sale_amt').to_frame(), sort=True)
-    #subtract constant from y_hat_t where non-null
+   #subtract constant from y_hat_t where non-null and zero any negative values
     df_sku_pred_baseline_sale_amt['y_hat_t_sale_amt'] -= hist_baseline_sale_amt_constant
+    df_sku_pred_baseline_sale_amt.y_hat_t_sale_amt = np.where(df_sku_pred_baseline_sale_amt.y_hat_t_sale_amt < 0, 0,
+                                                              df_sku_pred_baseline_sale_amt.y_hat_t_sale_amt)
 
 
     # sale qty
@@ -337,9 +375,10 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
 
     df_sku_pred_baseline_sale_qty = df_sku_pred_baseline_sale_qty.append(
         fit_hist_baseline_sale_qty.forecast(forward_period).rename('y_hat_t_sale_qty').to_frame(), sort=True)
-    # subtract constant from y_hat_t where non-null
+    # subtract constant from y_hat_t where non-null and zero any negative values
     df_sku_pred_baseline_sale_qty['y_hat_t_sale_qty'] -= hist_baseline_sale_qty_constant
-
+    df_sku_pred_baseline_sale_qty.y_hat_t_sale_qty = np.where(df_sku_pred_baseline_sale_qty.y_hat_t_sale_qty < 0, 0,
+                                                              df_sku_pred_baseline_sale_qty.y_hat_t_sale_qty)
 
     # margin amt
     df_sku_pred_baseline_margin_amt = pd.DataFrame(np.c_[df_sku_hist_baseline_margin_amt,
@@ -355,6 +394,29 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
         fit_hist_baseline_margin_amt.forecast(forward_period).rename('y_hat_t_margin_amt').to_frame(), sort=True)
     # subtract constant from y_hat_t where non-null
     df_sku_pred_baseline_margin_amt['y_hat_t_margin_amt'] -= hist_baseline_margin_amt_constant
+    
+     # compute metrics
+    metrics_results_df = pd.DataFrame(columns=['sku_root_id', 'metric', 'alpha', 'beta',
+                                               'phi', 'gamma', 'l_0', 'b_0', 'SSE', 'MSE', 'RMSE', 'MAE', 'AVG_FCAST',
+                                               'convergence_flag'])
+    params = ['smoothing_level', 'smoothing_slope', 'damping_slope', 'smoothing_seasonal', 'initial_level',
+              'initial_slope']
+
+    metric_series_sale_amt = metric_baseline_sku(sku, 'pred_baseline_sale_amt', params, df_sku_pred_baseline_sale_amt['y_t_sale_amt'],
+                                                 df_sku_pred_baseline_sale_amt['y_hat_t_sale_amt'],
+                                                 fit_hist_baseline_sale_amt, metrics_results_df.columns, start_date, end_date)
+    metric_series_sale_qty = metric_baseline_sku(sku, 'pred_baseline_sale_qty', params, df_sku_pred_baseline_sale_qty['y_t_sale_qty'],
+                                                 df_sku_pred_baseline_sale_qty['y_hat_t_sale_qty'],
+                                                 fit_hist_baseline_sale_qty, metrics_results_df.columns, start_date, end_date)
+    metric_series_margin_amt = metric_baseline_sku(sku, 'pred_baseline_margin_amt', params, df_sku_pred_baseline_margin_amt['y_t_margin_amt'],
+                                                   df_sku_pred_baseline_margin_amt['y_hat_t_margin_amt'],
+                                                 fit_hist_baseline_margin_amt, metrics_results_df.columns, start_date, end_date)
+
+    # add to sku metrics dataframe
+    metrics_results_df = metrics_results_df.append(metric_series_sale_amt, ignore_index=True)
+    metrics_results_df = metrics_results_df.append(metric_series_sale_qty, ignore_index=True)
+    metrics_results_df = metrics_results_df.append(metric_series_margin_amt, ignore_index=True)
+
 
 #     # Test - visualise the data
 #     ax = df_sku_hist_baseline_sale_amt.plot(marker='o', color='black', figsize=(12, 8))
@@ -444,7 +506,9 @@ if __name__ == "__main__":
                                                                            sku,summary_table, 
                                                                            seasonal_period, 
                                                                            forward_period, 
-                                                                           freq, constant))  # Passing the list
+                                                                           freq, constant,
+                                                                           smoothing_window, 
+                                                                           start_date, end_date))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
@@ -488,71 +552,7 @@ if __name__ == "__main__":
         logger.info('Completed upload of section forecast baseline to Bigquery...')
     
     
-    # Code to append in correct format - to fix issues
-    # TODO
-#     if (i_sec == 0):
-#             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists=bl_table_config, 
-#                              table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'l_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 's_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_hat_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'b_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'l_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 's_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'y_hat_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'y_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'b_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'l_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 's_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_hat_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'date', 'type': 'TIMESTAMP'},
-#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
-#             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, 
-#                               if_exists=bl_table_config, table_schema=[{'name': 'alpha', 'type': 'NUMERIC'},
-#                                            {'name': 'beta', 'type': 'NUMERIC'},
-#                                            {'name': 'phi', 'type': 'NUMERIC'},
-#                                            {'name': 'gamma', 'type': 'NUMERIC'},
-#                                            {'name': 'l_0', 'type': 'NUMERIC'},
-#                                            {'name': 'b_0', 'type': 'NUMERIC'},
-#                                            {'name': 'SSE', 'type': 'NUMERIC'},
-#                                            {'name': 'MAE', 'type': 'NUMERIC'},
-#                                            {'name': 'convergence_flag', 'type': 'INTEGER'},
-#                                            {'name': 'metric', 'type': 'STRING'},
-#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
-#         else:
-#             pandas_gbq.to_gbq(results_df, 'baseline_performance.forecast_baseline', project_id=project_id, if_exists='append',
-#                              table_schema=[{'name': 'b_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'l_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 's_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_hat_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_t_sale_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'b_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'l_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 's_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'y_hat_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'y_t_sale_qty', 'type': 'NUMERIC'},
-#                                            {'name': 'b_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'l_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 's_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_hat_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'y_t_margin_amt', 'type': 'NUMERIC'},
-#                                            {'name': 'date', 'type': 'TIMESTAMP'},
-#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
-#             pandas_gbq.to_gbq(metrics_df, 'baseline_performance.forecast_baseline_metrics', project_id=project_id, 
-#                               if_exists='append', table_schema=[{'name': 'alpha', 'type': 'NUMERIC'},
-#                                            {'name': 'beta', 'type': 'NUMERIC'},
-#                                            {'name': 'phi', 'type': 'NUMERIC'},
-#                                            {'name': 'gamma', 'type': 'NUMERIC'},
-#                                            {'name': 'l_0', 'type': 'NUMERIC'},
-#                                            {'name': 'b_0', 'type': 'NUMERIC'},
-#                                            {'name': 'SSE', 'type': 'NUMERIC'},
-#                                            {'name': 'MAE', 'type': 'NUMERIC'},
-#                                            {'name': 'convergence_flag', 'type': 'INTEGER'},
-#                                            {'name': 'metric', 'type': 'STRING'},
-#                                            {'name': 'sku_root_id', 'type': 'STRING'}])
-    
+   
     
 #     CREATE OR REPLACE TABLE
 #   `gum-eroski-dev.baseline_performance.forecast_baseline`  AS
