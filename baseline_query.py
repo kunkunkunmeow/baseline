@@ -1,8 +1,10 @@
 import pandas as pd
 import pandas_gbq
+import logging
 from google.cloud import bigquery
 
-
+# Set logger properties
+logger = logging.getLogger('baseline_calculation')
 
 def baseline_dashboard(project_id, dataset_id):
         
