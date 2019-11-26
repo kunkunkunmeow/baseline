@@ -116,7 +116,7 @@ def load_bl_from_bq(project_id, section, level):
 def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
     table = cb_table[['date','sku_root_id', 'promo_flag_binary','incremental_qty', cb_l]][cb_table[cb_l] == cb_level]
 
-    agg_np_cb = agg_np[agg_np[cb_l] == 'DESAYUNO TIPO DIGESTIVE']
+    agg_np_cb = agg_np[agg_np[cb_l] == cb_level]
 
     df = pd.merge(table, agg_np_cb, on=['date',cb_l])
 
