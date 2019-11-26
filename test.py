@@ -12,6 +12,7 @@ job_config = bigquery.QueryJobConfig()
 # Set the destination table
 table_ref = client.dataset(dataset_id).table('calendar_2')
 job_config.destination = table_ref
+job_config.write_disposition = "WRITE_TRUNCATE"
 sql = """  SELECT
           day AS date,
           CASE EXTRACT(DAYOFWEEK
