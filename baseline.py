@@ -21,6 +21,9 @@ bl_l = "section"
 # Scope for the baseline (at an area level)
 bl_s = "ALIMENTACION"
 
+# Category level used for the cannibalisation effect
+cb_l = "segment"
+
 # Append or replace destination table (either 'append' or 'replace')
 bl_table_config = 'replace'
 
@@ -163,7 +166,7 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
     baseline = baseline_ref[baseline_ref[bl_l] == sku_level]
 
     # merge baseline and sku table
-    table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
+    table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'cb_flag_temp', 'total_sale_amt', 'total_sale_qty',
                              'total_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
                              'margin_amt_promo_flag']],
                      baseline[['date', bl_l, 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct']],
@@ -184,7 +187,24 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
         for j in range(1, ext_day + 1):
             if table.loc[i, 'change_flag'] == 2 and table.loc[i + j, 'change_flag'] == 0:
                 table.loc[i + j, 'change_flag'] = 3
-
+                
+    # define cb_flag to be the reference of cannibalisation calculation 
+    # set 1: for the first date where there's no promotion for that sku but promotion in at least one sku in the cb_l level 
+    # set 2: for the rest days where there's no promotion for that sku but promotion in at least one sku in the cb_l level 
+    # set 4: days where the sku is on promotion 
+    for i in range(0,len(table)):
+        if table.loc[i,'cb_flag_temp'] ==0 and table.loc[i,'promo_flag_binary'] == 0:
+            table.loc[i,'cb_flag'] = 0
+        if table.loc[i,'cb_flag_temp'] >0 and table.loc[i,'promo_flag_binary'] == 0:
+            table.loc[i,'cb_flag'] = 2
+        if table.loc[i,'change_flag'] ==3 and table.loc[i,'cb_flag_temp'] >0:
+            table.loc[i,'cb_flag'] = 1
+        if table.loc[i,'promo_flag_binary'] == 1:
+            table.loc[i,'cb_flag'] = 4
+    for i in range(1,len(table)):    
+        if table.loc[i,'cb_flag'] == 2 and table.loc[i-1,'cb_flag'] == 0:
+            table.loc[i,'cb_flag'] = 1
+                             
     # produce baseline
     for metric in metrics.keys():
         for i in range(0, len(table)):
@@ -216,17 +236,42 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
                     table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'], 2)
     logger.debug(f'{sku} - completed pull forward baseline')
 
+    #produce cannibalisation baseline
+    for metric in metrics.keys():
+        for i in range(0, len(table)):
+            if i==0:                                                                                 
+                if table.loc[i, 'cb_flag'] in [1,2]:
+                    table.loc[i, f'{metric}_cb_bl'] = float(table.loc[i, f'total_{metric}'])
+                else:
+                    table.loc[i, f'{metric}_cb_bl'] = np.nan
+            else:
+                if table.loc[i, 'cb_flag'] in [0, 4]:
+                    table.loc[i, f'{metric}_cb_bl'] = np.nan
+                if table.loc[i, 'cb_flag'] == 1 and table.loc[i - 1, 'cb_flag'] == 4:
+                    table.loc[i, f'{metric}_cb_bl'] = round(float(table.loc[i - 1, f'{metric}_bl']) * table.loc[i, f'{metric}_pct'],
+                                                        2)
+                if table.loc[i, 'cb_flag'] == 1 and table.loc[i - 1, 'cb_flag'] == 0:
+                    table.loc[i, f'{metric}_cb_bl'] = round(float(table.loc[i - 1, f'total_{metric}']) * table.loc[i, f'{metric}_pct'],
+                                                        2)
+                if table.loc[i, 'cb_flag'] ==2:
+                    table.loc[i, f'{metric}_cb_bl'] = round(float(table.loc[i - 1, f'{metric}_cb_bl']) * table.loc[i, f'{metric}_pct'],
+                                                        2)
+    
     # define incremental sale
     table['incremental_sale'] = pd.to_numeric(table['total_sale_amt']) - table['sale_amt_bl']
     table['incremental_qty'] = pd.to_numeric(table['total_sale_qty']) - table['sale_qty_bl']
     table['incremental_margin'] = pd.to_numeric(table['total_margin_amt']) - table['margin_amt_bl']
     
+    # define cannibalisation amount 
+    for metric in metrics.keys():
+        table[f'cb_{metric}'] = table[f'{metric}_cb_bl'] - pd.to_numeric(table[f'total_{metric}'], errors='coerce')
+    
     # define final dataframe
     final_df = table[
-        ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
+        ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'cb_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
-         'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
-         'margin_amt_promo_flag']]
+         'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_cb_bl', 'sale_qty_cb_bl', 'margin_amt_cb_bl', 
+         'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag', 'margin_amt_promo_flag']]
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
   
@@ -264,6 +309,11 @@ if __name__ == "__main__":
 
         logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
         agg_np = aggregate_np(weekly_agg, bl_l)
+        
+        logger.info("Defining cannabalisation flag at {a} level".format(a=cb_l))
+        cb_flag= summary_table[['date', cb_l, 'promo_flag_binary']].groupby(["date", cb_l], as_index=False).sum()
+        cb_flag.columns = ['date',cb_l,'cb_flag_temp']
+        summary_table = pd.merge(summary_table, cb_flag, on=['date',cb_l])
 
         logger.info("Computing no. of unique in-scope skus")
         uniq_sku = list(summary_table['sku_root_id'].unique())
@@ -357,9 +407,9 @@ if __name__ == "__main__":
         #table_schema = [{'name': 'date', 'type': 'TIMESTAMP'}, {'name': 'col2', 'type': 'STRING'},]
         
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline2', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline2', project_id=project_id, if_exists='append')
 
 
         logger.info('Completed upload of section baseline to Bigquery...')
