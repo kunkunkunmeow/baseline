@@ -40,8 +40,8 @@ def load_bl_from_bq(project_id, level):
     start_time = time.time()
 
     summary_sql = """
-    SELECT cast(DATE(date) AS DATE) AS date, sku_root_id, sku.segment, promo_flag_binary, incremental_sale_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
-    FROM `WIP.baseline_dashboard`
+    SELECT cast(DATE(date) AS DATE) AS date, sku_root_id, sku.segment, promo_flag_binary, incremental_qty, cb_flag, cb_sale_amt, cb_sale_qty, cb_margin_amt
+    FROM `baseline_performance.baseline` 
     LEFT JOIN (SELECT sku_root_id, "%s" FROM `ETL.root_sku`) sku
     USING(sku_root_id)
     """%(level)
@@ -56,11 +56,11 @@ def load_bl_from_bq(project_id, level):
 
 # define the calculation of cannibalisation for certain date
 def cannibalisation(frame, cb_table, date, level):
-    table = cb_table[['date','sku_root_id', 'promo_flag_binary','incremental_sale_qty', level]][cb_table['date'] == date]
+    table = cb_table[['date','sku_root_id', 'promo_flag_binary','incremental_qty', level]][cb_table['date'] == date]
     
     df = pd.merge(table, agg_np, on=['date',level])
 
-    df['cb_pct'] = df['incremental_sale_qty'] / df['ttl_inc_sale_qty']
+    df['cb_pct'] = df['incremental_qty'] / df['ttl_inc_sale_qty']
     
     df['cb_sale_amt'] = df['ttl_cb_sale_amt']*df['cb_pct']
     df['cb_sale_qty'] = df['ttl_cb_sale_qty']*df['cb_pct']
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     baseline_table['cb_sale_amt'] = pd.to_numeric(baseline_table['cb_sale_amt'])
     baseline_table['cb_sale_qty'] = pd.to_numeric(baseline_table['cb_sale_qty'])
     baseline_table['cb_margin_amt'] = pd.to_numeric(baseline_table['cb_margin_amt'])
-    baseline_table['incremental_sale_qty'] = pd.to_numeric(baseline_table['incremental_sale_qty'])
+    baseline_table['incremental_qty'] = pd.to_numeric(baseline_table['incremental_qty'])
     
     # options to ignore the negative values in the cannibalisation amount
     cb_table = baseline_table.copy()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         num[num < 0] = 0
     
     logger.info("aggreate the cannibalisation amount into the defined level")
-    agg_np = cb_table.groupby(["date",cb_l], as_index=False)['incremental_sale_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
+    agg_np = cb_table.groupby(["date",cb_l], as_index=False)['incremental_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
     agg_np.columns = ['date', cb_l, 'ttl_inc_sale_qty','ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
     
     #get unique dates 
@@ -126,5 +126,5 @@ if __name__ == "__main__":
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
    
-    pandas_gbq.to_gbq(results_df, 'WIP.cannibalisation_test', project_id=project_id, if_exists='replace')
+    pandas_gbq.to_gbq(results_df, '`baseline_performance.cannibalisation', project_id=project_id, if_exists='replace')
 
