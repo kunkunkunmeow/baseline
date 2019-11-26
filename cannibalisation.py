@@ -96,6 +96,9 @@ if __name__ == "__main__":
     #get unique dates 
     dates = list(baseline_table.date.unique())
     
+    # Store the baseline results
+    results_df = pd.DataFrame()
+
     with Manager() as manager:
         frame = manager.list()  # <-- can be shared between processes.
         processes = []
