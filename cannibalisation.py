@@ -129,7 +129,7 @@ def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
     final_df = df[['date', cb_l, 'sku_root_id','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
     final_df.columns = ['date', cb_l, 'sku_root_id', 'ind_cb_sale', 'ind_cb_qty', 'ind_cb_margin']
     
-    logger.info(f'{date} - completed cannibalisation calculation')
+    logger.info(f'{cb_level} - completed cannibalisation calculation')
     frame.append(final_df)
 
 if __name__ == "__main__":
