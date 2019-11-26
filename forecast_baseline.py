@@ -397,7 +397,7 @@ def forward_looking_baseline_sku(sku_pred_frame, sku_metric_frame, sku, summary_
     
      # compute metrics
     metrics_results_df = pd.DataFrame(columns=['sku_root_id', 'metric', 'alpha', 'beta',
-                                               'phi', 'gamma', 'l_0', 'b_0', 'SSE', 'MSE', 'RMSE', 'MAE', 'AVG_FCAST',
+                                               'phi', 'gamma', 'l_0', 'b_0', 'SSE', 'MSE', 'RMSE', 'MAE', 'avg_forecast_period',
                                                'convergence_flag'])
     params = ['smoothing_level', 'smoothing_slope', 'damping_slope', 'smoothing_seasonal', 'initial_level',
               'initial_slope']
