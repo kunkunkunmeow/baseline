@@ -515,7 +515,7 @@ def test(project_id):
           FROM
             UNNEST( GENERATE_DATE_ARRAY(DATE('2017-10-02'), DATE('2019-10-06'), INTERVAL 1 DAY) ) AS day )
         ORDER BY
-          date ASC;
+          date ASC
           
         """
 
