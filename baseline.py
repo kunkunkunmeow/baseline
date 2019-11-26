@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import time
 import logging
-from baseline_query import baseline_dashboard, test
+from baseline_query import baseline_dashboard
 
 # Input global variables 
 # Reformat code to accept these variables as input
