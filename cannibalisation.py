@@ -133,7 +133,7 @@ def cb_sku (frame, sku, summary_table):
     final_df = table[['date', 'sku_root_id', 'section', 'segment', 'promo_flag_binary', 'incremental_qty', 
                       'cb_flag', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
     
-    logger.info(f'{sku} - completed baseline and pull forward calculation')
+    logger.info(f'{sku} - completed cb baseline calculation')
     
     frame.append(final_df)
 
