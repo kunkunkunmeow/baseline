@@ -282,9 +282,9 @@ if __name__ == "__main__":
         logger.info('Uploading cannibalisation table to Bigquery...')
 
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation2', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation2', project_id=project_id, if_exists='append')
 
         logger.info('Completed upload of section baseline to Bigquery...')
     
