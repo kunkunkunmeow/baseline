@@ -120,7 +120,8 @@ def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
 
     df = pd.merge(table, agg_np_cb, on=['date',cb_l])
 
-    df['cb_pct'] = df['incremental_qty'] / df['ttl_inc_sale_qty']
+    df['cb_pct'] = sdf['incremental_qty']/ df['ttl_inc_sale_qty']
+    df.loc[~np.isfinite(df['cb_pct']), 'cb_pct'] = 0
     
     df['cb_sale_amt'] = df['ttl_cb_sale_amt']*df['cb_pct']
     df['cb_sale_qty'] = df['ttl_cb_sale_qty']*df['cb_pct']
@@ -158,6 +159,7 @@ if __name__ == "__main__":
         baseline_table['cb_sale_qty'] = pd.to_numeric(baseline_table['cb_sale_qty'])
         baseline_table['cb_margin_amt'] = pd.to_numeric(baseline_table['cb_margin_amt'])
         baseline_table['incremental_qty'] = pd.to_numeric(baseline_table['incremental_qty'])
+        baseline_table['incremental_qty'][baseline_table['incremental_qty']<0] =0
     
         # options to ignore the negative values in the cannibalisation amount
         cb_table = baseline_table.copy()
