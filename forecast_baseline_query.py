@@ -59,7 +59,7 @@ def fcast_baseline_dashboard(project_id, dataset_id):
         tables = {'forecast_baseline':fcast_baseline_sql, 'forecast_baseline_metrics': fcast_metrics_sql} 
         
         job_config.write_disposition = "WRITE_TRUNCATE"
-        for key in baseline_tables:
+        for key in tables:
                 
                 # Set the destination table
                 table_ref = client.dataset(dataset_id).table(key)
