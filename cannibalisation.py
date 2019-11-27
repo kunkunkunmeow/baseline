@@ -140,7 +140,8 @@ def cb_sku (frame, sku, summary_table):
 
 # define the calculation of cannibalisation for certain date
 def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
-    table = cb_table[['date','sku_root_id', 'promo_flag_binary','cb_tt_sale_qty', cb_l]][cb_table[cb_l] == cb_level]
+    table = cb_table[['date','sku_root_id', 'promo_flag_binary','cb_tt_sale_qty', 
+                      'ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt', cb_l]][cb_table[cb_l] == cb_level]
 
     agg_np_cb = agg_np[agg_np[cb_l] == cb_level]
 
@@ -154,7 +155,8 @@ def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
     df['cb_margin_amt'] = df['ttl_cb_margin_amt']*df['cb_pct']
     
     final_df = df[['date', cb_l, 'sku_root_id','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
-    final_df.columns = ['date', cb_l, 'sku_root_id', 'ind_cb_sale', 'ind_cb_qty', 'ind_cb_margin', 'ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
+    final_df.columns = ['date', cb_l, 'sku_root_id', 'ind_cb_sale', 'ind_cb_qty', 'ind_cb_margin', 
+                        'ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
     
     logger.info(f'{cb_level} - completed cannibalisation calculation')
     frame.append(final_df)
