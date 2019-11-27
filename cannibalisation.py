@@ -227,7 +227,7 @@ if __name__ == "__main__":
                 output = pd.concat(frame)
                 baseline_cb_df = pd.concat([baseline_cb_df, output], ignore_index=True, sort =False)
                 baseline_cb_df.reset_index(drop=True, inplace=True)
-                print(baseline_cb_df.cloumns)
+                print(baseline_cb_df.columns)
                 frame[:] = [] 
 
                 total_time_batch = round((time.time() - start_time_batch), 2)
