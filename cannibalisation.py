@@ -118,12 +118,12 @@ def cb_sku (frame, sku, summary_table):
                 if table.loc[i, 'cb_flag'] in [0, 4]:
                     table.loc[i, f'{metric}_cb_bl'] = np.nan
                 if table.loc[i, 'cb_flag'] == 1 and table.loc[i - 1, 'cb_flag'] == 4:
-                    table.loc[i, f'{metric}_cb_bl'] = round(table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'],
+                    table.loc[i, f'{metric}_cb_bl'] = round(float(table.loc[i - 1, f'{metric}_bl']) * float(table.loc[i, f'{metric}_pct']),
                                                         2)
                 if table.loc[i, 'cb_flag'] == 1 and table.loc[i - 1, 'cb_flag'] == 0:
-                    table.loc[i, f'{metric}_cb_bl'] = round(table.loc[i, f'total_{metric}'],                                                                          2)
+                    table.loc[i, f'{metric}_cb_bl'] = round(float(table.loc[i, f'total_{metric}']),                                                                          2)
                 if table.loc[i, 'cb_flag'] ==2:
-                    table.loc[i, f'{metric}_cb_bl'] = round(table.loc[i - 1, f'{metric}_cb_bl'] * table.loc[i, f'{metric}_pct'],
+                    table.loc[i, f'{metric}_cb_bl'] = round(float(table.loc[i - 1, f'{metric}_cb_bl']) * float(table.loc[i, f'{metric}_pct']),
                                                         2)
     
     # define cannibalisation amount 
