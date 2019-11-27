@@ -131,7 +131,8 @@ def cb_sku (frame, sku, summary_table):
         table[f'cb_{metric}'] = table[f'{metric}_cb_bl'] - pd.to_numeric(table[f'total_{metric}'], errors='coerce')
     
     final_df = table[['date', 'sku_root_id', 'section', 'segment', 'promo_flag_binary', 'total_sale_qty', 
-                      'cb_flag', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
+                      'cb_flag', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt', 
+                      'ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']]
     
     logger.info(f'{sku} - completed cb baseline calculation')
     
