@@ -243,7 +243,7 @@ if __name__ == "__main__":
         
             logger.info("aggreate the cannibalisation amount into the defined level")
             cb_table['cb_tt_sale_qty'] = cb_table['total_sale_qty'] * cb_table['promo_flag_binary']
-            agg_np = agg_np_temp.groupby(['date',cb_l], as_index=False)['cb_tt_sale_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
+            agg_np = cb_table.groupby(['date',cb_l], as_index=False)['cb_tt_sale_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
             agg_np.columns = ['date', cb_l, 'ttl_sale_qty','ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
 
 
