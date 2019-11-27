@@ -275,10 +275,10 @@ if __name__ == "__main__":
         results_df = results_df.where((pd.notnull(results_df)), None)
 
         total_time = round((time.time() - section_start_time) / 60, 1)
-        logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+        logger.info('Completed cannibalisation processing in {a} mins...'.format(a=total_time))
         
         # upload the final dataframe onto Bigquery
-        logger.info('Uploading baseline table to Bigquery...')
+        logger.info('Uploading cannibalisation table to Bigquery...')
 
         if (i_sec == 0):
             pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation', project_id=project_id, if_exists=bl_table_config)
