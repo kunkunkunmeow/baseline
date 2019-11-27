@@ -1,3 +1,5 @@
+# BASED ON INCREMENTAL SALE 
+
 import pandas as pd
 from multiprocessing import Process, Manager
 import pandas_gbq
@@ -65,7 +67,7 @@ def load_bl_from_bq(project_id, section, level):
 
     summary_sql = """
     SELECT cast(DATE(date) AS DATE) AS date, sku_root_id, section, segment, promo_flag_binary, change_flag,
-            CAST(sale_amt_bl AS NUMERIC) AS sale_amt_bl, CAST(sale_qty_bl  AS NUMERIC) AS sale_qty_bl, CAST(margin_amt_bl  AS NUMERIC) AS margin_amt_bl ,
+            cast(incremental_qty as NUMERIC) AS incremental_qty, CAST(sale_amt_bl AS NUMERIC) AS sale_amt_bl, CAST(sale_qty_bl  AS NUMERIC) AS sale_qty_bl, CAST(margin_amt_bl  AS NUMERIC) AS margin_amt_bl ,
             CAST(sale_amt_pct AS NUMERIC) AS sale_amt_pct, CAST(sale_qty_pct AS NUMERIC) AS sale_qty_pct, CAST(margin_amt_pct AS NUMERIC) AS margin_amt_pct, CAST(total_sale_amt AS NUMERIC) AS total_sale_amt, CAST(total_sale_qty  AS NUMERIC) AS total_sale_qty,
             CAST(total_margin_amt  AS NUMERIC) AS total_margin_amt 
     FROM `baseline_performance.baseline`
@@ -130,9 +132,8 @@ def cb_sku (frame, sku, summary_table):
     for metric in metrics:
         table[f'cb_{metric}'] = table[f'{metric}_cb_bl'] - pd.to_numeric(table[f'total_{metric}'], errors='coerce')
     
-    final_df = table[['date', 'sku_root_id', 'section', 'segment', 'promo_flag_binary', 'total_sale_qty', 
-                      'cb_flag', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt', 
-                      'ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']]
+    final_df = table[['date', 'sku_root_id', 'section', 'segment', 'promo_flag_binary', 'incremental_qty', 
+                      'cb_flag', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
     
     logger.info(f'{sku} - completed cb baseline calculation')
     
@@ -141,14 +142,13 @@ def cb_sku (frame, sku, summary_table):
 
 # define the calculation of cannibalisation for certain date
 def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
-    table = cb_table[['date','sku_root_id', 'promo_flag_binary','cb_tt_sale_qty', 
-                      'ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt', cb_l]][cb_table[cb_l] == cb_level]
+    table = cb_table[['date','sku_root_id', 'promo_flag_binary','incremental_qty', cb_l]][cb_table[cb_l] == cb_level]
 
     agg_np_cb = agg_np[agg_np[cb_l] == cb_level]
 
     df = pd.merge(table, agg_np_cb, on=['date',cb_l])
 
-    df['cb_pct'] = df['cb_tt_sale_qty']/ df['ttl_sale_qty']
+    df['cb_pct'] = df['incremental_qty']/ df['ttl_inc_sale_qty']
     df.loc[~np.isfinite(df['cb_pct']), 'cb_pct'] = 0
     
     df['cb_sale_amt'] = df['ttl_cb_sale_amt']*df['cb_pct']
@@ -156,8 +156,7 @@ def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
     df['cb_margin_amt'] = df['ttl_cb_margin_amt']*df['cb_pct']
     
     final_df = df[['date', cb_l, 'sku_root_id','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
-    final_df.columns = ['date', cb_l, 'sku_root_id', 'ind_cb_sale', 'ind_cb_qty', 'ind_cb_margin', 
-                        'ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
+    final_df.columns = ['date', cb_l, 'sku_root_id', 'ind_cb_sale', 'ind_cb_qty', 'ind_cb_margin']
     
     logger.info(f'{cb_level} - completed cannibalisation calculation')
     frame.append(final_df)
@@ -188,7 +187,7 @@ if __name__ == "__main__":
         # baseline_table['cb_sale_qty'] = pd.to_numeric(baseline_table['cb_sale_qty'])
         # baseline_table['cb_margin_amt'] = pd.to_numeric(baseline_table['cb_margin_amt'])
         # baseline_table['incremental_qty'] = pd.to_numeric(baseline_table['incremental_qty'])
-        baseline_table['total_sale_qty'][baseline_table['total_sale_qty']<0] =0
+        baseline_table['incremental_qty'][baseline_table['incremental_qty']<0] =0
 
         logger.info("Defining cannabalisation flag at {a} level".format(a=cb_l))
         cb_flag= baseline_table[['date', cb_l, 'promo_flag_binary']].groupby(["date", cb_l], as_index=False).sum()
@@ -239,15 +238,14 @@ if __name__ == "__main__":
 
             # options to ignore the negative values in the cannibalisation amount
             cb_table = baseline_cb_df.copy()
-            cb_table['total_sale_qty'] = pd.to_numeric(cb_table['total_sale_qty'])
+            cb_table['incremental_qty'] = pd.to_numeric(cb_table['incremental_qty'])
             if cb_np_flag == "positive":
                 num = cb_table._get_numeric_data()
                 num[num < 0] = 0
         
             logger.info("aggreate the cannibalisation amount into the defined level")
-            cb_table['cb_tt_sale_qty'] = cb_table['total_sale_qty'] * cb_table['promo_flag_binary']
-            agg_np = cb_table.groupby(['date',cb_l], as_index=False)['cb_tt_sale_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
-            agg_np.columns = ['date', cb_l, 'ttl_sale_qty','ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
+            agg_np = cb_table.groupby(['date',cb_l], as_index=False)['incremental_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
+            agg_np.columns = ['date', cb_l, 'ttl_inc_sale_qty','ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
 
 
             for i in range(0,len(unique_cb_l), batchsize):
@@ -285,9 +283,9 @@ if __name__ == "__main__":
         logger.info('Uploading cannibalisation table to Bigquery...')
 
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation2', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation2', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation', project_id=project_id, if_exists='append')
 
         logger.info('Completed upload of section baseline to Bigquery...')
     
