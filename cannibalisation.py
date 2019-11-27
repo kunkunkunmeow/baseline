@@ -232,11 +232,10 @@ if __name__ == "__main__":
                 total_time_batch = round((time.time() - start_time_batch), 2)
                 logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
 
-                logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+                logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=baseline_cb_df.shape[0], b=baseline_cb_df.shape[1]))
 
             # options to ignore the negative values in the cannibalisation amount
             cb_table = baseline_cb_df.copy()
-            print(cb_table.info())
             cb_table['incremental_qty'] = pd.to_numeric(cb_table['incremental_qty'])
             if cb_np_flag == "positive":
                 num = cb_table._get_numeric_data()
@@ -244,7 +243,6 @@ if __name__ == "__main__":
         
             logger.info("aggreate the cannibalisation amount into the defined level")
             agg_np = cb_table.groupby(['date',cb_l], as_index=False)['incremental_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
-            print(agg_np.columns)
             agg_np.columns = ['date', cb_l, 'ttl_inc_sale_qty','ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
 
 
