@@ -236,13 +236,14 @@ if __name__ == "__main__":
 
             # options to ignore the negative values in the cannibalisation amount
             cb_table = baseline_cb_df.copy()
+            print(cb_table.info())
+            cb_table['incremental_qty'] = pd.to_numeric(cb_table['incremental_qty'])
             if cb_np_flag == "positive":
                 num = cb_table._get_numeric_data()
                 num[num < 0] = 0
         
             logger.info("aggreate the cannibalisation amount into the defined level")
             agg_np = cb_table.groupby(['date',cb_l], as_index=False)['incremental_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
-            print(cb_table.columns)
             print(agg_np.columns)
             agg_np.columns = ['date', cb_l, 'ttl_inc_sale_qty','ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
 
