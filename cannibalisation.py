@@ -120,7 +120,7 @@ def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
 
     df = pd.merge(table, agg_np_cb, on=['date',cb_l])
 
-    df['cb_pct'] = sdf['incremental_qty']/ df['ttl_inc_sale_qty']
+    df['cb_pct'] = df['incremental_qty']/ df['ttl_inc_sale_qty']
     df.loc[~np.isfinite(df['cb_pct']), 'cb_pct'] = 0
     
     df['cb_sale_amt'] = df['ttl_cb_sale_amt']*df['cb_pct']
