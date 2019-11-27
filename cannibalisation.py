@@ -64,7 +64,7 @@ def load_bl_from_bq(project_id, section, level):
     start_time = time.time()
 
     summary_sql = """
-    SELECT cast(DATE(date) AS DATE) AS date, sku_root_id, section, segment, promo_flag_binary, 
+    SELECT cast(DATE(date) AS DATE) AS date, sku_root_id, section, segment, promo_flag_binary, change_flag,
             cast(incremental_qty as NUMERIC) AS incremental_qty, CAST(sale_amt_bl AS NUMERIC) AS sale_amt_bl, CAST(sale_qty_bl  AS NUMERIC) AS sale_qty_bl, CAST(margin_amt_bl  AS NUMERIC) AS margin_amt_bl ,
             CAST(sale_amt_pct AS NUMERIC) AS sale_amt_pct, CAST(sale_qty_pct AS NUMERIC) AS sale_qty_pct, CAST(margin_amt_pct AS NUMERIC) AS margin_amt_pct, CAST(total_sale_amt AS NUMERIC) AS total_sale_amt, CAST(total_sale_qty  AS NUMERIC) AS total_sale_qty,
             CAST(total_margin_amt  AS NUMERIC) AS total_margin_amt 
@@ -130,9 +130,12 @@ def cb_sku (frame, sku, summary_table):
     for metric in metrics:
         table[f'cb_{metric}'] = table[f'{metric}_cb_bl'] - pd.to_numeric(table[f'total_{metric}'], errors='coerce')
     
+    final_df = table[['date', 'sku_root_id', 'section', 'segment', 'promo_flag_binary', 'incremental_qty', 
+                      'cb_flag', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
+    
     logger.info(f'{sku} - completed baseline and pull forward calculation')
     
-    frame.append(table)
+    frame.append(final_df)
 
 
 # define the calculation of cannibalisation for certain date
