@@ -227,6 +227,7 @@ if __name__ == "__main__":
                 output = pd.concat(frame)
                 baseline_cb_df = pd.concat([baseline_cb_df, output], ignore_index=True, sort =False)
                 baseline_cb_df.reset_index(drop=True, inplace=True)
+                print(baseline_cb_df.cloumns)
                 frame[:] = [] 
 
                 total_time_batch = round((time.time() - start_time_batch), 2)
@@ -241,7 +242,7 @@ if __name__ == "__main__":
                 num[num < 0] = 0
         
             logger.info("aggreate the cannibalisation amount into the defined level")
-            agg_np = cb_table.groupby(["date",cb_l], as_index=False)['incremental_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
+            agg_np = cb_table.groupby(['date',cb_l], as_index=False)['incremental_qty','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt'].sum()
             agg_np.columns = ['date', cb_l, 'ttl_inc_sale_qty','ttl_cb_sale_amt', 'ttl_cb_sale_qty', 'ttl_cb_margin_amt']
 
 
