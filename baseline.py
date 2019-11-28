@@ -29,7 +29,7 @@ bl_table_config = 'replace'
 # Pull forward week
 # TODO - need to test
 ext_day = 1
-#
+
 # Baseline % metrics
 metrics = {
     'sale_amt': ['sale_amt_np', 'total_sale_amt'],
