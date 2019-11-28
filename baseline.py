@@ -165,7 +165,7 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
     baseline = baseline_ref[baseline_ref[bl_l] == sku_level]
 
     # merge baseline and sku table
-    table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'cb_flag_temp', 'total_sale_amt', 'total_sale_qty',
+    table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
                              'total_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
                              'margin_amt_promo_flag']],
                      baseline[['date', bl_l, 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct']],
@@ -228,10 +228,10 @@ def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ex
     
     # define final dataframe
     final_df = table[
-        ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'cb_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
+        ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
-         'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_cb_bl', 'sale_qty_cb_bl', 'margin_amt_cb_bl', 
-         'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt', 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct', 'sale_amt_promo_flag', 'sale_qty_promo_flag', 'margin_amt_promo_flag']]
+         'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct', 
+         'sale_amt_promo_flag', 'sale_qty_promo_flag', 'margin_amt_promo_flag']]
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
   
