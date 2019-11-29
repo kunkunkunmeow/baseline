@@ -52,7 +52,7 @@ def load_section_from_bq(project_id):
     FROM `baseline_performance.baseline` 
     LEFT JOIN (SELECT sku_root_id, section FROM `ETL.root_sku`) 
     USING(sku_root_id)
-    WHERE SECTION = "BEBIDAS" """
+     """
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -287,9 +287,9 @@ if __name__ == "__main__":
         logger.info('Uploading cannibalisation table to Bigquery...')
 
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'WIP.cb1129', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'WIP.cannibalisation1129', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'WIP.cb1129', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'WIP.cannibalisation1129', project_id=project_id, if_exists='append')
 
         logger.info('Completed upload of section baseline to Bigquery...')
     
