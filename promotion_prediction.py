@@ -175,7 +175,7 @@ def load_t2_from_bq(section, project_id):
     1 AS in_gondola_flag,
     1 AS in_both_leaflet_gondola_flag,
     # 2 weeks worth baseline
-    fcast.avg_forecast_period as p_qty_bl*2 
+    fcast.avg_forecast_period*2 as p_qty_bl
 
     FROM `gum-eroski-dev.ETL.root_sku` sku
 
