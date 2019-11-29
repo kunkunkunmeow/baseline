@@ -93,7 +93,6 @@ def load_t0_from_bq(area, project_id):
     SELECT distinct section
     FROM `ETL.root_sku`
     WHERE area = "%s"   """ %(area)
-    start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
         section_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
@@ -111,7 +110,6 @@ def load_t1_from_bq(project_id):
     SELECT *
     FROM `prediction_results.prediction_train_input`
     """
-    start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
         hist_promo_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
@@ -120,6 +118,79 @@ def load_t1_from_bq(project_id):
     logger.info("Completed loading of historical promotion table from Bigquery {a} mins...".format(a=total_time))
 
     return hist_promo_table
+
+# Function to load prediction data at a sku + promo mechanic from bigquery
+def load_t2_from_bq(section, project_id):
+    start_time = time.time()
+
+    summary_sql = """
+    WITH pr_train AS (
+    SELECT distinct promo_mechanic, Promo_mechanic_en , discount_depth 
+    from `gum-eroski-dev.prediction_results.prediction_train_input` 
+    ), sku_list AS (
+    SELECT 
+    sku.sku_root_id,
+    description, 
+    area, 
+    section, 
+    category,
+    subcategory,
+    segment,
+    brand_name,
+    CASE WHEN eroskibrand_label is not null 
+    THEN eroskibrand_label
+    WHEN wealthy_range_flag = 'N' 
+    THEN 'Normal'
+    WHEN wealthy_range_flag = 'S'
+    THEN 'Premium'
+    ELSE null
+    END AS brand_price_label,
+    flag_healthy,
+    innovation_flag,
+    tourism_flag,
+    local_flag,
+    regional_flag, 
+    100 AS no_impacted_stores,
+    5 AS no_impacted_regions,
+    500 AS avg_store_size,
+    1 AS type,
+    0 AS customer_profile_type,
+    'Oferta corporativa' AS marketing_type,
+    14 AS duration_days,
+    true AS includes_weekend,
+    'Thursday' AS campaign_start_day,
+    'Jan' AS campaign_start_month,
+    1 AS campaign_start_quarter,
+    2 AS campaign_start_week,
+    0 AS leaflet_cover,
+    0 AS leaflet_priv_space,
+    1 AS in_leaflet_flag,
+    1 AS in_gondola_flag,
+    1 AS in_both_leaflet_gondola_flag,
+    fcast.avg_forecast_period as p_qty_bl
+
+    FROM `gum-eroski-dev.ETL.root_sku` sku
+
+    LEFT JOIN `gum-eroski-dev.baseline_performance.forecast_baseline_metrics` fcast
+
+    ON fcast.sku_root_id = sku.sku_root_id
+
+    WHERE fcast.metric = 'pred_baseline_sale_qty'
+    and sku.section = "%s"   
+    )
+
+    SELECT * from sku_list
+
+    CROSS JOIN pr_train
+    """ %(section)
+    
+    for i in tqdm(range(1), desc='Loading table...'):
+        pred_promo_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
+
+    total_time = round((time.time() - start_time) / 60, 1)
+    logger.info("Completed loading of prediction promotion table from Bigquery {a} mins...".format(a=total_time))
+
+    return pred_promo_table
 
 def plotImp(model, train_model, X , num = 20):
 
@@ -153,13 +224,13 @@ def plothist(y_validation, pred):
     plt.show()
 
 
-def run_prediction_model(input_data, train_model, mapping_dict, train_mae, train_mape):
+def run_prediction_model(frame,sku, input_data, train_model, mapping_dict, train_mae, train_mape):
 
     # Filter on SKUs
-    X_apply = input_data
+    X_apply = input_data[input_data.sku_root_id == sku].reset_index(drop=True)
 
     # Filter only on the input features
-    X_apply = X_apply[input_features]
+    X_apply = X_apply[input_features] 
 
     if len(mapping_dict) != 0:
 
@@ -183,8 +254,7 @@ def run_prediction_model(input_data, train_model, mapping_dict, train_mae, train
     pred_df = pd.concat([pred_df.reset_index(drop=True), input_data.reset_index(drop=True)], axis = 1)
 
     # save the results
-    return pred_df
-
+    frame.append(pred_df)
 
 def train_promotion_prediction_model(input_data, input_features, cat_columns, model, learning_rate, max_depth,
                                      num_leaves, n_iter, n_estimators,
@@ -457,7 +527,7 @@ if __name__ == "__main__":
     start_time = time.time()
     
     # Train the model
-    if run_config == 'train':
+    if run_config in ('train', 'train-predict'):
         logger.info("Training the prediction model for the promotion period...")
       
         # obtain input data
@@ -481,8 +551,9 @@ if __name__ == "__main__":
                                                                             remove_outliers=True)  # remove outliers
     
     # Run the model to predict 
-    if run_config == 'train-predict':
-      
+    if run_config in ('train-predict'):
+        
+        logger.info("Predicting the promotional performance for in-scope skus....")
         logger.info("Loading input tables from Bigquery....")
     
         logger.info("Loading distinct sections table from Bigquery....")
@@ -493,122 +564,78 @@ if __name__ == "__main__":
         logger.info("Unique sections include:")
         for section in unique_sections: logger.info("{a}".format(a=section))
     
-      # Loop through sections
-      for i_sec in range(0, len(unique_sections)):
+        # Loop through sections
+        for i_sec in range(0, len(unique_sections)):
 
-          section_start_time = time.time()
-          section = unique_sections[i_sec]
+            section_start_time = time.time()
+            section = unique_sections[i_sec]
 
-          logger.info("Processing section {a}...".format(a=section))
+            logger.info("Processing section {a}...".format(a=section))
 
-          # Compute the baseline for each section     
-          logger.info("Loading summary transaction table from Bigquery....")
-          summary_table = load_t1_from_bq(section, project_id)
+            # Load the input data table for each section   
+            logger.info("Loading prediction input table from Bigquery....")
+            pred_input_data = load_t2_from_bq(section, project_id):
 
-          logger.info("Loading summary non-promotional transaction table from Bigquery....")
-          weekly_agg = load_t2_from_bq(section, project_id)
+            logger.info("Computing no. of unique in-scope skus")
+            uniq_sku = list(pred_input_data['sku_root_id'].unique())
+            logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
 
-          logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
-          agg_np = aggregate_np(weekly_agg, bl_l)
+            # Compute the % change values in each of the categories used in the baseline
+            results_df = pd.DataFrame()
 
+            # Use the multiproc module to process in parallel
+            with Manager() as manager:
+                frame = manager.list()  # <-- can be shared between processes.
+                processes = []
 
-          logger.info("Computing no. of unique in-scope skus")
-          uniq_sku = list(summary_table['sku_root_id'].unique())
-          logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
+                # Compute the SKU level baseline calculations
+                for i in range(0, len(uniq_sku), batchsize):
 
-          # Compute the % change values in each of the categories used in the baseline
-          logger.info("Calculating the % change in baseline values")
+                    # Clear the processes list
+                    processes[:] = []
 
-          baseline_ref = pd.DataFrame()
-          bl_parameter = list(agg_np[bl_l].unique())
-          logger.info("No. of in-scope categories used in baseline analyses: {a}".format(a=len(bl_parameter)))
+                    start_time_batch = time.time()
+                    batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+                    
+                    run_prediction_model():
+                    for sku in batch:
+                        p = Process(target=run_prediction_model, args=(frame,sku, pred_input_data, train_model, map_dict, mae, mape))  # Passing the list
+                        p.start()
+                        processes.append(p)
+                    for p in processes:
+                        p.join()
+                    output = pd.concat(frame)
+                    results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
+                    results_df.reset_index(drop=True, inplace=True)
+                    frame[:] = [] 
 
-          # Store the baseline results
-          baseline_perc_df = pd.DataFrame()
-          results_df = pd.DataFrame()
+                    total_time_batch = round((time.time() - start_time_batch), 2)
+                    logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
 
-          # Use the multiproc module to process in parallel
-          with Manager() as manager:
-              frame = manager.list()  # <-- can be shared between processes.
-              processes = []
-
-              #Compute the category level baseline metric changes
-              for i in range(0, len(bl_parameter), batchsize):
-
-                  # Clear the processes list
-                  processes[:] = []
-
-                  start_time_batch = time.time()
-                  batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
-
-                  for category in batch:
-                      p = Process(target=baseline_pct, args=(frame,category,agg_np, bl_l, metrics))  # Passing the list
-                      p.start()
-                      processes.append(p)
-                  for p in processes:
-                      p.join()
-                  output = pd.concat(frame)
-                  baseline_perc_df = pd.concat([baseline_perc_df, output], ignore_index=True, sort =False)
-                  baseline_perc_df.reset_index(drop=True, inplace=True)
-                  frame[:] = [] 
-
-                  total_time_batch = round((time.time() - start_time_batch), 2)
-                  logger.debug('Processing category percs with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
-                  logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
-
-              # Compute the SKU level baseline calculations
-              for i in range(0, len(uniq_sku), batchsize):
-
-                  # Clear the processes list
-                  processes[:] = []
-
-                  start_time_batch = time.time()
-                  batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
-
-                  for sku in batch:
-                      p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df, bl_l, metrics, ext_day))  # Passing the list
-                      p.start()
-                      processes.append(p)
-                  for p in processes:
-                      p.join()
-                  output = pd.concat(frame)
-                  results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
-                  results_df.reset_index(drop=True, inplace=True)
-                  frame[:] = [] 
-
-                  total_time_batch = round((time.time() - start_time_batch), 2)
-                  logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
-
-                  logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
-
-          for i in list(results_df.columns)[2:]:
-              results_df[i] = pd.to_numeric(results_df[i])
-
-          # Convert all nulls to None
-          results_df = results_df.where((pd.notnull(results_df)), None)
+                    logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
 
-          total_time = round((time.time() - section_start_time) / 60, 1)
-          logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+            # Convert all nulls to None
+            results_df = results_df.where((pd.notnull(results_df)), None)
 
-          # upload the final dataframe onto Bigquery
-          logger.info('Uploading baseline table to Bigquery...')
+            total_time = round((time.time() - section_start_time) / 60, 1)
+            logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
+
+            # upload the final dataframe onto Bigquery
+            logger.info('Uploading baseline table to Bigquery...')
+
+            if (i_sec == 0):
+                pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists=bl_table_config)
+            else:
+                pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists='append')
 
 
-          #table_schema = [{'name': 'date', 'type': 'TIMESTAMP'}, {'name': 'col2', 'type': 'STRING'},]
+            logger.info('Completed upload of section prediction to Bigquery...')
 
-          if (i_sec == 0):
-              pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists=bl_table_config)
-          else:
-              pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
+        # call function to run query in Bigquery to create baseline related tables
+        #logger.info('Creating baseline tables in Bigquery...')
+        #baseline_query.baseline_dashboard(project_id, dataset_id)
+        #logger.info('Completed creating baseline tables in Bigquery...')
 
-
-          logger.info('Completed upload of section baseline to Bigquery...')
-
-      # call function to run query in Bigquery to create baseline related tables
-      logger.info('Creating baseline tables in Bigquery...')
-      baseline_query.baseline_dashboard(project_id, dataset_id)
-      logger.info('Completed creating baseline tables in Bigquery...')
-
-      total_time = round((time.time() - start_time) / 60, 1)
-      logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+    total_time = round((time.time() - start_time) / 60, 1)
+    logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
