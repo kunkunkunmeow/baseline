@@ -597,7 +597,6 @@ if __name__ == "__main__":
                     start_time_batch = time.time()
                     batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
                     
-                    run_prediction_model():
                     for sku in batch:
                         p = Process(target=run_prediction_model, args=(frame,sku, pred_input_data, train_model, map_dict, mae, mape))  # Passing the list
                         p.start()
