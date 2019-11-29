@@ -192,12 +192,6 @@ def promotion_prediction_res(project_id, dataset_id):
         FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` 
         WHERE p_qty_bl>100
         AND p_cal_inc_sale_qty>0 
-        ), input AS (
-
-        SELECT distinct sku_root_id, discount_depth, 1 AS promoted_in_past
-
-        FROM `gum-eroski-dev.prediction_results.prediction_train_input`
-
         ), res_temp AS (
         SELECT *, ROW_NUMBER() 
             over (
@@ -227,15 +221,8 @@ def promotion_prediction_res(project_id, dataset_id):
         res.discount_depth,
         res.p_qty_bl as baseline_sales_qty,
         res.p_cal_inc_sale_qty as inc_sales_qty,
-        res.perc_uplift_qty*100 as perc_uplift_qty,
-        input.promoted_in_past
-
+        res.perc_uplift_qty*100 as perc_uplift_qty
         FROM res_temp res
-
-        left join input
-        on input.sku_root_id = res.sku_root_id
-        and input.discount_depth  = res.discount_depth 
-
         WHERE RowNo<=20
 
         order by category, perc_uplift_qty desc, p_cal_inc_sale_qty desc
