@@ -246,12 +246,12 @@ def run_prediction_model_single(input_data, train_model, mapping_dict, train_mae
                 input_data[col] = pd.to_numeric(input_data[col])
     
     X_apply = input_data
-    logger.debug("Sample data includes {b} samples to predict...".format(b=X_apply.shape[0]))
+    logger.info("Sample data includes {b} samples to predict...".format(b=X_apply.shape[0]))
 
     # Filter only on the input features
     X_apply = X_apply[input_features]
     
-    logger.debug("Applying mapping to sample data...")
+    logger.info("Applying mapping to sample data...")
     if len(mapping_dict) != 0:
 
         # Apply mapping on the items in X_apply
@@ -264,7 +264,7 @@ def run_prediction_model_single(input_data, train_model, mapping_dict, train_mae
                 X_apply[col] = X_apply[col].map(unique_vals_dict)
 
     # predict using the model
-    logger.debug("Predicting target variable for sample data...")
+    logger.info("Predicting target variable for sample data...")
     pred = train_model.predict(X_apply)
 
     # compute the prediction intervals (use MAE as a starting point)
@@ -276,7 +276,7 @@ def run_prediction_model_single(input_data, train_model, mapping_dict, train_mae
     pred_df = pd.concat([pred_df.reset_index(drop=True), input_data.reset_index(drop=True)], axis = 1)
 
     # save the results
-    logger.debug("Completed prediction of target variable...")
+    logger.info("Completed prediction of target variable...")
     return pred_df
 
 def train_promotion_prediction_model(input_data, input_features, cat_columns, model, learning_rate, max_depth,
