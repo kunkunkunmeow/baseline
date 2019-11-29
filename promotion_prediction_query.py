@@ -4,7 +4,7 @@ import logging
 from google.cloud import bigquery
 
 # Set logger properties
-logger = logging.getLogger('forecast_baseline_calculation')
+logger = logging.getLogger('promotion_prediction_model')
 
 def promotion_prediction_(project_id, dataset_id, area):
         
