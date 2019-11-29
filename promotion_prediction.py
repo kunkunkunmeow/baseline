@@ -574,7 +574,7 @@ if __name__ == "__main__":
 
             # Load the input data table for each section   
             logger.info("Loading prediction input table from Bigquery....")
-            pred_input_data = load_t2_from_bq(section, project_id):
+            pred_input_data = load_t2_from_bq(section, project_id)
 
             logger.info("Computing no. of unique in-scope skus")
             uniq_sku = list(pred_input_data['sku_root_id'].unique())
