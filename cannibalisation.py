@@ -51,7 +51,8 @@ def load_section_from_bq(project_id):
     SELECT distinct section
     FROM `baseline_performance.baseline` 
     LEFT JOIN (SELECT sku_root_id, section FROM `ETL.root_sku`) 
-    USING(sku_root_id) """
+    USING(sku_root_id)
+    WHERE SECTION = "BEBIDAS" """
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
