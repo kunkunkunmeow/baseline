@@ -11,7 +11,7 @@ def promotion_prediction_(project_id, dataset_id, area):
         # Load client
         client = bigquery.Client()
 
-        job_config = bigquery.QueryJobConfig()
+        job_config = bigquery.QueryJobConfig()      
         
         promotion_pred_sql = """
         WITH
@@ -186,6 +186,34 @@ def promotion_prediction_res(project_id, dataset_id):
 
         job_config = bigquery.QueryJobConfig()
         
+        promo_update = """
+        SELECT 
+        CAST(p_cal_inc_sale_qty AS NUMERIC) AS p_cal_inc_sale_qty,
+        CAST(prediction_interval AS NUMERIC) AS prediction_interval,
+        CAST(prediction_error_perc AS NUMERIC) AS prediction_error_perc,
+        sku_root_id,description, area, section, category, subcategory, segment,
+        brand_name, brand_price_label, flag_healthy, innovation_flag, tourism_flag,
+        local_flag, regional_flag, 
+        CAST(no_impacted_stores AS INT64) AS no_impacted_stores, 
+        CAST(no_impacted_regions AS INT64) AS no_impacted_regions,
+        CAST(avg_store_size AS NUMERIC) AS avg_store_size,
+        CAST(type AS STRING) AS type,
+        customer_profile_type,  marketing_type, 
+        CAST(duration_days AS INT64) AS duration_days, 
+        includes_weekend, campaign_start_day, 
+        campaign_start_month , 
+        CAST(campaign_start_quarter AS INT64) AS campaign_start_quarter,
+        CAST(campaign_start_week AS INT64) AS campaign_start_week, 
+        CAST(leaflet_cover AS INT64) AS leaflet_cover,
+        CAST(leaflet_priv_space AS INT64) AS leaflet_priv_space, 
+        CAST(in_leaflet_flag AS INT64) AS in_leaflet_flag,
+        CAST(in_gondola_flag AS INT64) AS in_gondola_flag,
+        CAST(in_both_leaflet_gondola_flag AS INT64) AS in_both_leaflet_gondola_flag,
+        CAST(p_qty_bl AS NUMERIC) AS p_qty_bl, 
+        promo_mechanic, Promo_mechanic_en , discount_depth, 
+        CAST(promoted_in_past AS NUMERIC) as promoted_in_past
+        """
+
         promotion_pred_sql = """
         WITH res_ini AS (
         SELECT SAFE_DIVIDE(p_cal_inc_sale_qty, p_qty_bl) as perc_uplift_qty, *
@@ -229,7 +257,8 @@ def promotion_prediction_res(project_id, dataset_id):
         """ 
          
         # Create a disctionary to loop over all destination tables and scripts
-        tables = {'prediction_promotion_results_top_20':promotion_pred_sql} 
+        tables = {'prediction_promotion_results':promo_update,
+                  'prediction_promotion_results_top_20':promotion_pred_sql} 
         
         job_config.write_disposition = "WRITE_TRUNCATE"
         for key in tables:
