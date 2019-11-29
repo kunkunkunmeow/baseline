@@ -212,6 +212,7 @@ def promotion_prediction_res(project_id, dataset_id):
         CAST(p_qty_bl AS NUMERIC) AS p_qty_bl, 
         promo_mechanic, Promo_mechanic_en , discount_depth, 
         CAST(promoted_in_past AS NUMERIC) as promoted_in_past
+        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results`
         """
 
         promotion_pred_sql = """
@@ -249,7 +250,8 @@ def promotion_prediction_res(project_id, dataset_id):
         res.discount_depth,
         res.p_qty_bl as baseline_sales_qty,
         res.p_cal_inc_sale_qty as inc_sales_qty,
-        res.perc_uplift_qty*100 as perc_uplift_qty
+        res.perc_uplift_qty*100 as perc_uplift_qty,
+        res.promoted_in_past
         FROM res_temp res
         WHERE RowNo<=20
 
