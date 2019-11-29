@@ -13,7 +13,6 @@ import seaborn as sns
 from scipy import stats
 import promotion_prediction_query
 from tqdm import tqdm
-from multiprocessing import Process, Manager
 import pandas_gbq
 
 
@@ -26,12 +25,6 @@ bl_s = "ALIMENTACION"
 
 # Append or replace destination table (either 'append' or 'replace')
 bl_table_config = 'replace'
-
-# Set batch size
-batchsize = 50
-
-# use single or multiproc
-proc = 'single'
 
 # Set logger properties
 logger = logging.getLogger('promotion_prediction_model')
@@ -645,65 +638,27 @@ if __name__ == "__main__":
             logger.info("Computing no. of unique in-scope skus")
             uniq_sku = list(pred_input_data['sku_root_id'].unique())
             logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
-
-            # Compute the % change values in each of the categories used in the baseline
-            results_df = pd.DataFrame()
-            
-            # if use single or multi-proc
-            if proc=='single':
                 
-                # use a single proc
-                results_df = run_prediction_model_single(pred_input_data, train_model, map_dict, mae, mape)
-                
-            else: 
-              
-                # Use the multiproc module to process in parallel
-                with Manager() as manager:
-                    frame = manager.list()  # <-- can be shared between processes.
-                    processes = []
+            # use a single proc
+            results_df = run_prediction_model_single(pred_input_data, train_model, map_dict, mae, mape)
+            logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
-                    # Compute the SKU level baseline calculations
-                    for i in range(0, len(uniq_sku), batchsize):
+            # Convert all nulls to None
+            results_df = results_df.where((pd.notnull(results_df)), None)
 
-                        # Clear the processes list
-                        processes[:] = []
+            total_time = round((time.time() - section_start_time) / 60, 1)
+            logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
 
-                        start_time_batch = time.time()
-                        batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+            # upload the final dataframe onto Bigquery
+            logger.info('Uploading prediction results table to Bigquery...')
 
-                        for sku in batch:
-                            p = Process(target=run_prediction_model_multi, args=(frame,sku, pred_input_data, train_model, map_dict, mae, mape))  # Passing the list
-                            p.start()
-                            processes.append(p)
-                        for p in processes:
-                            p.join()
-                        output = pd.concat(frame)
-                        results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
-                        results_df.reset_index(drop=True, inplace=True)
-                        frame[:] = [] 
-
-                        total_time_batch = round((time.time() - start_time_batch), 2)
-                        logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
-
-                        logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+            if (i_sec == 0):
+                pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists=bl_table_config)
+            else:
+                pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists='append')
 
 
-                # Convert all nulls to None
-                results_df = results_df.where((pd.notnull(results_df)), None)
-
-                total_time = round((time.time() - section_start_time) / 60, 1)
-                logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
-
-                # upload the final dataframe onto Bigquery
-                logger.info('Uploading baseline table to Bigquery...')
-
-                if (i_sec == 0):
-                    pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists=bl_table_config)
-                else:
-                    pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists='append')
-
-
-                logger.info('Completed upload of section prediction to Bigquery...')
+            logger.info('Completed upload of section prediction to Bigquery...')
 
         # call function to run query in Bigquery to create baseline related tables
         #logger.info('Creating baseline tables in Bigquery...')
