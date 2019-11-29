@@ -593,7 +593,7 @@ if __name__ == "__main__":
     start_time = time.time()
     
     # Train the model
-    if run_config in ('train', 'train-predict'):
+    if run_config == 'train' or run_config == 'train-predict':
         logger.info("Training the prediction model for the promotion period...")
       
         # obtain input data
@@ -617,7 +617,7 @@ if __name__ == "__main__":
                                                                             remove_outliers=True)  # remove outliers
     
     # Run the model to predict 
-    if run_config in ('train-predict'):
+    if run_config == 'train-predict':
         
         logger.info("Predicting the promotional performance for in-scope skus....")
         logger.info("Loading input tables from Bigquery....")
@@ -650,7 +650,7 @@ if __name__ == "__main__":
             results_df = pd.DataFrame()
             
             # if use single or multi-proc
-            if proc='single':
+            if proc=='single':
                 
                 # use a single proc
                 results_df = run_prediction_model_single(pred_input_data, train_model, map_dict, mae, mape)
