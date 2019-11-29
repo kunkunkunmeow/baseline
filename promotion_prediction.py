@@ -2,13 +2,28 @@ import xgboost as xgb
 import lightgbm as lgb
 from catboost import CatBoostRegressor, Pool, cv
 from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
-import pandas_gbq
-from tqdm import tqdm
 import time
 import logging
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+
+# Project ID
+project_id = "gum-eroski-dev"
+dataset_id = "prediction_results"
+
+# Scope for the prediction (at an area level)
+bl_s = "ALIMENTACION"
+
+# Append or replace destination table (either 'append' or 'replace')
+bl_table_config = 'replace'
+
+# Set batch size
+batchsize = 50
 
 # Set logger properties
 logger = logging.getLogger('promotion_prediction_model')
@@ -32,30 +47,111 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 # Specify list of input features
-input_features = ['sku_root_id', 'area', 'section', 'category', 'subcategory', 'segment', 'brand_name', 
-                  'flag_healthy', 'innovation_flag', 'tourism_flag', 'local_flag', 'regional_flag', 
-                  'no_impacted_stores', 'no_impacted_regions', 'avg_store_size', 'Promo_mechanic_en',
-                  'customer_profile_type', 'marketing_type', 'duration', 'includes_weekend', 'campaign_start_day',
-                  'campaign_start_month', 'campaign_start_quarter', 'campaign_start_week', 'leaflet_cover', 
-                  'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag', 'in_both_leaflet_gondola_flag', 
-                  'discount_depth', 'brand_price_label']
+# input_features = ['sku_root_id', 'area', 'section', 'category', 'subcategory', 'segment', 'brand_name',
+#                   'flag_healthy', 'innovation_flag', 'tourism_flag', 'local_flag', 'regional_flag',
+#                   'no_impacted_stores', 'no_impacted_regions', 'avg_store_size', 'Promo_mechanic_en',
+#                   'customer_profile_type', 'marketing_type', 'duration', 'includes_weekend', 'campaign_start_day',
+#                   'campaign_start_month', 'campaign_start_quarter', 'campaign_start_week', 'leaflet_cover',
+#                   'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag', 'in_both_leaflet_gondola_flag',
+#                   'discount_depth', 'brand_price_label']
 
-output_features = ['pct_inc_qty']
-    
+input_features = ['segment', 'brand_name',
+                  'no_impacted_stores', 'Promo_mechanic_en',
+                  'duration_days',
+                  'campaign_start_month', 'campaign_start_week',
+                  'discount_depth', 'p_qty_bl']
+
+output_features = ['p_cal_inc_sale_qty']
+
+test_months_exclusion = ['Jan', 'Aug', 'Nov', 'Dec']
+
+
 # Specify categorical cols
 cat_columns = ['sku_root_id', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'flag_healthy',
-               'innovation_flag', 'tourism_flag', 'local_flag', 'regional_flag', 'Promo_mechanic_en', 'customer_profile_type',
-               'marketing_type', 'includes_weekend', 'campaign_start_day', 'campaign_start_month', 'campaign_start_quarter', 
-               'campaign_start_week', 'leaflet_cover', 'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag', 
+               'innovation_flag', 'tourism_flag', 'local_flag', 'regional_flag', 'Promo_mechanic_en',
+               'customer_profile_type',
+               'marketing_type', 'includes_weekend', 'campaign_start_day', 'campaign_start_month',
+               'campaign_start_quarter',
+               'campaign_start_week', 'leaflet_cover', 'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag',
                'in_both_leaflet_gondola_flag', 'discount_depth', 'brand_price_label']
 
 
-def train_promotion_prediction_model(input_data, input_features, cat_columns, model, learning_rate, max_depth, subsample, colsample_bytree, n_estimators, objective,
-                                     gamma, alpha, lambda, test_size_perc, test_months_exclusion):
+avg_cols = ['sku_root_id', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'Promo_mechanic_en',
+            'brand_price_label',  'discount_depth']
 
+
+def plotImp(model, train_model, X , num = 20):
+
+    if model == 'lightgbm':
+        feature_imp = pd.DataFrame({'Value':train_model.feature_importance(),'Feature': X.columns})
+    elif model == 'xgboost':
+        feature_imp = pd.DataFrame({'Value':train_model.feature_importances_,'Feature': X.columns})
+
+    plt.figure(figsize=(10, 10))
+    sns.set(font_scale = 1)
+    sns.barplot(x="Value", y="Feature", data=feature_imp.sort_values(by="Value",
+                                                        ascending=False)[0:num])
+    plt.title('Feature Importance')
+    plt.tight_layout()
+    plt.show()
+
+
+def plothist(y_validation, pred):
+    plt.subplot(1, 2, 1)
+    n, bins, patches = plt.hist(y_validation[output_features[0]].values - pred, 10000, facecolor='red', alpha=0.75)
+    plt.xlabel('error (uplift units) xgboost')
+    plt.xlim(-10000, 10000)
+    plt.title('Histogram of error')
+
+    plt.subplot(1, 2, 2)
+    n, bins, patches = plt.hist(y_validation[output_features[0]].values, 10000, facecolor='blue', alpha=0.75)
+    plt.xlabel('Error (naive - 0 units uplift)')
+    plt.xlim(-10000, 10000)
+    plt.title('Histogram of error')
+    plt.tight_layout()
+    plt.show()
+
+
+def run_prediction_model(input_data, train_model, mapping_dict, train_mae, train_mape):
+
+    # Filter on SKUs
+    X_apply = input_data
+
+    # Filter only on the input features
+    X_apply = X_apply[input_features]
+
+    if len(mapping_dict) != 0:
+
+        # Apply mapping on the items in X_apply
+        for col in mapping_dict:
+            if col in list(X_apply.columns):
+
+                # apply mapping - any new values not in mapping will be set to NaN
+                unique_vals_dict = mapping_dict[col]
+                X_apply[col] = X_apply[col].map(unique_vals_dict)
+
+    # predict using the model
+    pred = train_model.predict(X_apply)
+
+    # compute the prediction intervals (use MAE as a starting point)
+    pred_df = pd.DataFrame({output_features[0]: pred[:]})
+    pred_df['prediction_interval'] = train_mae
+    pred_df['prediction_error_perc'] = train_mape
+
+    # join the results with X_apply
+    pred_df = pd.concat([pred_df.reset_index(drop=True), input_data.reset_index(drop=True)], axis = 1)
+
+    # save the results
+    return pred_df
+
+
+def train_promotion_prediction_model(input_data, input_features, cat_columns, model, learning_rate, max_depth,
+                                     num_leaves, n_iter, n_estimators,
+                                     train_size, test_months_exclusion, cat_var_exclusion,
+                                     remove_outliers):
     """train the promotion model during the promotion weeks
     :Args
-        X(dataframe): dataframe containing the input data to train the model 
+        X(dataframe): dataframe containing the input data to train the model
         y(dataframe): dataframe containing the output values to train the model on
         input_features(list): list of cols that we will be using
         cat_columns(list): list of cols that are categorical
@@ -63,88 +159,388 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         max_depth(int): determines how deeply each tree is allowed to grow during any boosting round
         subsample(float): percentage of samples used per tree. Low value can lead to underfitting
         colsample_bytree(float): percentage of features used per tree. High value can lead to overfitting
-        n_estimators(int): number of trees you want to build
-        objective(reg object): determines the loss function to be used like reg:linear for regression problems,
-        gamma(int): controls whether a given node will split based on the expected reduction in loss after the split. A higher value leads to fewer splits. Supported only for tree-based learners
-        alpha(int): L1 regularization on leaf weights. A large value leads to more regularization
-        lambda(int): L2 regularization on leaf weights and is smoother than L1 regularization
-        test_size_perc(float): train test splits
+        n_iter(int): number of iterations you want to run
+        train_size_perc(float): train test splits
         test_months_exclusion: identifies the months to be excluded from the training data set
     :return:
         xgboost model(model): xgboost ML model
     """
-    
+
+    # Lets remove data with months Aug, Nov, Dec, Jan from the input data
+    if 'campaign_start_month' in list(input_data.columns):
+        logger.info("Removing sample data for the following months:\n{}".format(test_months_exclusion))
+        input_data = input_data[~input_data['campaign_start_month'].isin(test_months_exclusion)]
+        input_data = input_data[~input_data['campaign_start_month'].isin(test_months_exclusion)]
+
+    if remove_outliers:
+        logger.info("Removing outliers from sample data...")
+
+        # outlier removal based on negative values
+        outliers = input_data[input_data[output_features[0]] <= 0]
+        logger.info("Removing all negative values from inc. sales qty, {} sample data points removed...".format(outliers.shape[0]))
+
+        input_data = input_data[input_data[output_features[0]] > 0]
+
+        # outlier removal based on quantile in target variable
+        q = input_data[output_features[0]].quantile(0.95)
+
+        outliers = input_data[input_data[output_features[0]] >= q]
+        logger.info("Based on 95% quantiles, {} sample data points removed...".format(outliers.shape[0]))
+
+        input_data = input_data[input_data[output_features[0]] < q]
+
+
+
     # Filter on only the input features
     X = input_data[input_features]
     y = input_data[output_features]
-    
+
     # Check absent values
     null_value_stats_x = X.isnull().sum(axis=0)
-    logger.info("Null values for input features include:")
-    logger.info("\n{}".format(null_value_stats_x[null_value_stats_x != 0]))
-    
+    logger.info("Null values for input features include:\n{}".format(null_value_stats_x[null_value_stats_x != 0]))
+
     null_value_stats_y = y.isnull().sum(axis=0)
-    logger.info("Null values for predicted features include:")
-    logger.info("\n{}".format(null_value_stats_y[null_value_stats_y != 0]))
-    
-    # Remove rows where we have null in y 
-    # TODO
-    
-    # Fill remaining absent values in X with -999 
+    logger.info("Null values for target variable include:\n{}".format(null_value_stats_y[null_value_stats_y != 0]))
+
+    # Throw error if any values are null in y
+    if y.isnull().values.any():
+        logger.error("Null values found in target data...")
+        raise ValueError('Null values found in target data-frame: y')
+
+    # Fill remaining absent values in X with -999
     X.fillna(-999, inplace=True)
-    
+
     # Check data types
-    logger.info("Input dataset data types include:")
-    logger.info("\n{}".format(X.dtypes))
-    
-    # Visualise the probability distribution of the target variable (we would like something uniform)
-    # TODO
-    
-    # Obtain categorical feature index
-    cat_features_index = [X.columns.get_loc(c) for c in cat_columns if c in X]
-    
+    logger.info("Input dataset data types include:\n{}".format(X.dtypes))
+    logger.info("Target variable data types include:\n{}".format(y.dtypes))
+
+    logger.info("Target variable mean is: {}".format(y[output_features[0]].mean()))
+    logger.info("Target variable stdev is: {}".format(y[output_features[0]].std()))
+
     # Lets split the data into training and validation sets
-    X_train, X_validation, y_train, y_validation = train_test_split(X, y, train_size=0.8, random_state=42)
-    
-    # Lets further remove data with months Aug, Nov, Dec, Jan from train and test set
-    # TODO
-    
-    if model='CatBoost':
-      
+    X_train, X_validation, y_train, y_validation = train_test_split(X, y, train_size=train_size, random_state=42)
+    logger.info("Training dataset includes {} samples...".format(X_train.shape[0]))
+    logger.info("Test dataset includes {} samples...".format(X_validation.shape[0]))
+
+    # create a mapping dictionary (to be used for models which require int categorical cols)
+    map_dict = {}
+
+    if model == 'CatBoost':
+
         # using the catboost model
         params = {'depth': [4, 7, 10],
-          'learning_rate' : [0.03, 0.1, 0.15],
-         'l2_leaf_reg': [1,4,9],
-         'iterations': [300]}
-        
-        # initialise CatBoost regressor
-        model =  CatBoostRegressor(iterations=700,
-                             learning_rate=0.01,
-                             depth=16,
-                             eval_metric='RMSE',
-                             random_seed = 42,
-                             bagging_temperature = 0.2,
-                             od_type='Iter',
-                             metric_period = 75,
-                             od_wait=100)
-        
-        
-        # Fit the model - catboost does not require us to specify integers for cat features
-        model.fit(X_train, y_train,
-                 eval_set=(X_validation, y_validation),
-                 cat_features=cat_features_index,
-                 use_best_model=True)
-        
-        # Calculate feature importance
-        fea_imp = pd.DataFrame({'imp': model.feature_importances_, 'col': X.columns})
-        fea_imp = fea_imp.sort_values(['imp', 'col'], ascending=[True, False])
-#         fea_imp.plot(kind='barh', x='col', y='imp', figsize=(10, 7), legend=None)
-#         plt.title('CatBoost - Feature Importance')
-#         plt.ylabel('Features')
-#         plt.xlabel('Importance');
+                  'learning_rate': [0.03, 0.1, 0.15],
+                  'l2_leaf_reg': [1, 4, 9],
+                  'iterations': [300]}
 
+        # Obtain categorical feature index
+        cat_features_index = [X.columns.get_loc(c) for c in cat_columns if c in X]
+
+        # initialise CatBoost regressor
+        train_model = CatBoostRegressor(iterations=700,
+                                        learning_rate=learning_rate,
+                                        depth=max_depth,
+                                        eval_metric='RMSE',
+                                        random_seed=42,
+                                        bagging_temperature=0.2,
+                                        od_type='Iter',
+                                        metric_period=75,
+                                        od_wait=100)
+
+        # Fit the model - catboost does not require us to specify integers for cat features
+        train_model.fit(X_train, y_train,
+                        eval_set=(X_validation, y_validation),
+                        cat_features=cat_features_index,
+                        use_best_model=True)
+
+        # Calculate feature importance
+        fea_imp = pd.DataFrame({'imp': train_model.feature_importances_, 'col': X.columns})
+        fea_imp = fea_imp.sort_values(['imp', 'col'], ascending=[True, False])
+        #         fea_imp.plot(kind='barh', x='col', y='imp', figsize=(10, 7), legend=None)
+        #         plt.title('CatBoost - Feature Importance')
+        #         plt.ylabel('Features')
+        #         plt.xlabel('Importance');
 
         # Save model
-        model.save_model('catboost_model.dump')
-            
+        train_model.save_model('catboost_model.dump')
 
+    elif model =='lightgbm':
+
+        # For lightgbm, we need to convert our categorical features to int
+        # Loop through categorical cols
+        for col in cat_columns:
+            if col in list(X.columns):
+
+                # get unique values
+                unique_vals = X[col].unique()
+                unique_vals_dict = dict([(val, num + 1) for num, val in enumerate(unique_vals)])
+
+                # map them for the train and test data sets
+                X_train[col] = X_train[col].map(unique_vals_dict)
+                X_validation[col] = X_validation[col].map(unique_vals_dict)
+
+                # store the mapping for later use
+                map_dict[col] = unique_vals_dict
+
+        # LightGBM dataset formatting (with categorical variables)
+        if cat_var_exclusion:
+            lgtrain = lgb.Dataset(X_train, y_train,
+                                  feature_name=input_features)
+            lgvalid = lgb.Dataset(X_validation, y_validation,
+                                  feature_name=input_features)
+        else:
+            cat_col = [col for col in cat_columns if col in list(X.columns)]
+
+            lgtrain = lgb.Dataset(X_train, y_train,
+                                  feature_name=input_features,
+                                  categorical_feature=cat_col)
+            lgvalid = lgb.Dataset(X_validation, y_validation,
+                                  feature_name=input_features,
+                                  categorical_feature=cat_col)
+
+        params = {
+            'objective': 'regression',
+            'metric': 'rmse',
+            'num_leaves': num_leaves,
+            'max_depth': max_depth,
+            'learning_rate': learning_rate,
+            'feature_fraction': 0.8,
+            'bagging_fraction': 0.8,
+            'bagging_freq': 1,
+            'boosting_type': 'gbdt',
+            'verbosity': -1
+        }
+
+        train_model = lgb.train(
+            params,
+            lgtrain,
+            num_boost_round=n_iter,
+            valid_sets=[lgtrain, lgvalid],
+            valid_names=["train", "valid"],
+            early_stopping_rounds=1000,
+            verbose_eval=500
+        )
+
+        pred = train_model.predict(X_validation)
+
+    elif model == 'xgboost':
+
+        # For xgboost, we need to convert our categorical features to int
+        # There are 3 approaches - one-hot encode, label encode and binary encode
+
+        # Here, for simplicity, we are using label encoders
+        # Loop through categorical cols
+        for col in cat_columns:
+            if col in list(X.columns):
+                # get unique values
+                unique_vals = X[col].unique()
+                unique_vals_dict = dict([(val, num + 1) for num, val in enumerate(unique_vals)])
+
+                # map them for the train and test data sets
+                X_train[col] = X_train[col].map(unique_vals_dict)
+                X_validation[col] = X_validation[col].map(unique_vals_dict)
+
+                # store the mapping for later use
+                map_dict[col] = unique_vals_dict
+
+        train_model = xgb.XGBRegressor(objective='reg:linear',
+                                 colsample_bytree=0.3,
+                                 learning_rate=learning_rate,
+                                 max_depth=max_depth,
+                                 alpha=10,
+                                 n_estimators=n_estimators,
+                                 verbosity=2)
+
+        train_model.fit(X_train, y_train)
+
+        pred = train_model.predict(X_validation)
+
+    elif model=='average':
+
+        # compute the model average - use avg_cols
+        avg_c = [col for col in avg_cols if col in list(X.columns)]
+
+        # add the target variable col
+        tot_c = avg_c + output_features
+
+        # combine two dataframes into 1
+        X_train_avg = pd.concat([X_train, y_train], ignore_index=True, sort=False, axis=1)
+        X_train_avg = X_train_avg[tot_c]
+
+        # group by the avg_c
+        X_train_avg = X_train_avg.groupby(avg_c).avg()
+
+        # test accuracy on test set
+        # ensure all values in test set are in train set
+        y_val_avg = pd.concat([X_train, y_train], ignore_index=True, sort=False, axis=1)
+        y_val_avg = pd.merge(y_val_avg, X_train_avg, on=avg_c, how='left')
+        #pred = y_val_avg[]
+
+    # Evaluate the model
+    rmse = np.sqrt(mean_squared_error(y_validation, pred))
+    logger.info("RMSE: {}".format(rmse))
+
+    mean_error = np.mean(y_validation[output_features[0]].values-pred)
+    logger.info("Mean Error: {}".format(mean_error))
+
+    mae = np.mean(np.absolute(y_validation[output_features[0]].values-pred))
+    logger.info("MAE: {}".format(mae))
+
+    mape = np.divide(y_validation[output_features[0]].values - pred, y_validation[output_features[0]].values)
+    mape[mape == np.inf] = 0
+    mape[mape == -np.inf] = 0
+    mape = np.median(np.abs(mape))
+    logger.info("MAPE: {}%".format(mape*100))
+
+    val_std = np.std(y_validation[output_features[0]].values)
+    logger.info("Benchmark STD: {}".format(val_std))
+
+    val_mean = np.mean(y_validation[output_features[0]].values)
+    logger.info("Benchmark Mean Error: {}".format(val_mean))
+
+    val_mae = np.mean(np.absolute(y_validation[output_features[0]].values))
+    logger.info("Benchmark MAE: {}".format(val_mae))
+
+    logger.info("Benchmark MAPE: -100%")
+
+    # plot the results
+    #plothist(y_validation, pred)
+
+    # plot the feature importance
+    plotImp(model, train_model, X, num=20)
+
+    return train_model, map_dict, mae, mape
+            
+if __name__ == "__main__":
+    
+    start_time = time.time()
+
+    logger.info("Loading input tables from Bigquery....")
+    
+    logger.info("Loading distinct sections table from Bigquery....")
+    section_table = load_t0_from_bq(bl_s, project_id)
+    
+    # Unique sections in category include
+    unique_sections = list(section_table["section"].unique())
+    logger.info("Unique sections include:")
+    for section in unique_sections: logger.info("{a}".format(a=section))
+    
+    # Loop through sections
+    for i_sec in range(0, len(unique_sections)):
+        
+        section_start_time = time.time()
+        section = unique_sections[i_sec]
+        
+        logger.info("Processing section {a}...".format(a=section))
+        
+        # Compute the baseline for each section     
+        logger.info("Loading summary transaction table from Bigquery....")
+        summary_table = load_t1_from_bq(section, project_id)
+
+        logger.info("Loading summary non-promotional transaction table from Bigquery....")
+        weekly_agg = load_t2_from_bq(section, project_id)
+
+        logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
+        agg_np = aggregate_np(weekly_agg, bl_l)
+        
+
+        logger.info("Computing no. of unique in-scope skus")
+        uniq_sku = list(summary_table['sku_root_id'].unique())
+        logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
+
+        # Compute the % change values in each of the categories used in the baseline
+        logger.info("Calculating the % change in baseline values")
+
+        baseline_ref = pd.DataFrame()
+        bl_parameter = list(agg_np[bl_l].unique())
+        logger.info("No. of in-scope categories used in baseline analyses: {a}".format(a=len(bl_parameter)))
+
+        # Store the baseline results
+        baseline_perc_df = pd.DataFrame()
+        results_df = pd.DataFrame()
+
+        # Use the multiproc module to process in parallel
+        with Manager() as manager:
+            frame = manager.list()  # <-- can be shared between processes.
+            processes = []
+
+            #Compute the category level baseline metric changes
+            for i in range(0, len(bl_parameter), batchsize):
+
+                # Clear the processes list
+                processes[:] = []
+
+                start_time_batch = time.time()
+                batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
+
+                for category in batch:
+                    p = Process(target=baseline_pct, args=(frame,category,agg_np, bl_l, metrics))  # Passing the list
+                    p.start()
+                    processes.append(p)
+                for p in processes:
+                    p.join()
+                output = pd.concat(frame)
+                baseline_perc_df = pd.concat([baseline_perc_df, output], ignore_index=True, sort =False)
+                baseline_perc_df.reset_index(drop=True, inplace=True)
+                frame[:] = [] 
+
+                total_time_batch = round((time.time() - start_time_batch), 2)
+                logger.debug('Processing category percs with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+                logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
+
+            # Compute the SKU level baseline calculations
+            for i in range(0, len(uniq_sku), batchsize):
+
+                # Clear the processes list
+                processes[:] = []
+
+                start_time_batch = time.time()
+                batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+
+                for sku in batch:
+                    p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df, bl_l, metrics, ext_day))  # Passing the list
+                    p.start()
+                    processes.append(p)
+                for p in processes:
+                    p.join()
+                output = pd.concat(frame)
+                results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
+                results_df.reset_index(drop=True, inplace=True)
+                frame[:] = [] 
+
+                total_time_batch = round((time.time() - start_time_batch), 2)
+                logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+
+                logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+
+        for i in list(results_df.columns)[2:]:
+            results_df[i] = pd.to_numeric(results_df[i])
+
+        # Convert all nulls to None
+        results_df = results_df.where((pd.notnull(results_df)), None)
+
+
+        total_time = round((time.time() - section_start_time) / 60, 1)
+        logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+
+        # upload the final dataframe onto Bigquery
+        logger.info('Uploading baseline table to Bigquery...')
+        
+        
+        #table_schema = [{'name': 'date', 'type': 'TIMESTAMP'}, {'name': 'col2', 'type': 'STRING'},]
+        
+        if (i_sec == 0):
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists=bl_table_config)
+        else:
+            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
+
+
+        logger.info('Completed upload of section baseline to Bigquery...')
+        
+    # call function to run query in Bigquery to create baseline related tables
+    logger.info('Creating baseline tables in Bigquery...')
+    baseline_query.baseline_dashboard(project_id, dataset_id)
+    logger.info('Completed creating baseline tables in Bigquery...')
+    
+    total_time = round((time.time() - start_time) / 60, 1)
+    logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
