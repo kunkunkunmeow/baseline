@@ -282,8 +282,11 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     """
     
     # convert input data format
-    input_data[output_features[0]] = pd.to_numeric(input_data[output_features[0]])
-    
+    # for cols in input data that is not in the cat cols list, convert to numeric
+    for col in list(input_data.columns):
+            if col not in list(cat_columns):
+                input_data[col] = pd.to_numeric(input_data[col])
+
     # Lets remove data with months Aug, Nov, Dec, Jan from the input data
     if 'campaign_start_month' in list(input_data.columns):
         logger.info("Removing sample data for the following months:\n{}".format(test_months_exclusion))
