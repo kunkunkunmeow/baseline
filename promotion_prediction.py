@@ -78,7 +78,7 @@ cat_columns = ['sku_root_id', 'segment', 'subcategory', 'category', 'section', '
                'marketing_type', 'includes_weekend', 'campaign_start_day', 'campaign_start_month',
                'campaign_start_quarter',
                'campaign_start_week', 'leaflet_cover', 'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag',
-               'in_both_leaflet_gondola_flag', 'discount_depth', 'brand_price_label']
+               'in_both_leaflet_gondola_flag', 'discount_depth', 'brand_price_label', 'type']
 
 # Specify cols to take the avg values
 avg_cols = ['sku_root_id', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'Promo_mechanic_en',
