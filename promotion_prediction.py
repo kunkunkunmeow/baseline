@@ -13,6 +13,8 @@ import seaborn as sns
 from scipy import stats
 import promotion_prediction_query
 from tqdm import tqdm
+from multiprocessing import Process, Manager
+import pandas_gbq
 
 
 # Project ID
