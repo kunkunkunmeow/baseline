@@ -60,7 +60,7 @@ input_features = ['segment', 'brand_name',
                   'no_impacted_stores', 'Promo_mechanic_en',
                   'duration_days',
                   'campaign_start_month', 'campaign_start_week',
-                  'discount_depth', 'p_qty_bl']
+                  'discount_depth', 'p_qty_bl', 'in_leaflet_flag', 'in_gondola_flag']
 
 # Sepcify output features
 output_features = ['p_cal_inc_sale_qty']
@@ -573,10 +573,10 @@ if __name__ == "__main__":
         # train ML model
         train_model, map_dict, mae, mape = train_promotion_prediction_model(input_data, input_features, cat_columns,
                                                                             model='lightgbm',  # either lightgbm, xgboost, catboost or average
-                                                                            learning_rate=0.05, # set between 0.01-0.05
-                                                                            max_depth=100, # 100 for lightgbm, 50 for xgboost
+                                                                            learning_rate=0.03, # set between 0.01-0.05
+                                                                            max_depth=200, # 100 for lightgbm, 50 for xgboost
                                                                             num_leaves = 250, # for lightgbm
-                                                                            n_iter=2000, # for lightgbm, no. of iterations, 20000
+                                                                            n_iter=10000, # for lightgbm, no. of iterations, 20000
                                                                             n_estimators = 150, # for xgboost, no of estimators
                                                                             train_size=0.8, # test train split
                                                                             test_months_exclusion=test_months_exclusion, # exclude certain months
