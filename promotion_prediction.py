@@ -127,7 +127,14 @@ def load_t2_from_bq(section, project_id):
     WITH pr_train AS (
     SELECT distinct promo_mechanic, Promo_mechanic_en , discount_depth 
     from `gum-eroski-dev.prediction_results.prediction_train_input` 
-    ), sku_list AS (
+    ), 
+    input AS (
+
+    SELECT distinct sku_root_id, discount_depth, 1 AS promoted_in_past
+
+    FROM `gum-eroski-dev.prediction_results.prediction_train_input`
+    ), 
+    sku_list AS (
     SELECT 
     sku.sku_root_id,
     description, 
@@ -177,11 +184,18 @@ def load_t2_from_bq(section, project_id):
 
     WHERE fcast.metric = 'pred_baseline_sale_qty'
     and sku.section = "%s"   
-    )
+    ), cj AS (
 
     SELECT * from sku_list
 
     CROSS JOIN pr_train
+    ) 
+    
+    SELECT cj.*, input.promoted_in_past  from cj
+    LEFT JOIN input 
+    
+    ON cj.sku_root_id = input.sku_root_id
+    AND cj.discount_depth = input.discount_depth
     """ %(section)
     
     for i in tqdm(range(1), desc='Loading table...'):
