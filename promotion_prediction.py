@@ -562,7 +562,7 @@ if __name__ == "__main__":
                                                                             learning_rate=0.05, # set between 0.01-0.05
                                                                             max_depth=100, # 100 for lightgbm, 50 for xgboost
                                                                             num_leaves = 250, # for lightgbm
-                                                                            n_iter=1000, # for lightgbm, no. of iterations, 20000
+                                                                            n_iter=2000, # for lightgbm, no. of iterations, 20000
                                                                             n_estimators = 150, # for xgboost, no of estimators
                                                                             train_size=0.8, # test train split
                                                                             test_months_exclusion=test_months_exclusion, # exclude certain months
