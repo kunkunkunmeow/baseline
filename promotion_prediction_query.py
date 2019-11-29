@@ -177,4 +177,88 @@ def promotion_prediction_(project_id, dataset_id, area):
 
                 query_job.result()  # Waits for the query to finish
                 logger.info("Completed writing {a} table...".format(a=key))
+                
+                
+def promotion_prediction_res(project_id, dataset_id):
+        
+        # Load client
+        client = bigquery.Client()
+
+        job_config = bigquery.QueryJobConfig()
+        
+        promotion_pred_sql = """
+        WITH res_ini AS (
+        SELECT SAFE_DIVIDE(p_cal_inc_sale_qty, p_qty_bl) as perc_uplift_qty, *
+        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` 
+        WHERE p_qty_bl>100
+        AND p_cal_inc_sale_qty>0 
+        ), input AS (
+
+        SELECT distinct sku_root_id, discount_depth, 1 AS promoted_in_past
+
+        FROM `gum-eroski-dev.prediction_results.prediction_train_input`
+
+        ), res_temp AS (
+        SELECT *, ROW_NUMBER() 
+            over (
+                PARTITION BY category 
+                order by perc_uplift_qty desc
+            ) AS RowNo 
+        FROM res_ini 
+        )
+        SELECT 
+        res.RowNo as row_num,
+        res.sku_root_id, 
+        res.description, 
+        res.area, 
+        res.section, 
+        res.category, 
+        res.subcategory, 
+        res.segment, 
+        res.brand_name, 
+        res.brand_price_label,
+        res.flag_healthy,
+        res.innovation_flag,
+        res.tourism_flag,
+        res.local_flag,
+        res.regional_flag,
+        res.promo_mechanic,
+        res.Promo_mechanic_en,
+        res.discount_depth,
+        res.p_qty_bl as baseline_sales_qty,
+        res.p_cal_inc_sale_qty as inc_sales_qty,
+        res.perc_uplift_qty*100 as perc_uplift_qty,
+        input.promoted_in_past
+
+        FROM res_temp res
+
+        left join input
+        on input.sku_root_id = res.sku_root_id
+        and input.discount_depth  = res.discount_depth 
+
+        WHERE RowNo<=20
+
+        order by category, perc_uplift_qty desc, p_cal_inc_sale_qty desc
+        """ 
+         
+        # Create a disctionary to loop over all destination tables and scripts
+        tables = {'prediction_promotion_results_top_20':promotion_pred_sql} 
+        
+        job_config.write_disposition = "WRITE_TRUNCATE"
+        for key in tables:
+                
+                # Set the destination table
+                table_ref = client.dataset(dataset_id).table(key)
+                job_config.destination = table_ref
+     
+                # Start the query, passing in the extra configuration.
+                query_job = client.query(
+                    tables[key],
+                    # Location must match that of the dataset(s) referenced in the query
+                    # and of the destination table.
+                    location='europe-west3',
+                    job_config=job_config)  # API request - starts the query
+
+                query_job.result()  # Waits for the query to finish
+                logger.info("Completed writing {a} table...".format(a=key))
 
