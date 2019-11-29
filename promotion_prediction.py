@@ -76,13 +76,13 @@ test_months_exclusion = ['Jan', 'Aug', 'Nov', 'Dec']
 run_config = 'train' # values include 'train', 'train-forecast', 'forecast'
 
 # Specify categorical cols
-cat_columns = ['sku_root_id', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'flag_healthy',
-               'innovation_flag', 'tourism_flag', 'local_flag', 'regional_flag', 'Promo_mechanic_en',
-               'customer_profile_type',
+cat_columns = ['sku_root_id', 'description', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'flag_healthy',
+               'innovation_flag', 'tourism_flag', 'local_flag', 'regional_flag', 'Promo_mechanic_en','promo_mechanic','name',
+               'start_date', 'end_date', 'customer_profile_type',
                'marketing_type', 'includes_weekend', 'campaign_start_day', 'campaign_start_month',
                'campaign_start_quarter',
                'campaign_start_week', 'leaflet_cover', 'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag',
-               'in_both_leaflet_gondola_flag', 'discount_depth', 'brand_price_label', 'type']
+               'in_both_leaflet_gondola_flag', 'discount_depth', 'period', 'brand_price_label', 'type', 'promo_id', 'promo_year']
 
 # Specify cols to take the avg values
 avg_cols = ['sku_root_id', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'Promo_mechanic_en',
