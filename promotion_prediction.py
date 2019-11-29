@@ -613,9 +613,9 @@ if __name__ == "__main__":
             logger.info('Uploading prediction results table to Bigquery...')
 
             if (i_sec == 0):
-                pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists=bl_table_config)
+                pandas_gbq.to_gbq(results_df, 'prediction_results.prediction_promotion_results', project_id=project_id, if_exists=bl_table_config)
             else:
-                pandas_gbq.to_gbq(results_df, 'prediction_train_input.prediction_promotion_results', project_id=project_id, if_exists='append')
+                pandas_gbq.to_gbq(results_df, 'prediction_results.prediction_promotion_results', project_id=project_id, if_exists='append')
 
 
             logger.info('Completed upload of section prediction to Bigquery...')
