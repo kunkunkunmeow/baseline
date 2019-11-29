@@ -280,7 +280,10 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     :return:
         xgboost model(model): xgboost ML model
     """
-
+    
+    # convert input data format
+    input_data[output_features[0]] = pd.to_numeric(input_data[output_features[0]])
+    
     # Lets remove data with months Aug, Nov, Dec, Jan from the input data
     if 'campaign_start_month' in list(input_data.columns):
         logger.info("Removing sample data for the following months:\n{}".format(test_months_exclusion))
@@ -522,7 +525,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     #plothist(y_validation, pred)
 
     # plot the feature importance
-    plotImp(model, train_model, X, num=20)
+    #plotImp(model, train_model, X, num=20)
 
     return train_model, map_dict, mae, mape
             
