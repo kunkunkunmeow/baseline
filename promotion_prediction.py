@@ -229,7 +229,13 @@ def plothist(y_validation, pred):
 
 
 def run_prediction_model(frame,sku, input_data, train_model, mapping_dict, train_mae, train_mape):
-
+    
+    # convert input data format
+    # for cols in input data that is not in the cat cols list, convert to numeric
+    for col in list(input_data.columns):
+            if col not in list(cat_columns):
+                input_data[col] = pd.to_numeric(input_data[col])
+    
     # Filter on SKUs
     X_apply = input_data[input_data.sku_root_id == sku].reset_index(drop=True)
 
