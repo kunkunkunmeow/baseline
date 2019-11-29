@@ -559,85 +559,85 @@ if __name__ == "__main__":
     
     start_time = time.time()
     
-#     # Train the model
-#     if run_config == 'train' or run_config == 'train-predict':
-#         logger.info("Training the prediction model for the promotion period...")
+    # Train the model
+    if run_config == 'train' or run_config == 'train-predict':
+        logger.info("Training the prediction model for the promotion period...")
       
-#         # obtain input data
-#         logger.info("Writing historical promotion performance data table in Bigquery...")
-#         promotion_prediction_query.promotion_prediction_(project_id, dataset_id, bl_s)
+        # obtain input data
+        logger.info("Writing historical promotion performance data table in Bigquery...")
+        promotion_prediction_query.promotion_prediction_(project_id, dataset_id, bl_s)
 
-#         logger.info("Loading historical promotion performance data table from Bigquery...")
-#         input_data = load_t1_from_bq(project_id)
+        logger.info("Loading historical promotion performance data table from Bigquery...")
+        input_data = load_t1_from_bq(project_id)
 
-#         # train ML model
-#         train_model, map_dict, mae, mape = train_promotion_prediction_model(input_data, input_features, cat_columns,
-#                                                                             model='lightgbm',  # either lightgbm, xgboost, catboost or average
-#                                                                             learning_rate=0.03, # set between 0.01-0.05
-#                                                                             max_depth=200, # 100 for lightgbm, 50 for xgboost
-#                                                                             num_leaves = 250, # for lightgbm
-#                                                                             n_iter=10000, # for lightgbm, no. of iterations, 20000
-#                                                                             n_estimators = 150, # for xgboost, no of estimators
-#                                                                             train_size=0.8, # test train split
-#                                                                             test_months_exclusion=test_months_exclusion, # exclude certain months
-#                                                                             cat_var_exclusion=False, # exclude specification of categorical variables (lightgbm)
-#                                                                             remove_outliers=True)  # remove outliers
+        # train ML model
+        train_model, map_dict, mae, mape = train_promotion_prediction_model(input_data, input_features, cat_columns,
+                                                                            model='lightgbm',  # either lightgbm, xgboost, catboost or average
+                                                                            learning_rate=0.03, # set between 0.01-0.05
+                                                                            max_depth=200, # 100 for lightgbm, 50 for xgboost
+                                                                            num_leaves = 250, # for lightgbm
+                                                                            n_iter=10000, # for lightgbm, no. of iterations, 20000
+                                                                            n_estimators = 150, # for xgboost, no of estimators
+                                                                            train_size=0.8, # test train split
+                                                                            test_months_exclusion=test_months_exclusion, # exclude certain months
+                                                                            cat_var_exclusion=False, # exclude specification of categorical variables (lightgbm)
+                                                                            remove_outliers=True)  # remove outliers
     
-#     # Run the model to predict 
-#     if run_config == 'train-predict':
+    # Run the model to predict 
+    if run_config == 'train-predict':
         
-#         logger.info("Predicting the promotional performance for in-scope skus....")
-#         logger.info("Loading input tables from Bigquery....")
+        logger.info("Predicting the promotional performance for in-scope skus....")
+        logger.info("Loading input tables from Bigquery....")
     
-#         logger.info("Loading distinct sections table from Bigquery....")
-#         section_table = load_t0_from_bq(bl_s, project_id)
+        logger.info("Loading distinct sections table from Bigquery....")
+        section_table = load_t0_from_bq(bl_s, project_id)
 
-#         # Unique sections in category include
-#         unique_sections = list(section_table["section"].unique())
-#         logger.info("Unique sections include:")
-#         for section in unique_sections: logger.info("{a}".format(a=section))
+        # Unique sections in category include
+        unique_sections = list(section_table["section"].unique())
+        logger.info("Unique sections include:")
+        for section in unique_sections: logger.info("{a}".format(a=section))
     
-#         # Loop through sections
-#         for i_sec in range(0, len(unique_sections)):
+        # Loop through sections
+        for i_sec in range(0, len(unique_sections)):
 
-#             section_start_time = time.time()
-#             section = unique_sections[i_sec]
+            section_start_time = time.time()
+            section = unique_sections[i_sec]
 
-#             logger.info("Processing section {a}...".format(a=section))
+            logger.info("Processing section {a}...".format(a=section))
 
-#             # Load the input data table for each section   
-#             logger.info("Loading prediction input table from Bigquery....")
-#             pred_input_data = load_t2_from_bq(section, project_id)
+            # Load the input data table for each section   
+            logger.info("Loading prediction input table from Bigquery....")
+            pred_input_data = load_t2_from_bq(section, project_id)
 
-#             logger.info("Computing no. of unique in-scope skus")
-#             uniq_sku = list(pred_input_data['sku_root_id'].unique())
-#             logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
+            logger.info("Computing no. of unique in-scope skus")
+            uniq_sku = list(pred_input_data['sku_root_id'].unique())
+            logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
                 
-#             # use a single proc
-#             results_df = run_prediction_model_single(pred_input_data, train_model, map_dict, mae, mape)
-#             logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+            # use a single proc
+            results_df = run_prediction_model_single(pred_input_data, train_model, map_dict, mae, mape)
+            logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
-#             # Convert all nulls to None
-#             results_df = results_df.where((pd.notnull(results_df)), None)
+            # Convert all nulls to None
+            results_df = results_df.where((pd.notnull(results_df)), None)
 
-#             total_time = round((time.time() - section_start_time) / 60, 1)
-#             logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
+            total_time = round((time.time() - section_start_time) / 60, 1)
+            logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
 
-#             # upload the final dataframe onto Bigquery
-#             logger.info('Uploading prediction results table to Bigquery...')
+            # upload the final dataframe onto Bigquery
+            logger.info('Uploading prediction results table to Bigquery...')
 
-#             if (i_sec == 0):
-#                 pandas_gbq.to_gbq(results_df, 'prediction_results.prediction_promotion_results', project_id=project_id, if_exists=bl_table_config)
-#             else:
-#                 pandas_gbq.to_gbq(results_df, 'prediction_results.prediction_promotion_results', project_id=project_id, if_exists='append')
+            if (i_sec == 0):
+                pandas_gbq.to_gbq(results_df, 'prediction_results.prediction_promotion_results', project_id=project_id, if_exists=bl_table_config)
+            else:
+                pandas_gbq.to_gbq(results_df, 'prediction_results.prediction_promotion_results', project_id=project_id, if_exists='append')
 
 
-#             logger.info('Completed upload of section prediction to Bigquery...')
+            logger.info('Completed upload of section prediction to Bigquery...')
 
         # call function to run query in Bigquery to create baseline related tables
-    logger.info('Creating prediction promotion top 20 table in Bigquery...')
-    promotion_prediction_query.promotion_prediction_res(project_id, dataset_id)
-    logger.info('Completed creating prediction promotion top 20 table in Bigquery...')
+        logger.info('Creating prediction promotion top 20 table in Bigquery...')
+        promotion_prediction_query.promotion_prediction_res(project_id, dataset_id)
+        logger.info('Completed creating prediction promotion top 20 table in Bigquery...')
 
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
