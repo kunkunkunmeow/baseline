@@ -527,7 +527,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     mean_error = np.mean(y_validation[output_features[0]].values-pred)
     logger.info("Mean Error: {}".format(mean_error))
 
-    mae = np.mean(np.absolute(y_validation[output_features[0]].values-pred))
+    mae = np.median(np.absolute(y_validation[output_features[0]].values-pred))
     logger.info("MAE: {}".format(mae))
 
     mape = np.divide(y_validation[output_features[0]].values - pred, y_validation[output_features[0]].values)
