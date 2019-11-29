@@ -133,7 +133,7 @@ def cb_sku (frame, sku, summary_table):
         table[f'cb_{metric}'] = table[f'{metric}_cb_bl'] - pd.to_numeric(table[f'total_{metric}'], errors='coerce')
     
     final_df = table[['date', 'sku_root_id', 'section', 'segment', 'promo_flag_binary', 'incremental_qty', 
-                      'cb_flag', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
+                      'cb_flag', 'sale_amt_cb_bl', 'sale_qty_cb_bl', 'margin_amt_cb_bl', 'cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
     
     logger.info(f'{sku} - completed cb baseline calculation')
     
@@ -142,7 +142,8 @@ def cb_sku (frame, sku, summary_table):
 
 # define the calculation of cannibalisation for certain date
 def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
-    table = cb_table[['date','sku_root_id', 'promo_flag_binary','incremental_qty', cb_l]][cb_table[cb_l] == cb_level]
+    table = cb_table[['date','sku_root_id', 'promo_flag_binary', 'cb_flag', 'sale_amt_cb_bl', 'sale_qty_cb_bl', 'margin_amt_cb_bl',
+                      'incremental_qty', cb_l]][cb_table[cb_l] == cb_level]
 
     agg_np_cb = agg_np[agg_np[cb_l] == cb_level]
 
@@ -155,8 +156,10 @@ def cannibalisation(frame, agg_np, cb_table, cb_l, cb_level):
     df['cb_sale_qty'] = df['ttl_cb_sale_qty']*df['cb_pct']
     df['cb_margin_amt'] = df['ttl_cb_margin_amt']*df['cb_pct']
     
-    final_df = df[['date', cb_l, 'sku_root_id','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
-    final_df.columns = ['date', cb_l, 'sku_root_id', 'ind_cb_sale', 'ind_cb_qty', 'ind_cb_margin']
+    final_df = df[['date', cb_l, 'cb_flag', 'sale_amt_cb_bl', 'sale_qty_cb_bl', 'margin_amt_cb_bl',
+                   'sku_root_id','cb_sale_amt', 'cb_sale_qty', 'cb_margin_amt']]
+    final_df.columns = ['date', cb_l, 'cb_flag', 'sale_amt_cb_bl', 'sale_qty_cb_bl', 'margin_amt_cb_bl',
+                        'sku_root_id', 'ind_cb_sale', 'ind_cb_qty', 'ind_cb_margin']
     
     logger.info(f'{cb_level} - completed cannibalisation calculation')
     frame.append(final_df)
@@ -283,9 +286,9 @@ if __name__ == "__main__":
         logger.info('Uploading cannibalisation table to Bigquery...')
 
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'WIP.cb1129', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.cannibalisation', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'WIP.cb1129', project_id=project_id, if_exists='append')
 
         logger.info('Completed upload of section baseline to Bigquery...')
     
