@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 import promotion_prediction_query
+from tqdm import tqdm
+
 
 # Project ID
 project_id = "gum-eroski-dev"
