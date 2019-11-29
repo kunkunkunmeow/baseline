@@ -40,7 +40,7 @@ fh.setLevel(logging.DEBUG)
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -232,6 +232,7 @@ def run_prediction_model(frame,sku, input_data, train_model, mapping_dict, train
     
     # convert input data format
     # for cols in input data that is not in the cat cols list, convert to numeric
+    logger.debug("Processing SKU: {}".format(sku))
     for col in list(input_data.columns):
             if col not in list(cat_columns):
                 input_data[col] = pd.to_numeric(input_data[col])
@@ -241,7 +242,8 @@ def run_prediction_model(frame,sku, input_data, train_model, mapping_dict, train
 
     # Filter only on the input features
     X_apply = X_apply[input_features] 
-
+    
+    logger.debug("Applying mapping to SKU: {}".format(sku))
     if len(mapping_dict) != 0:
 
         # Apply mapping on the items in X_apply
@@ -253,6 +255,7 @@ def run_prediction_model(frame,sku, input_data, train_model, mapping_dict, train
                 X_apply[col] = X_apply[col].map(unique_vals_dict)
 
     # predict using the model
+    logger.debug("Predicting target variable for SKU: {}".format(sku))
     pred = train_model.predict(X_apply)
 
     # compute the prediction intervals (use MAE as a starting point)
@@ -262,6 +265,7 @@ def run_prediction_model(frame,sku, input_data, train_model, mapping_dict, train
 
     # join the results with X_apply
     pred_df = pd.concat([pred_df.reset_index(drop=True), input_data.reset_index(drop=True)], axis = 1)
+    logger.debug("Completed prediction of target variable for SKU: {}".format(sku))
 
     # save the results
     frame.append(pred_df)
