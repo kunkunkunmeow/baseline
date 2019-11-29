@@ -239,7 +239,9 @@ def run_prediction_model(frame,sku, input_data, train_model, mapping_dict, train
     
     # Filter on SKUs
     X_apply = input_data[input_data.sku_root_id == sku].reset_index(drop=True)
+    logger.debug("SKU: {a} has {b} samples to predict...".format(a=sku,b=X_apply.shape[0]))
 
+    
     # Filter only on the input features
     X_apply = X_apply[input_features] 
     
