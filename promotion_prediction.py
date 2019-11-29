@@ -245,7 +245,8 @@ def run_prediction_model_single(input_data, train_model, mapping_dict, train_mae
             if col in list(X_apply.columns):
 
                 # apply mapping - any new values not in mapping will be set to NaN
-                unique_vals_dict = mapping_dict[col]
+                unique_vals_dict = mapping_dict[col]#
+                X_apply = X_apply.copy()
                 X_apply[col] = X_apply[col].map(unique_vals_dict)
 
     # predict using the model
@@ -263,51 +264,6 @@ def run_prediction_model_single(input_data, train_model, mapping_dict, train_mae
     # save the results
     logger.debug("Completed prediction of target variable...")
     return pred_df
-    
-    
-def run_prediction_model_multi(frame,sku, input_data, train_model, mapping_dict, train_mae, train_mape):
-    
-    # convert input data format
-    # for cols in input data that is not in the cat cols list, convert to numeric
-    logger.debug("Processing SKU: {}".format(sku))
-    for col in list(input_data.columns):
-            if col not in list(cat_columns):
-                input_data[col] = pd.to_numeric(input_data[col])
-    
-    # Filter on SKUs
-    X_apply = input_data[input_data.sku_root_id == sku].reset_index(drop=True)
-    logger.debug("SKU: {a} has {b} samples to predict...".format(a=sku,b=X_apply.shape[0]))
-
-    
-    # Filter only on the input features
-    X_apply = X_apply[input_features] 
-    
-    logger.debug("Applying mapping to SKU: {}".format(sku))
-    if len(mapping_dict) != 0:
-
-        # Apply mapping on the items in X_apply
-        for col in mapping_dict:
-            if col in list(X_apply.columns):
-
-                # apply mapping - any new values not in mapping will be set to NaN
-                unique_vals_dict = mapping_dict[col]
-                X_apply[col] = X_apply[col].map(unique_vals_dict)
-
-    # predict using the model
-    logger.debug("Predicting target variable for SKU: {}".format(sku))
-    pred = train_model.predict(X_apply)
-
-    # compute the prediction intervals (use MAE as a starting point)
-    pred_df = pd.DataFrame({output_features[0]: pred[:]})
-    pred_df['prediction_interval'] = train_mae
-    pred_df['prediction_error_perc'] = train_mape
-
-    # join the results with X_apply
-    pred_df = pd.concat([pred_df.reset_index(drop=True), input_data.reset_index(drop=True)], axis = 1)
-    logger.debug("Completed prediction of target variable for SKU: {}".format(sku))
-
-    # save the results
-    frame.append(pred_df)
 
 def train_promotion_prediction_model(input_data, input_features, cat_columns, model, learning_rate, max_depth,
                                      num_leaves, n_iter, n_estimators,
@@ -446,7 +402,9 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
                 unique_vals_dict = dict([(val, num + 1) for num, val in enumerate(unique_vals)])
 
                 # map them for the train and test data sets
+                X_train = X_train.copy()
                 X_train[col] = X_train[col].map(unique_vals_dict)
+                X_validation = X_validation.copy()
                 X_validation[col] = X_validation[col].map(unique_vals_dict)
 
                 # store the mapping for later use
@@ -507,7 +465,9 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
                 unique_vals_dict = dict([(val, num + 1) for num, val in enumerate(unique_vals)])
 
                 # map them for the train and test data sets
+                X_train = X_train.copy()
                 X_train[col] = X_train[col].map(unique_vals_dict)
+                X_validation = X_validation.copy()
                 X_validation[col] = X_validation[col].map(unique_vals_dict)
 
                 # store the mapping for later use
