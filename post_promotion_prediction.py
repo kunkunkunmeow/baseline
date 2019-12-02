@@ -317,11 +317,11 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     if remove_outliers:
         logger.info("Removing outliers from sample data...")
 
-        # outlier removal based on negative values
-        outliers = input_data[input_data[output_features[0]] <= 0]
-        logger.info("Removing all negative values from inc. sales qty, {} sample data points removed...".format(outliers.shape[0]))
+        # outlier removal based on negative values (wont apply due to post promotion effects)
+        #outliers = input_data[input_data[output_features[0]] <= 0]
+        #logger.info("Removing all negative values from inc. sales qty, {} sample data points removed...".format(outliers.shape[0]))
 
-        input_data = input_data[input_data[output_features[0]] > 0]
+        #input_data = input_data[input_data[output_features[0]] > 0]
 
         # outlier removal based on quantile in target variable
         q = input_data[output_features[0]].quantile(0.95)
