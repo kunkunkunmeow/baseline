@@ -13,7 +13,7 @@ def promotion_prediction_(project_id, dataset_id, area):
 
         job_config = bigquery.QueryJobConfig()      
         
-        promotion_pred_sql = """
+        post_promotion_pred_sql = """
         WITH
         temp_aggr_promo AS (
         SELECT
@@ -158,7 +158,7 @@ def promotion_prediction_(project_id, dataset_id, area):
         """ %(area)
          
         # Create a disctionary to loop over all destination tables and scripts
-        tables = {'post_prediction_train_input':promotion_pred_sql} 
+        tables = {'post_prediction_train_input':post_promotion_pred_sql} 
         
         job_config.write_disposition = "WRITE_TRUNCATE"
         for key in tables:
@@ -258,8 +258,7 @@ def promotion_prediction_res(project_id, dataset_id):
         """ 
          
         # Create a disctionary to loop over all destination tables and scripts
-        tables = {'prediction_post_promotion_results':promo_update,
-                  'prediction_post_promotion_results_top_20':promotion_pred_sql} 
+        tables = {'prediction_post_promotion_results':promo_update} 
         
         job_config.write_disposition = "WRITE_TRUNCATE"
         for key in tables:
