@@ -637,9 +637,9 @@ if __name__ == "__main__":
             logger.info('Completed upload of section prediction to Bigquery...')
 
         # call function to run query in Bigquery to create baseline related tables
-        logger.info('Creating prediction post promotion top 20 table in Bigquery...')
+        logger.info('Creating prediction post promotion table in Bigquery...')
         post_promotion_prediction_query.promotion_prediction_res(project_id, dataset_id)
-        logger.info('Completed creating prediction post promotion top 20 table in Bigquery...')
+        logger.info('Completed creating prediction post promotion table in Bigquery...')
 
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed prediction processing in {a} mins...'.format(a=total_time))
