@@ -127,13 +127,13 @@ def load_t2_from_bq(section, project_id):
     summary_sql = """
     WITH pr_train AS (
     SELECT distinct promo_mechanic, Promo_mechanic_en , discount_depth 
-    from `gum-eroski-dev.prediction_results.post_prediction_train_input` 
+    from `gum-eroski-dev.prediction_results.prediction_train_input` 
     ), 
     input AS (
 
     SELECT distinct sku_root_id, discount_depth, 1 AS promoted_in_past
 
-    FROM `gum-eroski-dev.prediction_results.post_prediction_train_input`
+    FROM `gum-eroski-dev.prediction_results.prediction_train_input`
     ), 
     sku_list AS (
     SELECT 
@@ -164,7 +164,7 @@ def load_t2_from_bq(section, project_id):
     1 AS type,
     0 AS customer_profile_type,
     'Oferta corporativa' AS marketing_type,
-    7 AS duration_days,
+    14 AS duration_days,
     false AS includes_weekend,
     'Thursday' AS campaign_start_day,
     'Jan' AS campaign_start_month,
