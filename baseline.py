@@ -200,7 +200,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
                                                     2)
                         
-    logger.debug(f'{sku} - completed baseline')
+    logger.debug(f'{id} - completed baseline')
 
     # # produce extended baseline
     # for i in range(0, len(table)):
