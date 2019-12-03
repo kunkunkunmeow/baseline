@@ -63,8 +63,10 @@ def load_section_from_bq(area, project_id):
     summary_sql = """
     SELECT distinct section
     FROM `ETL.root_sku` 
-    WHERE area = "{area}"   """.format(area = area)
+    WHERE area = "{area}"
     AND section = "LIBRE SERVICIO"
+    """.format(area = area)
+    
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
