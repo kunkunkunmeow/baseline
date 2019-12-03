@@ -186,7 +186,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
     baseline = baseline_ref[baseline_ref[bl_l] == baseline_level]
 
     # merge baseline and sku table
-    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag','total_sale_qty']],
+    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag','total_sale_qty', 's_prev_bl_qty']],
                      baseline[['date', 'sale_qty_pct']],
                      on=['date']).reset_index(drop=True)
     
@@ -194,7 +194,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
     # produce baseline + extended_baseline
     for i in range(0, len(table)):
         if table.loc[i, 'change_flag'] == 1:
-            table.loc[i, 'sale_qty_bl'] = round(table.loc[i, 'previous_weekxxx'] * table.loc[i, 'sale_qty_pct'],
+            table.loc[i, 'sale_qty_bl'] = round(table.loc[i, 's_prev_bl_qty'] * table.loc[i, 'sale_qty_pct'],
                                                     2)
         if table.loc[i, 'change_flag'] in [2,3]:
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
