@@ -175,6 +175,9 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
         df_id.loc[i, 'promo_year'] = df_id.loc[i-1, 'promo_year']
         df_id.loc[i, 'promo_mechanic'] = df_id.loc[i-1, 'promo_mechanic']
         df_id.loc[i, 'discount_depth'] = df_id.loc[i-1, 'discount_depth']
+        df_id.loc[i, 'no_to_buy'] = df_id.loc[i-1, 'no_to_buy']
+        df_id.loc[i, 'no_to_pay'] = df_id.loc[i-1, 'no_to_pay']
+        df_id.loc[i, 'uniq_id'] = df_id.loc[i-1, 'uniq_id']
         df_id.loc[i, 'change_flag'] = 3     
 
     # locate the group that needs to be aggregated
