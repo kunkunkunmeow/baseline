@@ -6,14 +6,14 @@ from tqdm import tqdm
 import time
 import logging
 from datetime import timedelta  
-# import baseline_query
+import baseline_query
 
 # Input global variables 
 # Reformat code to accept these variables as input
 
 # Project ID
 project_id = "gum-eroski-dev"
-dataset_id = "baseline_performance"
+dataset_id = "baseline"
 
 # Define key baseline parameters
 # Category level used to compute the baseline
@@ -33,7 +33,7 @@ ext_week = 4
 
 
 # Set batch size
-batchsize = 50
+batchsize = 100
 
 # Set logger properties
 logger = logging.getLogger('baseline_calculation')
@@ -146,7 +146,7 @@ def baseline_pct (frame, parameter:str, agg_np, bl_l):
     frame.append(df)
 
 # define function to process baseline for one sku
-def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
+def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, section):
     """produce baseline and cannibalisation line for the sku
     Args:
         sku(str): sku_root_id
@@ -200,7 +200,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
                                                     2)
                         
-    logger.debug(f'{id} - completed baseline')
+    logger.debug(f'section {section} - {id} - completed baseline')
 
     # # produce extended baseline
     # for i in range(0, len(table)):
@@ -313,7 +313,7 @@ if __name__ == "__main__":
                 batch = uniq_id[i:i+batchsize] # the result might be shorter than batchsize at the end
 
                 for id in batch:
-                    p = Process(target=baseline_id, args=(frame,id,summary_table, baseline_perc_df, bl_l, ext_week))  # Passing the list
+                    p = Process(target=baseline_id, args=(frame,id,summary_table, baseline_perc_df, bl_l, ext_week, section))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
@@ -348,10 +348,10 @@ if __name__ == "__main__":
 
         logger.info('Completed upload of section baseline to Bigquery...')
         
-    # call function to run query in Bigquery to create baseline related tables
-    # logger.info('Creating baseline tables in Bigquery...')
-    # baseline_query.baseline_dashboard(project_id, dataset_id)
-    # logger.info('Completed creating baseline tables in Bigquery...')
+    call function to run query in Bigquery to create baseline related tables
+    logger.info('Creating baseline tables in Bigquery...')
+    baseline_query.baseline_dashboard(project_id, dataset_id)
+    logger.info('Completed creating baseline tables in Bigquery...')
     
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
