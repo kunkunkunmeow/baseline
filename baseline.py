@@ -157,10 +157,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     
     
     # get dataframe for the specific sku
-    id_time = time.time()
     df_id = summary_table[summary_table.uniq_id == id].sort_values(by=['date']).reset_index(drop=True)
-    load_id_table = round((time.time() - id_time), 2)
-    logger.debug('Loading {a} table took {b} secs...'.format(a=id, b=load_id_table))
     
 
     # define change_flag to be the reference of baseline and cannibalisation calculation
@@ -219,7 +216,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     final_df = table[
         ['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
 
-    logger.info(f'{id} - completed baseline and pull forward calculation')
+    logger.info(f'section {section} - {id} - completed baseline and pull forward calculation')
   
     frame.append(final_df)
     
