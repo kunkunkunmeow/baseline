@@ -64,6 +64,7 @@ def load_section_from_bq(area, project_id):
     SELECT distinct section
     FROM `ETL.root_sku` 
     WHERE area = "{area}"
+    AND section = "DULCE"
     """.format(area = area)
     
     start = time.time()
@@ -82,7 +83,7 @@ def load_promo_from_bq(section, project_id):
     start_time = time.time()
 
     summary_sql = """
-    SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, total_sale_qty, s_prev_bl_qty
+    SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy, total_sale_qty, s_prev_bl_qty
     FROM `ETL.aggregate_promo_to_sku_summary`
     WHERE section = "{section}"   """.format(bl_l = bl_l, section = section)
     start = time.time()
@@ -183,7 +184,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     baseline = baseline_ref[baseline_ref[bl_l] == baseline_level]
 
     # merge baseline and sku table
-    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag','total_sale_qty', 's_prev_bl_qty']],
+    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy','change_flag','total_sale_qty', 's_prev_bl_qty']],
                      baseline[['date', 'sale_qty_pct']],
                      on=['date']).reset_index(drop=True)
     
@@ -214,7 +215,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     
     # define final dataframe
     final_df = table[
-        ['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
+        ['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
 
     logger.info(f'section {section} - {id} - completed baseline and pull forward calculation')
   
@@ -246,7 +247,10 @@ if __name__ == "__main__":
         logger.info("Loading promo table from Bigquery....")
         summary_table = load_promo_from_bq(section, project_id)
         summary_table['promo_year'] = summary_table['promo_year'].apply(str)
-        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'] + summary_table['promo_mechanic'] + summary_table['discount_depth']
+        summary_table['discount_depth_2'] = summary_table['discount_depth'].fillna('ISNULL')
+        summary_table['no_to_pay_2'] = summary_table['no_to_pay'].fillna('ISNULL')
+        summary_table['no_to_buy_2'] = summary_table['no_to_buy'].fillna('ISNULL')
+        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'] + summary_table['promo_mechanic'] + summary_table['discount_depth']+summary_table['no_to_pay_2']+summary_table['no_to_buy_2']
         summary_table['total_sale_qty'] = summary_table['total_sale_qty'].apply(pd.to_numeric)
         summary_table['s_prev_bl_qty'] = summary_table['s_prev_bl_qty'].apply(pd.to_numeric)
 
