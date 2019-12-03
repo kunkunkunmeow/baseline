@@ -249,8 +249,8 @@ if __name__ == "__main__":
             
         logger.info("Loading promo table from Bigquery....")
         summary_table = load_promo_from_bq(section, project_id)
-        print(summary_table.info())
-        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'] + summary_table['promo_mechanic'] + summary_table['discount_depth']
+        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'].apply(str) + summary_table['promo_mechanic'] + summary_table['discount_depth']
+        summary_table['total_sale_qty'] = summary_table['total_sale_qty'].apply(pd.to_numeric)
 
         logger.info("Loading summary non-promotional transaction table from Bigquery....")
         weekly_agg = load_np_from_bq(section, project_id)
