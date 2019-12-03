@@ -174,6 +174,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
         df_id.loc[i, 'date'] = df_id.loc[i-1, 'date'] + timedelta(days=7)
         df_id.loc[i, 'sku_root_id'] = df_id.loc[i-1, 'sku_root_id']
         df_id.loc[i, 'promo_id'] = df_id.loc[i-1, 'promo_id']
+        df_id.loc[i, 'promo_year'] = df_id.loc[i-1, 'promo_year']
         df_id.loc[i, 'promo_mechanic'] = df_id.loc[i-1, 'promo_mechanic']
         df_id.loc[i, 'discount_depth'] = df_id.loc[i-1, 'discount_depth']
         df_id.loc[i, 'change_flag'] = 3     
@@ -247,7 +248,8 @@ if __name__ == "__main__":
             
         logger.info("Loading promo table from Bigquery....")
         summary_table = load_promo_from_bq(section, project_id)
-        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'].apply(str) + summary_table['promo_mechanic'] + summary_table['discount_depth']
+        summary_table['promo_year'] = summary_table['promo_year'].apply(str)
+        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'] + summary_table['promo_mechanic'] + summary_table['discount_depth']
         summary_table['total_sale_qty'] = summary_table['total_sale_qty'].apply(pd.to_numeric)
         summary_table['s_prev_bl_qty'] = summary_table['s_prev_bl_qty'].apply(pd.to_numeric)
 
