@@ -250,7 +250,7 @@ if __name__ == "__main__":
         summary_table['discount_depth_2'] = summary_table['discount_depth'].fillna('ISNULL')
         summary_table['no_to_pay_2'] = summary_table['no_to_pay'].fillna('ISNULL')
         summary_table['no_to_buy_2'] = summary_table['no_to_buy'].fillna('ISNULL')
-        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'] + summary_table['promo_mechanic'] + summary_table['discount_depth']+summary_table['no_to_pay_2']+summary_table['no_to_buy_2']
+        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'] + summary_table['promo_mechanic'] + summary_table['discount_depth']+summary_table['no_to_pay_2'].apply(str)+summary_table['no_to_buy_2'].apply(str)
         summary_table['total_sale_qty'] = summary_table['total_sale_qty'].apply(pd.to_numeric)
         summary_table['s_prev_bl_qty'] = summary_table['s_prev_bl_qty'].apply(pd.to_numeric)
 
