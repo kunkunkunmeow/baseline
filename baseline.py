@@ -31,12 +31,7 @@ bl_table_config = 'replace'
 # TODO - need to test
 ext_week = 4
 
-# # Baseline % metrics
-# metrics = {
-#     'sale_amt': ['sale_amt_np', 'total_sale_amt'],
-#     'sale_qty': ['sale_qty_np', 'total_sale_qty'],
-#     'margin_amt': ['margin_amt_np', 'total_margin_amt']
-# }
+
 # Set batch size
 batchsize = 50
 
@@ -286,9 +281,9 @@ if __name__ == "__main__":
 
                 start_time_batch = time.time()
                 batch = bl_parameter[i:i+batchsize] # the result might be shorter than batchsize at the end
-
-                for category in batch:
-                    p = Process(target=baseline_pct, args=(frame,category,agg_np, bl_l, metrics))  # Passing the list
+                
+                for baseline_parameter in batch:
+                    p = Process(target=baseline_pct, args=(frame,baseline_parameter,agg_np, bl_l))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
