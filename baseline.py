@@ -161,7 +161,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
     id_time = time.time()
     df_id = summary_table[summary_table.uniq_id == id].sort_values(by=['date']).reset_index(drop=True)
     load_id_table = round((time.time() - id_time), 2)
-    logger.debug('Loading {a} table took {b} secs...'.format(a=id, b=tload_id_table))
+    logger.debug('Loading {a} table took {b} secs...'.format(a=id, b=load_id_table))
 
     # define change_flag to be the reference of baseline and cannibalisation calculation
     # set 1 : for the first day on promotion
