@@ -163,7 +163,6 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
     load_id_table = round((time.time() - id_time), 2)
     logger.debug('Loading {a} table took {b} secs...'.format(a=id, b=load_id_table))
     
-    print(df_id.columns)
 
     # define change_flag to be the reference of baseline and cannibalisation calculation
     # set 1 : for the first day on promotion
@@ -187,7 +186,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
     baseline = baseline_ref[baseline_ref[bl_l] == baseline_level]
 
     # merge baseline and sku table
-    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic, discount_depth', 'change_flag','total_sale_qty']],
+    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag','total_sale_qty']],
                      baseline[['date', 'sale_qty_pct']],
                      on=['date']).reset_index(drop=True)
     
