@@ -326,8 +326,6 @@ if __name__ == "__main__":
 
                 logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
-        for i in list(results_df.columns)[2:]:
-            results_df[i] = pd.to_numeric(results_df[i])
 
         # Convert all nulls to None
         results_df = results_df.where((pd.notnull(results_df)), None)
