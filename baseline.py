@@ -64,6 +64,7 @@ def load_section_from_bq(area, project_id):
     SELECT distinct section
     FROM `ETL.root_sku` 
     WHERE area = "{area}"   """.format(area = area)
+    AND section = "LIBRE SERVICIO"
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -80,9 +81,9 @@ def load_promo_from_bq(section, project_id):
     start_time = time.time()
 
     summary_sql = """
-    SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, total_sale_qty, s_prev_bl_qty
+    SELECT date, sku_root_id , section , promo_id, promo_year, promo_mechanic, discount_depth, total_sale_qty, s_prev_bl_qty
     FROM `ETL.aggregate_promo_to_sku_summary`
-    WHERE section = "{section}"   """.format(bl_l = bl_l, section = section)
+    WHERE section = "{section}"   """.format(section = section)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
