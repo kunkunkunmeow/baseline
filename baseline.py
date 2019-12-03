@@ -5,7 +5,8 @@ import numpy as np
 from tqdm import tqdm
 import time
 import logging
-import baseline_query
+from datetime import timedelta  
+# import baseline_query
 
 # Input global variables 
 # Reformat code to accept these variables as input
@@ -28,14 +29,14 @@ bl_table_config = 'replace'
 
 # Pull forward week
 # TODO - need to test
-ext_day = 1
+ext_week = 4
 
-# Baseline % metrics
-metrics = {
-    'sale_amt': ['sale_amt_np', 'total_sale_amt'],
-    'sale_qty': ['sale_qty_np', 'total_sale_qty'],
-    'margin_amt': ['margin_amt_np', 'total_margin_amt']
-}
+# # Baseline % metrics
+# metrics = {
+#     'sale_amt': ['sale_amt_np', 'total_sale_amt'],
+#     'sale_qty': ['sale_qty_np', 'total_sale_qty'],
+#     'margin_amt': ['margin_amt_np', 'total_margin_amt']
+# }
 # Set batch size
 batchsize = 50
 
@@ -61,14 +62,14 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 # Function to load distinct section data at a sku level from bigquery
-def load_t0_from_bq(area, project_id):
+def load_section_from_bq(area, project_id):
     start_time = time.time()
 
     summary_sql = """
     SELECT distinct section
-    FROM `ETL.aggregate_weekly_transaction_summary`
-    WHERE area = "%s"   """ %(area)
-    start = time.time() 
+    FROM `ETL.root_sku` 
+    WHERE area = "{area}"   """.format(area = area)
+    start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
         section_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
@@ -80,13 +81,13 @@ def load_t0_from_bq(area, project_id):
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level from bigquery
-def load_t1_from_bq(section, project_id):
+def load_promo_from_bq(section, project_id):
     start_time = time.time()
 
     summary_sql = """
-    SELECT date, sku_root_id , area, section, category, subcategory , segment , total_sale_amt, total_sale_qty , total_margin_amt , promo_flag_binary, sale_amt_promo_flag, sale_qty_promo_flag, margin_amt_promo_flag
+    SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, total_sale_qty, s_prev_bl_qty
     FROM `ETL.aggregate_weekly_transaction_summary`
-    WHERE section = "%s"   """ %(section)
+    WHERE section = "{section}"   """.format(bl_l = bl_l, section = section)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -99,15 +100,15 @@ def load_t1_from_bq(section, project_id):
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level (for non-promotional periods) from bigquery
-def load_t2_from_bq(section, project_id):
+def load_np_from_bq(section, project_id):
     start_time = time.time()
 
     weeklyagg_sql = """
-    SELECT date, sku_root_id, area, section, category, subcategory, segment, sum(total_sale_amt) as sale_amt_np, sum(total_sale_qty) as sale_qty_np, sum(total_margin_amt) as margin_amt_np
+    SELECT date, sku_root_id,  {bl_l}, sum(total_sale_qty) as sale_qty_np
     FROM `ETL.aggregate_weekly_transaction_to_sku`
     WHERE promo_flag = false
-    AND section =  "%s"
-    group by date, sku_root_id, area, section, category, subcategory, segment """ %(section)
+    AND section =  "{section}"
+    group by date, sku_root_id, {bl_l} """.format(bl_l = bl_l, section = section)
 
     for i in tqdm(range(1), desc='Loading table...'):
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id=project_id)
@@ -122,116 +123,102 @@ def load_t2_from_bq(section, project_id):
 def aggregate_np(weekly_agg, level):
     start_time = time.time()
 
-    agg = weekly_agg.groupby(["date", level], as_index=False)['sale_amt_np', 'sale_qty_np', 'margin_amt_np'].sum()
+    agg = weekly_agg.groupby(["date", level], as_index=False)['sale_qty_np'].sum()
 
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info("Completed aggregating non-promotional summary transactions in {a} mins...".format(a=total_time))
 
     return agg
 
+
+
 # get the percentage changes for all baseline level parameters
-def baseline_pct (frame, parameter:str, agg_np, bl_l, metrics):        
+def baseline_pct (frame, parameter:str, agg_np, bl_l):        
     # get the aggregated none promotion data for the group that the SKU belongs to
     df = agg_np[agg_np[bl_l] == parameter].sort_values(by = ['date']).reset_index(drop=True)
-    for metric in metrics.keys():
-        df[f'{metric}_pct'] = 1
-        for i in range(1,len(df)):
-            if df.loc[i-1,metrics[metric][0]] == 0:
-                df.loc[i,f'{metric}_pct'] = np.nan
-            else:
-                df.loc[i,f'{metric}_pct'] = float(df.loc[i,metrics[metric][0]]/df.loc[i-1,metrics[metric][0]])
+  
+    df['sale_qty_pct'] = 1
+    for i in range(1,len(df)):
+        if df.loc[i-1,'sale_qty_np'] == 0:
+            df.loc[i,'sale_qty_pct'] = np.nan
+        else:
+            df.loc[i,'sale_qty_pct'] = float(df.loc[i,'sale_qty_np']/df.loc[i-1,'sale_qty_np'])
     
     logger.info(f'{parameter} - completed baseline perc change calculation')
     
     frame.append(df)
 
 # define function to process baseline for one sku
-def baseline_sku(frame, sku: str, summary_table, baseline_ref, bl_l, metrics, ext_day):
+def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
     """produce baseline and cannibalisation line for the sku
     Args:
         sku(str): sku_root_id
     Returns:
         final_df(pd.DataFrame): Final, preprocessed dataframe
     """
-    logger.debug(f'{sku} - being processed')
+    logger.debug(f'{id} - being processed')
+    
     
     # get dataframe for the specific sku
-    df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
-    
-     # locate the group that needs to be aggregated
-    sku_level = df_sku[bl_l].iloc[0]
-    
-    # produce baseline dataframe at desired level
-    baseline = baseline_ref[baseline_ref[bl_l] == sku_level]
-
-    # merge baseline and sku table
-    table = pd.merge(df_sku[['date', 'sku_root_id', 'promo_flag_binary', 'total_sale_amt', 'total_sale_qty',
-                             'total_margin_amt', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
-                             'margin_amt_promo_flag']],
-                     baseline[['date', bl_l, 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct']],
-                     on=['date']).reset_index(drop=True)
+    id_time = time.time()
+    df_id = summary_table[summary_table.uniq_id == id].sort_values(by=['date']).reset_index(drop=True)
+    load_id_table = round((time.time() - id_time), 2)
+    logger.debug('Loading {a} table took {b} secs...'.format(a=id, b=tload_id_table))
 
     # define change_flag to be the reference of baseline and cannibalisation calculation
     # set 1 : for the first day on promotion
     # set 2: for the rest days on promotion after first day
     # set 3: for the extension days of baseline calculation
-    table['change_flag'] = table['promo_flag_binary']
-    for i in range(1, len(table)):
+    df_id.loc[0, 'change_flag'] = 1
+    for i in range(1, len(df_id)):
+        df_id.loc[i, 'change_flag'] = 2
+    for i in range(len(df_id), len(df_id) + ext_week):
+        df_id.loc[i, 'date'] = df_id.loc[i-1, 'date'] + timedelta(days=7)
+        df_id.loc[i, 'sku_root_id'] = df_id.loc[i-1, 'sku_root_id']
+        df_id.loc[i, 'promo_id'] = df_id.loc[i-1, 'promo_id']
+        df_id.loc[i, 'promo_mechanic'] = df_id.loc[i-1, 'promo_mechanic']
+        df_id.loc[i, 'discount_depth'] = df_id.loc[i-1, 'discount_depth']
+        df_id.loc[i, 'change_flag'] = 3     
+
+    # locate the group that needs to be aggregated
+    baseline_level = df_id[bl_l].iloc[0]
+    
+    # produce baseline dataframe at desired level
+    baseline = baseline_ref[baseline_ref[bl_l] == baseline_level]
+
+    # merge baseline and sku table
+    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic, discount_depth', 'change_flag','total_sale_qty']],
+                     baseline[['date', 'sale_qty_pct']],
+                     on=['date']).reset_index(drop=True)
+    
+                                        
+    # produce baseline + extended_baseline
+    for i in range(0, len(table)):
         if table.loc[i, 'change_flag'] == 1:
-            table.loc[i, 'change_flag'] = 2
-    for i in range(0, len(table) - 1):
-        if table.loc[i, 'change_flag'] == 0 and table.loc[i + 1, 'change_flag'] == 2:
-            table.loc[i + 1, 'change_flag'] = 1
-    for i in range(0, len(table) - ext_day):
-        for j in range(1, ext_day + 1):
-            if table.loc[i, 'change_flag'] == 2 and table.loc[i + j, 'change_flag'] == 0:
-                table.loc[i + j, 'change_flag'] = 3
-                
-                             
-    # produce baseline
-    for metric in metrics.keys():
-        for i in range(0, len(table)):
-            if i==0:                                                                                 
-                if table.loc[i, 'change_flag'] == 1:
-                    table.loc[i, f'{metric}_bl'] = float(table.loc[i, metrics[metric][1]])
-                else:
-                    table.loc[i, f'{metric}_bl'] = np.nan
-            else:
-                if table.loc[i, 'change_flag'] == 0:
-                    table.loc[i, f'{metric}_bl'] = np.nan
-                if table.loc[i, 'change_flag'] == 1 and table.loc[i - 1, 'change_flag'] in [0, 3]:
-                    table.loc[i - 1, f'{metric}_bl'] = float(table.loc[i - 1, metrics[metric][1]])
-                if table.loc[i, 'change_flag'] in [1, 2]:
-                    table.loc[i, f'{metric}_bl'] = round(table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'],
-                                                         2)
+            table.loc[i, 'sale_qty_bl'] = round(table.loc[i, 'previous_weekxxx'] * table.loc[i, 'sale_qty_pct'],
+                                                    2)
+        if table.loc[i, 'change_flag'] in [2,3]:
+            table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
+                                                    2)
+                        
     logger.debug(f'{sku} - completed baseline')
 
-    # produce extended baseline
-    for metric in metrics.keys():
-        table.loc[0, f'{metric}_bl_ext'] = np.nan
-        for i in range(1, len(table)):
-            if table.loc[i, 'change_flag'] in [0, 1]:
-                table.loc[i, f'{metric}_bl_ext'] = np.nan
-            if table.loc[i, 'change_flag'] == 3 and table.loc[i - 1, 'change_flag'] == 2:
-                table.loc[i - 1, f'{metric}_bl_ext'] = table.loc[i - 1, f'{metric}_bl']
-            if table.loc[i, 'change_flag'] == 3:
-                table.loc[i, f'{metric}_bl_ext'] = round(
-                    table.loc[i - 1, f'{metric}_bl'] * table.loc[i, f'{metric}_pct'], 2)
-    logger.debug(f'{sku} - completed pull forward baseline')
+    # # produce extended baseline
+    # for i in range(0, len(table)):
+    #     if table.loc[i, 'change_flag'] == 3:
+    #         table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'], 2)
+    # logger.debug(f'{sku} - completed pull forward baseline')
+
+        # sku_promo.append(table)
 
     
-    # define incremental sale
-    table['incremental_sale'] = pd.to_numeric(table['total_sale_amt']) - table['sale_amt_bl']
-    table['incremental_qty'] = pd.to_numeric(table['total_sale_qty']) - table['sale_qty_bl']
-    table['incremental_margin'] = pd.to_numeric(table['total_margin_amt']) - table['margin_amt_bl']
+    # # define incremental sale
+    # table['incremental_qty'] = pd.to_numeric(table['total_sale_qty']) - table['sale_qty_bl']
     
     
     # define final dataframe
     final_df = table[
-        ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
-         'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
-         'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_pct', 'sale_qty_pct', 'margin_amt_pct', 
-         'sale_amt_promo_flag', 'sale_qty_promo_flag', 'margin_amt_promo_flag']]
+        ['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
 
     logger.info(f'{sku} - completed baseline and pull forward calculation')
   
@@ -245,7 +232,7 @@ if __name__ == "__main__":
     logger.info("Loading input tables from Bigquery....")
     
     logger.info("Loading distinct sections table from Bigquery....")
-    section_table = load_t0_from_bq(bl_s, project_id)
+    section_table = load_section_from_bq(bl_s, project_id)
     
     # Unique sections in category include
     unique_sections = list(section_table["section"].unique())
@@ -259,21 +246,21 @@ if __name__ == "__main__":
         section = unique_sections[i_sec]
         
         logger.info("Processing section {a}...".format(a=section))
-        
-        # Compute the baseline for each section     
-        logger.info("Loading summary transaction table from Bigquery....")
-        summary_table = load_t1_from_bq(section, project_id)
+            
+        logger.info("Loading promo table from Bigquery....")
+        summary_table = load_promo_from_bq(section, project_id)
+        summary_table['uniq_id'] = summary_table['sku_root_id'] + summary_table['promo_id'] + summary_table['promo_year'] + 
+                        summary_table['promo_mechanic'] + summary_table['discount_depth']
 
         logger.info("Loading summary non-promotional transaction table from Bigquery....")
-        weekly_agg = load_t2_from_bq(section, project_id)
+        weekly_agg = load_np_from_bq(section, project_id)
 
         logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
         agg_np = aggregate_np(weekly_agg, bl_l)
         
-
-        logger.info("Computing no. of unique in-scope skus")
-        uniq_sku = list(summary_table['sku_root_id'].unique())
-        logger.info("No. of in-scope skus: {a}".format(a=len(uniq_sku)))
+        logger.info("Computing no. of unique in-scope ids")
+        uniq_id = list(summary_table['uniq_id'].unique())
+        logger.info("No. of in-scope skus: {a}".format(a=len(uniq_id)))
 
         # Compute the % change values in each of the categories used in the baseline
         logger.info("Calculating the % change in baseline values")
@@ -316,16 +303,16 @@ if __name__ == "__main__":
                 logger.info('Category results dataframe has {a} rows and {b} cols...'.format(a=baseline_perc_df.shape[0], b=baseline_perc_df.shape[1]))
 
             # Compute the SKU level baseline calculations
-            for i in range(0, len(uniq_sku), batchsize):
+            for i in range(0, len(uniq_id), batchsize):
 
                 # Clear the processes list
                 processes[:] = []
 
                 start_time_batch = time.time()
-                batch = uniq_sku[i:i+batchsize] # the result might be shorter than batchsize at the end
+                batch = uniq_id[i:i+batchsize] # the result might be shorter than batchsize at the end
 
-                for sku in batch:
-                    p = Process(target=baseline_sku, args=(frame,sku,summary_table, baseline_perc_df, bl_l, metrics, ext_day))  # Passing the list
+                for id in batch:
+                    p = Process(target=baseline_sku, args=(frame,id,summary_table, baseline_perc_df, bl_l, ext_week))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
@@ -353,27 +340,19 @@ if __name__ == "__main__":
         # upload the final dataframe onto Bigquery
         logger.info('Uploading baseline table to Bigquery...')
         
-        # specify the table schema
-#          ['date', 'sku_root_id', 'promo_flag_binary', 'change_flag', 'total_sale_amt', 'sale_amt_bl', 'sale_amt_bl_ext',
-#          'total_sale_qty', 'sale_qty_bl', 'sale_qty_bl_ext', 'total_margin_amt', 'margin_amt_bl', 'margin_amt_bl_ext',
-#          'incremental_sale', 'incremental_qty', 'incremental_margin', 'sale_amt_promo_flag', 'sale_qty_promo_flag',
-#          'margin_amt_promo_flag']]
-        
-        
-        #table_schema = [{'name': 'date', 'type': 'TIMESTAMP'}, {'name': 'col2', 'type': 'STRING'},]
         
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'baseline.baseline', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline_performance.baseline', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'baseline.baseline', project_id=project_id, if_exists='append')
 
 
         logger.info('Completed upload of section baseline to Bigquery...')
         
     # call function to run query in Bigquery to create baseline related tables
-    logger.info('Creating baseline tables in Bigquery...')
-    baseline_query.baseline_dashboard(project_id, dataset_id)
-    logger.info('Completed creating baseline tables in Bigquery...')
+    # logger.info('Creating baseline tables in Bigquery...')
+    # baseline_query.baseline_dashboard(project_id, dataset_id)
+    # logger.info('Completed creating baseline tables in Bigquery...')
     
     total_time = round((time.time() - start_time) / 60, 1)
     logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
