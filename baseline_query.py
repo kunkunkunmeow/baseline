@@ -6,7 +6,7 @@ from google.cloud import bigquery
 # Set logger properties
 logger = logging.getLogger('baseline_calculation')
 
-def baseline_promo(project_id, dataset_id):
+def baseline_dashboard(project_id, dataset_id):
         
         # Load client
         client = bigquery.Client()
