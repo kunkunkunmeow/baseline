@@ -68,7 +68,7 @@ def load_t0_from_bq(area, project_id):
     SELECT distinct section
     FROM `ETL.aggregate_weekly_transaction_summary`
     WHERE area = "%s"   """ %(area)
-    start = time.time()
+    start = time.time() 
 
     for i in tqdm(range(1), desc='Loading table...'):
         section_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
