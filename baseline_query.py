@@ -64,7 +64,7 @@ def baseline_dashboard(project_id, dataset_id):
 
         agg_table as (
         SELECT date, sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, CONCAT(sku_root_id, "-", promo_id, "-", promo_year, "-", promo_mechanic, "-", discount_depth) AS uniq_id, 
-               change_flag, tt_sale_qty_ref,
+               change_flag, tt_sale_qty_ref, sale_qty_pct,
                CASE WHEN change_flag = 3 THEN post_promo.s_fw_bl_qty ELSE promo.total_sale_qty END AS tt_sale_qty,
                CASE WHEN change_flag = 3 THEN post_promo.s_fw_bl_sale ELSE promo.total_sale_amt END AS tt_sale_amt,
                CASE WHEN change_flag = 3 THEN post_promo.s_fw_bl_margin ELSE promo.total_margin_amt END AS tt_margin_amt,
