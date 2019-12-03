@@ -215,7 +215,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     
     # define final dataframe
     final_df = table[
-        ['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
+        ['date', 'uniq_id','sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
 
     logger.info(f'section {section} - {id} - completed baseline and pull forward calculation')
   
