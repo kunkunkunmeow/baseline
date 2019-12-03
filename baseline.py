@@ -219,7 +219,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week):
     final_df = table[
         ['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
 
-    logger.info(f'{sku} - completed baseline and pull forward calculation')
+    logger.info(f'{id} - completed baseline and pull forward calculation')
   
     frame.append(final_df)
     
