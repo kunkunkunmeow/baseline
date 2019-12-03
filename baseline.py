@@ -86,7 +86,7 @@ def load_promo_from_bq(section, project_id):
 
     summary_sql = """
     SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, total_sale_qty, s_prev_bl_qty
-    FROM `ETL.aggregate_weekly_transaction_summary`
+    FROM `ETL.aggregate_promo_to_sku_summary`
     WHERE section = "{section}"   """.format(bl_l = bl_l, section = section)
     start = time.time()
 
