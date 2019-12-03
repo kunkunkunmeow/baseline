@@ -64,7 +64,7 @@ def load_section_from_bq(area, project_id):
     SELECT distinct section
     FROM `ETL.root_sku` 
     WHERE area = "{area}"
-    AND section = "DULCE"
+    AND section = "LIBRE SERVICIO"
     """.format(area = area)
     
     start = time.time()
