@@ -83,9 +83,9 @@ def load_promo_from_bq(section, project_id):
     start_time = time.time()
 
     summary_sql = """
-    SELECT date, sku_root_id , section , promo_id, promo_year, promo_mechanic, discount_depth, total_sale_qty, s_prev_bl_qty
+    SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, total_sale_qty, s_prev_bl_qty
     FROM `ETL.aggregate_promo_to_sku_summary`
-    WHERE section = "{section}"   """.format(section = section)
+    WHERE section = "{section}"   """.format(bl_l = bl_l, section = section)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -310,7 +310,7 @@ if __name__ == "__main__":
                 batch = uniq_id[i:i+batchsize] # the result might be shorter than batchsize at the end
 
                 for id in batch:
-                    p = Process(target=baseline_sku, args=(frame,id,summary_table, baseline_perc_df, bl_l, ext_week))  # Passing the list
+                    p = Process(target=baseline_id, args=(frame,id,summary_table, baseline_perc_df, bl_l, ext_week))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
