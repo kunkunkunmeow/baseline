@@ -184,7 +184,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     baseline = baseline_ref[baseline_ref[bl_l] == baseline_level]
 
     # merge baseline and sku table
-    table = pd.merge(df_id[['date', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy','change_flag','total_sale_qty', 's_prev_bl_qty']],
+    table = pd.merge(df_id[['date', 'uniq_id', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy','change_flag','total_sale_qty', 's_prev_bl_qty']],
                      baseline[['date', 'sale_qty_pct']],
                      on=['date']).reset_index(drop=True)
     
