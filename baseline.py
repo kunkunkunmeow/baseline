@@ -6,7 +6,7 @@ from tqdm import tqdm
 import time
 import logging
 from datetime import timedelta  
-import baseline_query
+# import baseline_query
 
 # Input global variables 
 # Reformat code to accept these variables as input
