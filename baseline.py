@@ -344,9 +344,9 @@ if __name__ == "__main__":
         
         
         if (i_sec == 0):
-            pandas_gbq.to_gbq(results_df, 'baseline.baseline_dulce', project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'baseline.baseline', project_id=project_id, if_exists=bl_table_config)
         else:
-            pandas_gbq.to_gbq(results_df, 'baseline.baseline_dulce', project_id=project_id, if_exists='append')
+            pandas_gbq.to_gbq(results_df, 'baseline.baseline', project_id=project_id, if_exists='append')
 
 
         logger.info('Completed upload of section baseline to Bigquery...')
