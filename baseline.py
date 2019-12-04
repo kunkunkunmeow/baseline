@@ -82,7 +82,7 @@ def load_promo_from_bq(section, project_id):
     start_time = time.time()
 
     summary_sql = """
-    SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy, total_sale_qty, s_prev_bl_qty
+    SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy, total_sale_qty, s_prev_bl_qty, pf_after_bl_qty
     FROM `ETL.aggregate_promo_to_sku_summary`
     WHERE section = "{section}"   """.format(bl_l = bl_l, section = section)
     start = time.time()
@@ -186,7 +186,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     baseline = baseline_ref[baseline_ref[bl_l] == baseline_level]
 
     # merge baseline and sku table
-    table = pd.merge(df_id[['date', 'uniq_id', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy','change_flag','total_sale_qty', 's_prev_bl_qty']],
+    table = pd.merge(df_id[['date', 'uniq_id', 'sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy','change_flag','total_sale_qty', 's_prev_bl_qty', 'pf_after_bl_qty']],
                      baseline[['date', 'sale_qty_pct']],
                      on=['date']).reset_index(drop=True)
     
@@ -196,10 +196,16 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
         if table.loc[i, 'change_flag'] == 1:
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i, 's_prev_bl_qty'] * table.loc[i, 'sale_qty_pct'],
                                                     2)
-        if table.loc[i, 'change_flag'] in [2,3]:
+        if table.loc[i, 'change_flag'] ==2:
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
                                                     2)
-                        
+        if table.loc[i, 'change_flag'] ==3 and table.loc[i-1, 'change_flag'] ==2 :
+            table.loc[i, 'sale_qty_bl'] = round(table.loc[i, 'pf_after_bl_qty'] * table.loc[i, 'sale_qty_pct'],
+                                                    2)
+        if table.loc[i, 'change_flag'] ==3 and table.loc[i-1, 'change_flag'] ==3 :
+            table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
+                                                    2)
+                                    
     logger.debug(f'section {section} - {id} - completed baseline')
 
     # # produce extended baseline
@@ -255,6 +261,8 @@ if __name__ == "__main__":
         summary_table['uniq_id'] = summary_table['sku_root_id'] + "-"+ summary_table['promo_id'] + "-"+ summary_table['promo_year'] + "-"+ summary_table['promo_mechanic'] + "-"+ summary_table['discount_depth_2']+"-"+ summary_table['no_to_pay_2'].apply(str)+"-"+ summary_table['no_to_buy_2'].apply(str)
         summary_table['total_sale_qty'] = summary_table['total_sale_qty'].apply(pd.to_numeric)
         summary_table['s_prev_bl_qty'] = summary_table['s_prev_bl_qty'].apply(pd.to_numeric)
+        summary_table['pf_after_bl_qty'] = summary_table['pf_after_bl_qty'].apply(pd.to_numeric)
+        
 
         logger.info("Loading summary non-promotional transaction table from Bigquery....")
         weekly_agg = load_np_from_bq(section, project_id)
