@@ -80,9 +80,14 @@ impact_stores_outlier = 20
 promo_duration_outlier = 21
 
 # Specify the list of discount depths to include
-discount_depths_outlier = ['0% off','2.5% off','5% off','10% off','15% off','20% off','25% off','30% off','35% off','40% off','45% off',
-'50% off','55% off','60% off','65% off','70% off','75% off','80% off','85% off','buy 1 pay 1','buy 2 pay 1','buy 2 pay 1.2',
-'buy 2 pay 1.3','buy 2 pay 1.4','buy 2 pay 1.5','buy 2 pay 1.53','buy 2 pay 1.6','buy 2 pay 1.7','buy 2 pay 1.8','buy 3 pay 2',
+# discount_depths_outlier = ['0% off','2.5% off','5% off','10% off','15% off','20% off','25% off','30% off','35% off','40% off','45% off',
+# '50% off','55% off','60% off','65% off','70% off','75% off','80% off','85% off','buy 1 pay 1','buy 2 pay 1','buy 2 pay 1.2',
+# 'buy 2 pay 1.3','buy 2 pay 1.4','buy 2 pay 1.5','buy 2 pay 1.53','buy 2 pay 1.6','buy 2 pay 1.7','buy 2 pay 1.8','buy 3 pay 2',
+# 'buy 4 pay 3']
+
+discount_depths_outlier = ['2.5% off','5% off','10% off','15% off','20% off','25% off','30% off','35% off','40% off','45% off',
+'50% off','55% off','60% off','buy 2 pay 1','buy 2 pay 1.2',
+'buy 2 pay 1.3','buy 2 pay 1.4','buy 2 pay 1.5','buy 2 pay 1.6','buy 2 pay 1.7','buy 2 pay 1.8','buy 3 pay 2',
 'buy 4 pay 3']
 
 # Specify the in-scope categories to train the model on
