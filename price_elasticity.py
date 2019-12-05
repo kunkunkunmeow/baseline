@@ -323,6 +323,6 @@ if __name__ == "__main__":
     #     baseline_query.baseline_dashboard(project_id, dataset_id)
     #     logger.info('Completed creating baseline tables in Bigquery...')
 
-        total_time = round((time.time() - section_time) / 60, 1)
+        #total_time = round((time.time() - section_time) / 60, 1)
         logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
             
