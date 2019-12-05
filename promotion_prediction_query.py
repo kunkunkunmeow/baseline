@@ -247,14 +247,14 @@ def promotion_prediction_res(project_id, dataset_id):
         CAST(pred.promoted_in_past AS NUMERIC) as promoted_in_past,
         std_price.margin_per_unit as std_margin_per_unit,
         std_price.std_price_per_unit as std_price_per_unit,
-        pred.p_qty_bl*std_price.std_price_per_unit as p_sale_bl,
-        pred.p_qty_bl*std_price.margin_per_unit as p_margin_bl,
+        CAST(pred.p_qty_bl AS NUMERIC)*std_price.std_price_per_unit as p_sale_bl,
+        CAST(pred.p_qty_bl AS NUMERIC)*std_price.margin_per_unit as p_margin_bl,
         std_price.cost_per_unit as cost_price,
         (CAST(discount_depth_rank AS NUMERIC)/100) as equivalent_discount,
         (1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit as effective_discount_price_per_unit,
-        pred.p_cal_inc_sale_qty*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit as p_cal_inc_sale_amt,
-        (pred.p_cal_inc_sale_qty*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit) 
-        - (pred.p_cal_inc_sale_qty*(std_price.cost_per_unit)) as p_cal_inc_margin_amt
+        CAST(pred.p_cal_inc_sale_qty AS NUMERIC)*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit as p_cal_inc_sale_amt,
+        (CAST(pred.p_cal_inc_sale_qty AS NUMERIC)*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit) 
+        - (CAST(pred.p_cal_inc_sale_qty AS NUMERIC)*(std_price.cost_per_unit)) as p_cal_inc_margin_amt
         FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` pred
         LEFT JOIN `gum-eroski-dev.ETL.aggregate_std_price_margin` std_price
         on std_price.sku_root_id = pred.sku_root_id
