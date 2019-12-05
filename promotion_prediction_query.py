@@ -67,6 +67,7 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
           in_gondola_flag,
           in_both_leaflet_gondola_flag,
           discount_depth,
+          discount_depth_rank,
           CASE
             WHEN change_flag in (1,2) THEN 'promotion'
           ELSE
@@ -147,6 +148,7 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
           in_gondola_flag,
           in_both_leaflet_gondola_flag,
           discount_depth,
+          discount_depth_rank,
           period ),
         temp_aggr_promo_f AS (
         SELECT
