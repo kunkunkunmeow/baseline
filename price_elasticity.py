@@ -268,8 +268,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     print(cost_per_unit)
     sku = [sku]
     
-    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit))
-    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit'])
+    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, avg_price))
+    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'avg_price'])
         
     logger.info(f'{sku} - completed baseline perc change calculation')
     
