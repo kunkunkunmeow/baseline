@@ -198,12 +198,13 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     logger.info(f'{sku} - being processed...')
 
-    if sku == "3407590": 
+    if sku == 3407590: 
         logger.info(f"dataframe has {agg_np.shape[0]} rows")
     # set dataframe for each sku
     #fullData = agg_np.loc[agg_np['sku_root_id']==sku]sort_values(by=['col1'])
         fullData = agg_np[agg_np['sku_root_id']==sku].sort_values(by=['std_price_per_unit']).reset_index(drop=True)
         logger.info(f"new dataframe has {fullData.shape[0]} rows")
+        logger.info(fullData)
         #if sku == "3407590": logger.info(f"new dataframe has {fullData.shape[0]} rows")
     # get store ids
     store_ids = fullData.store_id.unique()
@@ -306,7 +307,8 @@ if __name__ == "__main__":
         logger.info("Processing category {a}...".format(a=each))
         
         category_table = load_daily_trans_from_bq(each, project_id)
-        category_table['sku_root_id'] = category_table['sku_root_id'].astype(str)
+        #category_table['sku_root_id'] = category_table['sku_root_id'].astype(str)
+        category_table['sku_root_id'] = pd.to_numeric['sku_root_id']
         
         cost_per_unit_table = unit_cost_table(each, project_id)
         
@@ -325,7 +327,7 @@ if __name__ == "__main__":
 
                 start_time_batch = time.time()
                 #batch = skus[i:i+batchsize] # the result might be shorter than batchsize at the end
-                batch = ["3407590"]
+                batch = [3407590]
                 for product in batch:
                     p = Process(target=linear_reg, args=(frame, category_table, cost_per_unit_table, product, max_limit, min_limit, min_points))  # Passing the list
                     p.start()
