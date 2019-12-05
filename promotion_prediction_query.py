@@ -99,7 +99,7 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
           `gum-eroski-dev.baseline.baseline_promo`
         WHERE
           promo_mechanic IN {m}
-          AND area = {a}
+          AND area = "{a}"
         GROUP BY
           sku_root_id,
           description,
@@ -178,7 +178,7 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
         promo_id,
         promo_year,
         period
-        """.format(m="(\'"+"\',\'".join(str(x) for x in mechanic)+"\')", a=str(area))
+        """.format(m="(\'"+"\',\'".join(str(x) for x in mechanic)+"\')", a=area)
          
         # Create a disctionary to loop over all destination tables and scripts
         tables = {'prediction_train_input':promotion_pred_sql} 
