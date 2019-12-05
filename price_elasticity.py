@@ -237,7 +237,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
     avg_price = fullData.mean(axis=0)['actual_price']
-    average_price.append(avg_price)
+    average_price.append(float(avg_price))
     
     # where gradient is positive drop row
     #median = df.loc[df['gradient']<0].median(axis=0)['gradient']
@@ -268,7 +268,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     standard_dev.append(df.std(axis=0)['gradient'])
     
-    cost_per_unit = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
+    cost_per_unit = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'])
     sku = [sku]
     
     #optimal_price = (intercept_sum + (slope*cost_per_unit))/(slope*2)
