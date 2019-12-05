@@ -371,7 +371,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     # Lets remove data where segment is not in in-scope segment
     if 'segment' in list(input_data.columns) and segment_outlier is not None:
         outliers = input_data[~input_data.segment.isin(segment_outlier)]
-        logger.info("Removing sample data wheresegment is not in {a}, {b} sample data points removed...".format(a=segment_outlier,
+        logger.info("Removing sample data where segment is not in {a}, {b} sample data points removed...".format(a=segment_outlier,
                                                                                                                  b=outliers.shape[0]))
         input_data = input_data[input_data.segment.isin(segment_outlier)]
 
@@ -648,7 +648,7 @@ if __name__ == "__main__":
                                                                             impact_stores_outlier=impact_stores_outlier, 
                                                                             promo_duration_outlier=promo_duration_outlier,
                                                                             discount_depths_outlier=discount_depths_outlier,
-                                                                            segment_outlier=segment_outlier)  # remove outliers
+                                                                            segment_outlier=None)  # remove outliers
     
     # Run the model to predict 
     if run_config == 'train-predict':
