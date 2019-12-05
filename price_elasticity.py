@@ -255,7 +255,7 @@ if __name__ == "__main__":
     logger.info("Loading input tables from Bigquery....")
     
     # loop through each category
-    for each in category:
+    for i_sec, each enumerate(category):
         
         logger.info("Processing category {a}...".format(a=each))
         
@@ -293,5 +293,30 @@ if __name__ == "__main__":
 
                 logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
-                
+            # Convert all nulls to None
+            results_df = results_df.where((pd.notnull(results_df)), None)
+
+
+            total_time = round((time.time() - section_start_time) / 60, 1)
+            logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+
+            # upload the final dataframe onto Bigquery
+            logger.info('Uploading baseline table to Bigquery...')
+
+
+            if (i_sec == 0):
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
+            else:
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
+
+
+            logger.info('Completed upload of section baseline to Bigquery...')
+
+    #     #call function to run query in Bigquery to create baseline related tables
+    #     logger.info('Creating baseline tables in Bigquery...')
+    #     baseline_query.baseline_dashboard(project_id, dataset_id)
+    #     logger.info('Completed creating baseline tables in Bigquery...')
+
+        total_time = round((time.time() - start_time) / 60, 1)
+        logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
             
