@@ -165,7 +165,7 @@ def load_daily_trans_from_bq(cat, project_id):
 
 def unit_cost_table(category, project_id):
     sql_str = """
-    SELECT price.sku_root_id as sku_root_id, price.cost_per_unit as cost_per_unit, cat.category as category
+    SELECT DISTINCT price.sku_root_id as sku_root_id, price.cost_per_unit as cost_per_unit, cat.category as category
     FROM `gum-eroski-dev.ETL.aggregate_std_price_margin` as price
     JOIN `gum-eroski-dev.ETL.sku` as cat
     ON price.sku_root_id = cat.sku_root_id
