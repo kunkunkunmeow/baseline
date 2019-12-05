@@ -15,7 +15,7 @@ import baseline_query
 # linear regression variables
 max_limit = 2
 min_limit = 1/max_limit
-min_points = 2
+min_points = 3
 
 # Project ID
 project_id = "gum-eroski-dev"
@@ -237,10 +237,12 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
     avg_price = fullData.mean(axis=0)['actual_price']
     
-    # where gradient is negative, calculate median
-    median = df.loc[df['gradient']<0].median(axis=0)['gradient']
-    indexNames = df[(df['gradient']/median > max_limit) | (df['gradient']/median < min_limit) ].index
+    # where gradient is positive drop row
+    #median = df.loc[df['gradient']<0].median(axis=0)['gradient']
+    #indexNames = df[(df['gradient']/median > max_limit) | (df['gradient']/median < min_limit) ].index
+    indexNames = df[(df['gradient']>=0)].index
     df.drop(indexNames , inplace=True)
+    # drop rows where points less than or equal to min_points
     df.drop(df[(df['points']<= min_points)].index, inplace=True)
     
     #df.to_csv(path_or_buf=f'{SKU}_regression_n.csv',index=False)
@@ -265,11 +267,13 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     standard_dev.append(df.std(axis=0)['gradient'])
     
     cost_per_unit = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
-    print(cost_per_unit)
     sku = [sku]
     
-    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, avg_price))
-    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'avg_price'])
+    optimal_price = (intercept_sum + (slope*cost_per_unit))/(slope*2)
+    percentage_change_in_price = ((optimal_price-avg_price)/avg_price)
+    
+    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, avg_price, optimal_price))
+    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'avg_price', 'optimal_price'])
         
     logger.info(f'{sku} - completed baseline perc change calculation')
     
