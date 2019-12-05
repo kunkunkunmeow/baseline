@@ -235,7 +235,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         
     list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points)) 
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
-    
+    logger.info(df.head())
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
     avg_price = fullData.mean(axis=0)['actual_price']
     average_price.append(float(avg_price))
@@ -309,7 +309,7 @@ if __name__ == "__main__":
         with Manager() as manager:
             frame = manager.list()  # <-- can be shared between processes.
             processes = []
-            
+            sku = "302851"
             for i in range(0, len(skus), batchsize):
 
                 # Clear the processes list
@@ -347,9 +347,9 @@ if __name__ == "__main__":
             logger.info(i_sec)
             
             if (i_sec == 0):
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
+                #pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
             else:
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
+                #pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
 
 
             logger.info('Completed upload of section baseline to Bigquery...')
