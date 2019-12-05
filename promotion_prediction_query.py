@@ -13,7 +13,7 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
 
         job_config = bigquery.QueryJobConfig()
         
-        logger.debug("Filtering on promotion mechanic {a}...".format(a=mechanic))
+        logger.info("Filtering on promotion mechanic {a}...".format(a=mechanic))
         
         promotion_pred_sql = """
          WITH
