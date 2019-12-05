@@ -233,10 +233,11 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         points.append(data.shape[0])
         c.append(lm.intercept_[0])
         gradient.append(lm.coef_[0][0]/Nfactor)
+        if sku == "302851": logger.info(store_id, lm.coef_[0][0], lm.score(X,y), data.shape[0], lm.intercept_[0], lm.coef_[0][0]/Nfactor)
         
     list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points)) 
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
-    if sku == "302851": logger.info(df)
+    
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
     avg_price = fullData.mean(axis=0)['actual_price']
     average_price.append(float(avg_price))
