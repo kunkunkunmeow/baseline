@@ -348,8 +348,10 @@ if __name__ == "__main__":
             logger.info(i_sec)
             
             if (i_sec == 0):
+                print()
                 #pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
             else:
+                print()
                 #pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
 
 
