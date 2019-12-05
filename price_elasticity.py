@@ -295,7 +295,7 @@ if __name__ == "__main__":
                 frame[:] = [] 
 
                 total_time_batch = round((time.time() - start_time_batch), 2)
-                logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+                #logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
 
                 logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
 
@@ -304,7 +304,7 @@ if __name__ == "__main__":
 
 
             #total_time = round((time.time() - section_start_time) / 60, 1)
-            logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+            #logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
             # upload the final dataframe onto Bigquery
             logger.info('Uploading baseline table to Bigquery...')
@@ -324,5 +324,5 @@ if __name__ == "__main__":
     #     logger.info('Completed creating baseline tables in Bigquery...')
 
         #total_time = round((time.time() - section_time) / 60, 1)
-        logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
+        #logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
             
