@@ -201,7 +201,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     if sku == "302851": logger.info(f"dataframe has {agg_np.shape[0]} rows")
     # set dataframe for each sku
     #fullData = agg_np.loc[agg_np['sku_root_id']==sku]sort_values(by=['col1'])
-    fullData = agg_np[agg_np['sku_root_id']==sku]sort_values(by=['store_id'])
+    fullData = agg_np[agg_np['sku_root_id']==sku].sort_values(by=['store_id']).reset_index(drop=True)
     if sku == "302851": logger.info(f"new dataframe has {fullData.shape[0]} rows")
     # get store ids
     store_ids = fullData.store_id.unique()
