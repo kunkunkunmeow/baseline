@@ -154,7 +154,7 @@ def load_t1_from_bq(project_id):
     return hist_promo_table
 
 # Function to load prediction data at a sku + promo mechanic from bigquery
-def load_t2_from_bq(section, project_id):
+def load_t2_from_bq(section, area, project_id):
     start_time = time.time()
 
     summary_sql = """
@@ -168,6 +168,16 @@ def load_t2_from_bq(section, project_id):
 
     FROM `gum-eroski-dev.prediction_results.prediction_train_input`
     ), 
+    fcast_baseline_metrics AS 
+    (
+    SELECT sku.sku_root_id, 
+    AVG(trans.total_sale_qty) as avg_sale_qty_per_store_per_week 
+    FROM `gum-eroski-dev.ETL.root_sku` sku
+    LEFT JOIN  `gum-eroski-dev.ETL.aggregate_weekly_transaction_to_sku` trans
+    ON sku.sku_root_id = trans.sku_root_id
+    WHERE promo_flag = FALSE
+    GROUP BY sku.sku_root_id
+    ),
     sku_list AS (
     SELECT 
     sku.sku_root_id,
@@ -191,6 +201,13 @@ def load_t2_from_bq(section, project_id):
     tourism_flag,
     local_flag,
     regional_flag, 
+    50 AS no_hipermercados_stores,	
+    50 AS no_supermercados_stores,	
+    0 AS no_gasolineras_stores,
+    0 AS no_comercio_electronico_stores,
+    0 AS no_otros_negocio_stores,
+    0 AS no_plataformas_stores,
+    0 AS no_other_stores,
     100 AS no_impacted_stores,
     5 AS no_impacted_regions,
     500 AS avg_store_size,
@@ -209,15 +226,15 @@ def load_t2_from_bq(section, project_id):
     1 AS in_gondola_flag,
     1 AS in_both_leaflet_gondola_flag,
     # 2 weeks worth baseline
-    fcast.avg_forecast_period*2 as p_qty_bl
+    fcast.avg_sale_qty_per_store_per_week*100*2 as p_qty_bl
 
     FROM `gum-eroski-dev.ETL.root_sku` sku
 
-    LEFT JOIN `gum-eroski-dev.baseline_performance.forecast_baseline_metrics` fcast
+    LEFT JOIN fcast_baseline_metrics fcast
 
     ON fcast.sku_root_id = sku.sku_root_id
-
-    WHERE fcast.metric = 'pred_baseline_sale_qty'
+    
+    WHERE sku.area = "%s"
     and sku.section = "%s"   
     ), cj AS (
 
@@ -231,7 +248,7 @@ def load_t2_from_bq(section, project_id):
     
     ON cj.sku_root_id = input.sku_root_id
     AND cj.discount_depth = input.discount_depth
-    """ %(section)
+    """ %(area, section)
     
     for i in tqdm(range(1), desc='Loading table...'):
         pred_promo_table = pandas_gbq.read_gbq(summary_sql, project_id=project_id)
@@ -679,7 +696,7 @@ if __name__ == "__main__":
 
             # Load the input data table for each section   
             logger.info("Loading prediction input table from Bigquery....")
-            pred_input_data = load_t2_from_bq(section, project_id)
+            pred_input_data = load_t2_from_bq(section, bl_s, project_id)
 
             logger.info("Computing no. of unique in-scope skus")
             uniq_sku = list(pred_input_data['sku_root_id'].unique())
