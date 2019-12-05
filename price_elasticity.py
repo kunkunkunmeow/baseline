@@ -204,7 +204,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     # get store ids
     store_ids = fullData.store_id.unique()
-    
+    if sku == "302851": logger.info(fullData)
     # initialise output lists
     store = []
     coeficient = []
