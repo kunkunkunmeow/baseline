@@ -271,8 +271,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     cost_per_unit = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
     sku = [sku]
     
-    optimal_price = (intercept_sum + (slope*float(cost_per_unit)))/(slope*2)
-    percentage_change_in_price = (optimal_price-avg_price)/avg_price
+    optimal_price = [(intercept_sum + (slope*float(cost_per_unit)))/(slope*2)]
+    percentage_change_in_price = [(optimal_price-avg_price)/avg_price]
     
     list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, avg_price, optimal_price))
     df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'avg_price', 'optimal_price'])
