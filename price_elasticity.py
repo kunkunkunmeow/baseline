@@ -236,7 +236,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         
     list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points)) 
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
-    logger.info(df)
+    logger.info(if sku == "302851" print(df))
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
     avg_price = fullData.mean(axis=0)['actual_price']
     average_price.append(float(avg_price))
@@ -310,7 +310,7 @@ if __name__ == "__main__":
         with Manager() as manager:
             frame = manager.list()  # <-- can be shared between processes.
             processes = []
-            skus = "302851"
+            
             for i in range(0, len(skus), batchsize):
 
                 # Clear the processes list
