@@ -30,11 +30,10 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category = """PESCADO Y MARISCO CONGELADO
-LECHE
-YOGURES Y POSTRES"""
-
+category = "PESCADO Y MARISCO CONGELADO"
 """
+LECHE
+YOGURES Y POSTRES
 QUESOS
 HUEVOS FRESCOS
 PATATAS FRITAS Y SNACKS
@@ -86,7 +85,8 @@ CONEJO ENVASADO
 MATERIAS PRIMAS Y MASAS CONGELADAS
 QUESOS RECIEN CORTADOS
 STAND IBERICOS
-COCINA IN SITU"""
+COCINA IN SITU
+"""
 
 category="\'"+category.replace("\n","\',\'")+"\'"
 category = list(category.split(","))
