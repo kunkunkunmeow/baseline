@@ -217,6 +217,13 @@ def promotion_prediction_res(project_id, dataset_id):
         sku_root_id,description, area, section, category, subcategory, segment,
         brand_name, brand_price_label, flag_healthy, innovation_flag, tourism_flag,
         local_flag, regional_flag, 
+        CAST(no_hipermercados_stores AS INT64) AS no_hipermercados_stores,
+        CAST(no_supermercados_stores AS INT64) AS no_supermercados_stores,
+        CAST(no_gasolineras_stores AS INT64) AS no_gasolineras_stores,
+        CAST(no_comercio_electronico_stores AS INT64) AS no_comercio_electronico_stores,
+        CAST(no_otros_negocio_stores AS INT64) AS no_otros_negocio_stores,
+        CAST(no_plataformas_stores AS INT64) AS no_plataformas_stores,
+        CAST(no_other_stores AS INT64) AS no_other_stores,
         CAST(no_impacted_stores AS INT64) AS no_impacted_stores, 
         CAST(no_impacted_regions AS INT64) AS no_impacted_regions,
         CAST(avg_store_size AS NUMERIC) AS avg_store_size,
@@ -234,8 +241,15 @@ def promotion_prediction_res(project_id, dataset_id):
         CAST(in_both_leaflet_gondola_flag AS INT64) AS in_both_leaflet_gondola_flag,
         CAST(p_qty_bl AS NUMERIC) AS p_qty_bl, 
         promo_mechanic, Promo_mechanic_en , discount_depth, 
-        CAST(promoted_in_past AS NUMERIC) as promoted_in_past
+        CAST(promoted_in_past AS NUMERIC) as promoted_in_past,
+        
+        
+        
+        
+        
         FROM `gum-eroski-dev.prediction_results.prediction_promotion_results`
+        
+        LEFT JOIN 
         """
 
         promotion_pred_sql = """
