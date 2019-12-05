@@ -263,17 +263,17 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     slope = average_gradient*avg_qty
     m.append(slope)
     
-    intercept_sum = avg_qty-(slope*avg_price)
+    intercept_sum = 1-(average_gradient*avg_price)
     intercept.append(intercept_sum)
     
-    Pmax.append(-intercept_sum/slope)
+    Pmax.append(-intercept_sum/average_gradient)
     
     standard_dev.append(df.std(axis=0)['gradient'])
     
     cost_per_unit = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
     sku = [sku]
     
-    opt_price = (intercept_sum + (slope*float(cost_per_unit)))/(slope*2)
+    opt_price = (intercept_sum + (slope*float(cost_per_unit)))/(average_gradient*2)
     optimal_price.append(opt_price)
     percentage = (opt_price-avg_price)/avg_price
     percentage_change.append(percentage)
