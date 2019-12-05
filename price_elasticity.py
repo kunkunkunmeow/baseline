@@ -316,6 +316,7 @@ if __name__ == "__main__":
         category_table['actual_price'] = pd.to_numeric(category_table['actual_price'])
         category_table['duration_weeks'] = pd.to_numeric(category_table['duration_weeks'])
         category_table['std_dev_sales_qty'] = pd.to_numeric(category_table['std_dev_sales_qty'])
+        pandas_gbq.to_gbq(category_table, 'WIP.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
         
         cost_per_unit_table = unit_cost_table(each, project_id)
         
@@ -365,7 +366,7 @@ if __name__ == "__main__":
             
             if (i_sec == 0):
                 print()
-                #pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
+                pandas_gbq.to_gbq(category_table, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
             else:
                 print()
                 #pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
