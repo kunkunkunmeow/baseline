@@ -62,11 +62,14 @@ input_features = ['segment', 'brand_name',
                   'campaign_start_month', 'campaign_start_week',
                   'discount_depth', 'p_qty_bl', 'in_leaflet_flag', 'in_gondola_flag']
 
-# Sepcify output features
+# Specify output features
 output_features = ['p_cal_inc_sale_qty']
 
 # Specify exclusion months
 test_months_exclusion = ['Jan', 'Aug', 'Nov', 'Dec']
+
+# Specify promo mechanics
+mechanic = [10,20]
 
 # Specify train, test, forecast
 run_config = 'train-predict' # values include 'train', 'train-predict', 'forecast'
@@ -566,7 +569,7 @@ if __name__ == "__main__":
       
         # obtain input data
         logger.info("Writing historical promotion performance data table in Bigquery...")
-        promotion_prediction_query.promotion_prediction_(project_id, dataset_id, bl_s)
+        promotion_prediction_query.promotion_prediction_(project_id, dataset_id, bl_s, mechanic)
 
         logger.info("Loading historical promotion performance data table from Bigquery...")
         input_data = load_t1_from_bq(project_id)
