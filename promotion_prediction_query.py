@@ -6,7 +6,7 @@ from google.cloud import bigquery
 # Set logger properties
 logger = logging.getLogger('promotion_prediction_model')
 
-def promotion_prediction_(project_id, dataset_id, area):
+def promotion_prediction_(project_id, dataset_id, area, mechanic):
         
         # Load client
         client = bigquery.Client()
@@ -33,6 +33,13 @@ def promotion_prediction_(project_id, dataset_id, area):
           tourism_flag,
           local_flag,
           regional_flag,
+          no_hipermercados_stores,
+          no_supermercados_stores,
+          no_gasolineras_stores,
+          no_comercio_electronico_stores,
+          no_otros_negocio_stores,
+          no_plataformas_stores,
+          no_other_stores,
           no_impacted_stores,
           no_impacted_regions,
           AVG(avg_store_size) AS avg_store_size,
@@ -83,8 +90,7 @@ def promotion_prediction_(project_id, dataset_id, area):
         FROM
           `gum-eroski-dev.baseline.baseline_promo`
         WHERE
-          promo_mechanic IN ('10',
-            '20')
+          promo_mechanic IN %s
           AND area = "%s"
         GROUP BY
           sku_root_id,
@@ -103,6 +109,13 @@ def promotion_prediction_(project_id, dataset_id, area):
           tourism_flag,
           local_flag,
           regional_flag,
+          no_hipermercados_stores,
+          no_supermercados_stores,
+          no_gasolineras_stores,
+          no_comercio_electronico_stores,
+          no_otros_negocio_stores,
+          no_plataformas_stores,
+          no_other_stores,
           no_impacted_stores,
           no_impacted_regions,
           promo_id,
@@ -157,7 +170,7 @@ def promotion_prediction_(project_id, dataset_id, area):
         promo_id,
         promo_year,
         period
-        """ %(area)
+        """ % ("(\'"+"\',\'".join(str(mech) for x in mechanic)+"\')", area)
          
         # Create a disctionary to loop over all destination tables and scripts
         tables = {'prediction_train_input':promotion_pred_sql} 
