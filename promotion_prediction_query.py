@@ -254,59 +254,50 @@ def promotion_prediction_res(project_id, dataset_id):
         pred.p_cal_inc_sale_qty*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit as p_cal_inc_sale_amt,
         (pred.p_cal_inc_sale_qty*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit) 
         - (pred.p_cal_inc_sale_qty*(std_price.cost_per_unit)) as p_cal_inc_margin_amt
-        
         FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` pred
-        
         LEFT JOIN `gum-eroski-dev.ETL.aggregate_std_price_margin` std_price
         on std_price.sku_root_id = pred.sku_root_id
         """
+        
+        promo_update_final = """
+        SELECT 
+        *, 
+        SAFE_DIVIDE(p_cal_inc_sale_qty, p_qty_bl) AS perc_uplift_qty,
+        SAFE_DIVIDE(p_cal_inc_sale_amt, p_sale_bl) AS perc_uplift_amt,
+        SAFE_DIVIDE(p_cal_inc_margin_amt, p_margin_bl) AS perc_uplift_margin
+        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` pred
+
+        """
 
         promotion_pred_sql = """
-        WITH res_ini AS (
-        SELECT SAFE_DIVIDE(p_cal_inc_sale_qty, p_qty_bl) as perc_uplift_qty, *
-        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` 
-        WHERE p_qty_bl>100
-        AND p_cal_inc_sale_qty>0 
-        ), res_temp AS (
-        SELECT *, ROW_NUMBER() 
-            over (
-                PARTITION BY category 
-                order by perc_uplift_qty desc
-            ) AS RowNo 
-        FROM res_ini 
-        )
-        SELECT 
-        res.RowNo as row_num,
-        res.sku_root_id, 
-        res.description, 
-        res.area, 
-        res.section, 
-        res.category, 
-        res.subcategory, 
-        res.segment, 
-        res.brand_name, 
-        res.brand_price_label,
-        res.flag_healthy,
-        res.innovation_flag,
-        res.tourism_flag,
-        res.local_flag,
-        res.regional_flag,
-        res.promo_mechanic,
-        res.Promo_mechanic_en,
-        res.discount_depth,
-        res.p_qty_bl as baseline_sales_qty,
-        res.p_cal_inc_sale_qty as inc_sales_qty,
-        res.perc_uplift_qty*100 as perc_uplift_qty,
-        res.promoted_in_past
-        FROM res_temp res
-        WHERE RowNo<=20
+        SELECT avg(p_cal_inc_sale_qty) as avg_p_cal_inc_sale_qty, 
+        avg(p_cal_inc_sale_amt) as avg_p_cal_inc_sale_amt,
+        avg(p_cal_inc_margin_amt) as avg_p_cal_inc_margin_amt,
 
-        order by category, perc_uplift_qty desc, p_cal_inc_sale_qty desc
+        avg(perc_uplift_qty) as avg_perc_uplift_qty,
+        avg(perc_uplift_amt) as avg_perc_uplift_amt,
+        avg(perc_uplift_margin) as avg_perc_uplift_margin,
+
+        sum(p_cal_inc_sale_qty) as sum_p_cal_inc_sale_qty, 
+        sum(p_cal_inc_sale_amt) as sum_p_cal_inc_sale_amt,
+        sum(p_cal_inc_margin_amt) as sum_p_cal_inc_margin_amt,
+
+        avg(prediction_interval) as avg_prediction_interval,
+        avg(prediction_error_perc) as avg_prediction_error_perc,
+        area, section, category, subcategory, brand_name, 
+        promo_mechanic, Promo_mechanic_en, discount_depth, 
+        count(distinct sku_root_id) as no_skus_in_brand_cat,
+        max(promoted_in_past) as promoted_in_past
+
+        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results`
+
+        group by area, section, category, subcategory, brand_name, promo_mechanic, Promo_mechanic_en, discount_depth
         """ 
          
         # Create a disctionary to loop over all destination tables and scripts
         tables = {'prediction_promotion_results':promo_update,
-                  'prediction_promotion_results_top_20':promotion_pred_sql} 
+                  'prediction_promotion_results':promo_update_final,
+                  'prediction_promotion_results_cat_brand':promotion_pred_sql} 
         
         job_config.write_disposition = "WRITE_TRUNCATE"
         for key in tables:
