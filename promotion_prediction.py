@@ -54,7 +54,9 @@ logger.addHandler(ch)
 #                   'customer_profile_type', 'marketing_type', 'duration', 'includes_weekend', 'campaign_start_day',
 #                   'campaign_start_month', 'campaign_start_quarter', 'campaign_start_week', 'leaflet_cover',
 #                   'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag', 'in_both_leaflet_gondola_flag',
-#                   'discount_depth', 'brand_price_label']
+#                   'discount_depth', 'brand_price_label', 'no_hipermercados_stores',	'no_supermercados_stores'	
+ #                    'no_gasolineras_stores',	'no_comercio_electronico_stores',	'no_otros_negocio_stores',
+ #                     'no_plataformas_stores',	'no_other_stores']
 
 input_features = ['segment', 'brand_name',
                   'no_impacted_stores', 'Promo_mechanic_en',
@@ -82,6 +84,18 @@ discount_depths_outlier = ['0% off','2.5% off','5% off','10% off','15% off','20%
 '50% off','55% off','60% off','65% off','70% off','75% off','80% off','85% off','buy 1 pay 1','buy 2 pay 1','buy 2 pay 1.2',
 'buy 2 pay 1.3','buy 2 pay 1.4','buy 2 pay 1.5','buy 2 pay 1.53','buy 2 pay 1.6','buy 2 pay 1.7','buy 2 pay 1.8','buy 3 pay 2',
 'buy 4 pay 3']
+
+# Specify the in-scope categories to train the model on
+segment_outlier = ['QUESO FRESCOS','PIMIENTO PIQUILLO','DENTIFRICOS','YOGURES BASICOS','YOGURES SALUD','CARAMELO','VINOS D.O. TINTOS',
+'PIZZAS','VINOS D.O.BLANCOS','SUAVIZANTES ESTANDAR','CERVEZAS EXTRA','ACEITES OLIVA','ACEITE OLIVA VIRGEN','PATATAS FRITAS','PAPEL HIGIENICO SECO',
+'SNACKS/APERITIVOS','LECHE LARGA VIDA UHT','AGUAS SIN GAS','GALLETAS SALUD','CERVEZAS 0,0','CAFE MOLIDO','CERVEZAS LAGER','JUDIAS',
+'SNACKS','LECHE LARGA VIDA ESPECIALES','VERDURA NATURAL','TOMATE FRITO','C/G NARANJA','CEREALES','CAFE SOLUBLE','PREPARADOS VEGETALES',
+'BONITO','ATUN CLARO','MERIENDA','ENERGETICO','GALLETAS MERIENDA','ZUMO Y NECTAR','MAYONESAS, S.FINAS Y S.LIGERAS','GELES FAMILIARES',
+'GALLETAS DESAYUNO FAMILIAR','POSTRES ESPECIALES','S/G SABOR','DESAYUNO','ACEITES GIRASOL','YOGURES ESPECIALES','ESPARRAGOS BLANCOS',
+'SOLUBLES DE CACAO','RESTO HOGAR','AMBIENTADORES CONTINUOS','C/G COLA','POSTRES BASICOS','TRADICIONALES SIN CASCARA','GALLETAS INFANTILES',
+'CREMAS CACAO','ROLLO COCINA','PESCADO NATURAL','CEFALOPODO','SURIMI','TOALLITAS','CHOCOLATE LECHE','LAVAVAJILLAS MAQUINA',
+'SOPAS Y CREMAS SOBRE','YOGURES INFANTILES Y PETIT','GARBANZO SECO','LENTEJA SECA','LAVAVAJILLAS MANO','DETERGENTE MAQUINA LIQUIDO',
+'LECHE LARGA VIDA BOTELLA','PAN BLANCO','PAN ESPECIALIDADES','PATATAS','DETERGENTE CAPSULAS','CALDOS EN PASTILLAS']
 
 # Specify train, test, forecast
 run_config = 'train-predict' # values include 'train', 'train-predict', 'forecast'
@@ -299,7 +313,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
                                      num_leaves, n_iter, n_estimators,
                                      train_size, test_months_exclusion, cat_var_exclusion,
                                      remove_outliers, impact_stores_outlier=None, promo_duration_outlier=None,
-                                     discount_depths_outlier=None):
+                                     discount_depths_outlier=None, segment_outlier=None):
     """train the promotion model during the promotion weeks
     :Args
         X(dataframe): dataframe containing the input data to train the model
@@ -326,45 +340,42 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     # Check no. of input sample data rows
     logger.info("Input sample data includes {b} samples...".format(b=input_data.shape[0]))
     
-    # Lets remove data with months Aug, Nov, Dec, Jan from the input data
+    # Lets remove data within the test exclusion months list
     if 'campaign_start_month' in list(input_data.columns):
         logger.info("Removing sample data for the following months:\n{}".format(test_months_exclusion))
         input_data = input_data[~input_data['campaign_start_month'].isin(test_months_exclusion)]
-        input_data = input_data[~input_data['campaign_start_month'].isin(test_months_exclusion)]
+    
+     # Lets remove data where store count is below a certain value
+    if 'no_impacted_stores' in list(input_data.columns) and impact_stores_outlier is not None:
+        outliers = input_data[input_data['no_impacted_stores'] < impact_stores_outlier]
+        logger.info("Removing sample data where impacted stores < {a}, {b} sample data points removed...".format(a=impact_stores_outlier,
+                                                                                                                 b=outliers.shape[0]))
+        input_data = input_data[input_data['no_impacted_stores'] >= impact_stores_outlier]
+    
+    # Lets remove data where duration is above a certain value
+    if 'duration_days' in list(input_data.columns) and promo_duration_outlier is not None:
+        outliers = input_data[input_data['duration_days'] > promo_duration_outlier]
+        logger.info("Removing sample data where promotion duration > {a}, {b} sample data points removed...".format(a=promo_duration_outlier,
+                                                                                                                 b=outliers.shape[0]))
+        input_data = input_data[input_data['duration_days'] <= promo_duration_outlier]
+  
+    # Lets remove data where discount depth is not in specified list
+    if 'discount_depth' in list(input_data.columns) and discount_depths_outlier is not None:
+        outliers = input_data[~input_data.discount_depth.isin(discount_depths_outlier)]
+        logger.info("Removing sample data where discount depth is not in {a}, {b} sample data points removed...".format(a=discount_depths_outlier,
+                                                                                                                 b=outliers.shape[0]))
+        input_data = input_data[input_data.discount_depth.isin(discount_depths_outlier)]
+    
+    # Lets remove data where segment is not in in-scope segment
+    if 'segment' in list(input_data.columns) and segment_outlier is not None:
+        outliers = input_data[~input_data.segment.isin(segment_outlier)]
+        logger.info("Removing sample data wheresegment is not in {a}, {b} sample data points removed...".format(a=segment_outlier,
+                                                                                                                 b=outliers.shape[0]))
+        input_data = input_data[input_data.segment.isin(segment_outlier)]
 
     if remove_outliers:
         logger.info("Removing outliers from sample data...")
         
-        if 'no_impacted_stores' in list(input_data.columns) and impact_stores_outlier is not None:
-          
-            # outlier removal based on impacted stores
-            outliers = input_data[input_data['no_impacted_stores'] < impact_stores_outlier]
-            
-            logger.info("Removing sample data where impacted stores < {a}, {b} sample data points removed...".format(a=impact_stores_outlier,
-                                                                                                                     b=outliers.shape[0]))
-
-            input_data = input_data[input_data['no_impacted_stores'] >= impact_stores_outlier]
-        
-        if 'duration_days' in list(input_data.columns) and promo_duration_outlier is not None:
-          
-            # outlier removal based on promotional duration
-            outliers = input_data[input_data['duration_days'] > promo_duration_outlier]
-            
-            logger.info("Removing sample data where promotion duration > {a}, {b} sample data points removed...".format(a=promo_duration_outlier,
-                                                                                                                     b=outliers.shape[0]))
-
-            input_data = input_data[input_data['duration_days'] <= promo_duration_outlier]
-            
-        if 'discount_depth' in list(input_data.columns) and discount_depths_outlier is not None:
-          
-            # outlier removal based on promotional duration
-            outliers = input_data[~input_data.discount_depth.isin(discount_depths_outlier)]
-            
-            logger.info("Removing sample data where discount depth is not in {a}, {b} sample data points removed...".format(a=discount_depths_outlier,
-                                                                                                                     b=outliers.shape[0]))
-
-            input_data = input_data[input_data.discount_depth.isin(discount_depths_outlier)]
-
         # outlier removal based on negative values
         outliers = input_data[input_data[output_features[0]] <= 0]
         logger.info("Removing all negative values from {a}, {b} sample data points removed...".format(a=output_features[0],
@@ -634,7 +645,8 @@ if __name__ == "__main__":
                                                                             remove_outliers=True,
                                                                             impact_stores_outlier=impact_stores_outlier, 
                                                                             promo_duration_outlier=promo_duration_outlier,
-                                                                            discount_depths_outlier=discount_depths_outlier)  # remove outliers
+                                                                            discount_depths_outlier=discount_depths_outlier,
+                                                                            segment_outlier=segment_outlier)  # remove outliers
     
     # Run the model to predict 
     if run_config == 'train-predict':
