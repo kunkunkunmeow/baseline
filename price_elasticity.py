@@ -167,6 +167,7 @@ def load_daily_trans_from_bq(cat, project_id):
 def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):        
     # get the aggregated none promotion data for the group that the SKU belongs to
     avg_gradient = []
+    store_count = []
     m = []
     slope = []
     intercept = []
@@ -227,6 +228,9 @@ def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):
     average_r2 = df.mean(axis=0)['R2']
     avg_R2.append(average_r2)
     
+    unique_stores = len(df.store.unique())
+    store_count.append(unique_stores)
+    
     average_gradient = df.mean(axis=0)['gradient']
     avg_gradient.append(average_gradient)
     
@@ -240,8 +244,8 @@ def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):
     
     standard_dev.append(df.std(axis=0)['gradient'])
         
-    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev))
-    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std'])
+    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count))
+    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store count'])
     
     logger.info(f'{id} - completed baseline perc change calculation')
     
