@@ -213,45 +213,52 @@ def promotion_prediction_res(project_id, dataset_id):
         
         promo_update = """
         SELECT 
-        CAST(p_cal_inc_sale_qty AS NUMERIC) AS p_cal_inc_sale_qty,
-        CAST(prediction_interval AS NUMERIC) AS prediction_interval,
-        CAST(prediction_error_perc AS NUMERIC) AS prediction_error_perc,
-        sku_root_id,description, area, section, category, subcategory, segment,
-        brand_name, brand_price_label, flag_healthy, innovation_flag, tourism_flag,
-        local_flag, regional_flag, 
-        CAST(no_hipermercados_stores AS INT64) AS no_hipermercados_stores,
-        CAST(no_supermercados_stores AS INT64) AS no_supermercados_stores,
-        CAST(no_gasolineras_stores AS INT64) AS no_gasolineras_stores,
-        CAST(no_comercio_electronico_stores AS INT64) AS no_comercio_electronico_stores,
-        CAST(no_otros_negocio_stores AS INT64) AS no_otros_negocio_stores,
-        CAST(no_plataformas_stores AS INT64) AS no_plataformas_stores,
-        CAST(no_other_stores AS INT64) AS no_other_stores,
-        CAST(no_impacted_stores AS INT64) AS no_impacted_stores, 
-        CAST(no_impacted_regions AS INT64) AS no_impacted_regions,
-        CAST(avg_store_size AS NUMERIC) AS avg_store_size,
-        CAST(type AS STRING) AS type,
-        customer_profile_type,  marketing_type, 
-        CAST(duration_days AS INT64) AS duration_days, 
-        includes_weekend, campaign_start_day, 
-        campaign_start_month , 
-        CAST(campaign_start_quarter AS INT64) AS campaign_start_quarter,
-        CAST(campaign_start_week AS INT64) AS campaign_start_week, 
-        CAST(leaflet_cover AS INT64) AS leaflet_cover,
-        CAST(leaflet_priv_space AS INT64) AS leaflet_priv_space, 
-        CAST(in_leaflet_flag AS INT64) AS in_leaflet_flag,
-        CAST(in_gondola_flag AS INT64) AS in_gondola_flag,
-        CAST(in_both_leaflet_gondola_flag AS INT64) AS in_both_leaflet_gondola_flag,
-        CAST(p_qty_bl AS NUMERIC) AS p_qty_bl, 
-        promo_mechanic, Promo_mechanic_en , discount_depth, 
-        CAST(promoted_in_past AS NUMERIC) as promoted_in_past,
+        CAST(pred.p_cal_inc_sale_qty AS NUMERIC) AS p_cal_inc_sale_qty,
+        CAST(pred.prediction_interval AS NUMERIC) AS prediction_interval,
+        CAST(pred.prediction_error_perc AS NUMERIC) AS prediction_error_perc,
+        pred.sku_root_id,pred.description, pred.area, pred.section, pred.category, pred.subcategory, pred.segment,
+        pred.brand_name, pred.brand_price_label, pred.flag_healthy, pred.innovation_flag, pred.tourism_flag,
+        pred.local_flag, pred.regional_flag, 
+        CAST(pred.no_hipermercados_stores AS INT64) AS no_hipermercados_stores,
+        CAST(pred.no_supermercados_stores AS INT64) AS no_supermercados_stores,
+        CAST(pred.no_gasolineras_stores AS INT64) AS no_gasolineras_stores,
+        CAST(pred.no_comercio_electronico_stores AS INT64) AS no_comercio_electronico_stores,
+        CAST(pred.no_otros_negocio_stores AS INT64) AS no_otros_negocio_stores,
+        CAST(pred.no_plataformas_stores AS INT64) AS no_plataformas_stores,
+        CAST(pred.no_other_stores AS INT64) AS no_other_stores,
+        CAST(pred.no_impacted_stores AS INT64) AS no_impacted_stores, 
+        CAST(pred.no_impacted_regions AS INT64) AS no_impacted_regions,
+        CAST(pred.avg_store_size AS NUMERIC) AS avg_store_size,
+        CAST(pred.type AS STRING) AS type,
+        pred.customer_profile_type,  pred.marketing_type, 
+        CAST(pred.duration_days AS INT64) AS duration_days, 
+        pred.includes_weekend, pred.campaign_start_day, 
+        pred.campaign_start_month , 
+        CAST(pred.campaign_start_quarter AS INT64) AS campaign_start_quarter,
+        CAST(pred.campaign_start_week AS INT64) AS campaign_start_week, 
+        CAST(pred.leaflet_cover AS INT64) AS leaflet_cover,
+        CAST(pred.leaflet_priv_space AS INT64) AS leaflet_priv_space, 
+        CAST(pred.in_leaflet_flag AS INT64) AS in_leaflet_flag,
+        CAST(pred.in_gondola_flag AS INT64) AS in_gondola_flag,
+        CAST(pred.in_both_leaflet_gondola_flag AS INT64) AS in_both_leaflet_gondola_flag,
+        CAST(pred.p_qty_bl AS NUMERIC) AS p_qty_bl, 
+        pred.promo_mechanic, pred.Promo_mechanic_en , pred.discount_depth, 
+        CAST(pred.promoted_in_past AS NUMERIC) as promoted_in_past,
+        std_price.margin_per_unit as std_margin_per_unit,
+        std_price.std_price_per_unit as std_price_per_unit,
+        pred.p_qty_bl*std_price.std_price_per_unit as p_sale_bl,
+        pred.p_qty_bl*std_price.margin_per_unit as p_margin_bl,
+        std_price.cost_per_unit as cost_price,
+        (CAST(discount_depth_rank AS NUMERIC)/100) as equivalent_discount,
+        (1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit as effective_discount_price_per_unit,
+        pred.p_cal_inc_sale_qty*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit as p_cal_inc_sale_amt,
+        (pred.p_cal_inc_sale_qty*(1-(CAST(discount_depth_rank AS NUMERIC)/100))*std_price.std_price_per_unit) 
+        - (pred.p_cal_inc_sale_qty*(std_price.cost_per_unit)) as p_cal_inc_margin_amt
         
+        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` pred
         
-        
-        
-        
-        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results`
-        
-        LEFT JOIN 
+        LEFT JOIN `gum-eroski-dev.ETL.aggregate_std_price_margin` std_price
+        on std_price.sku_root_id = pred.sku_root_id
         """
 
         promotion_pred_sql = """
