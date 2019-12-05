@@ -95,7 +95,7 @@ category = list(category.split(","))
 bl_table_config = 'replace'
 
 # Set batch size
-batchsize = 1
+batchsize = 2
 
 # Set logger properties
 logger = logging.getLogger('price_elasticity_calculation')
