@@ -95,7 +95,7 @@ category = list(category.split(","))
 bl_table_config = 'replace'
 
 # Set batch size
-batchsize = 50
+batchsize = 1
 
 # Set logger properties
 logger = logging.getLogger('price_elasticity_calculation')
@@ -307,6 +307,7 @@ if __name__ == "__main__":
         cost_per_unit_table = unit_cost_table(each, project_id)
         
         skus = list(category_table['sku_root_id'].unique())
+        skus = "302851"
         
         results_df = pd.DataFrame()
         
