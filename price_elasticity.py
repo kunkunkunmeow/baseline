@@ -194,7 +194,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     average_price = []
     optimal_price = []
     percentage_change = []
-    fullData = pd.DataFrame()
+    #fullData = pd.DataFrame()
     
     logger.info(f'{sku} - being processed...')
 
