@@ -246,6 +246,7 @@ def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):
     Pmax.append(-intercept_sum/slope)
     
     standard_dev.append(df.std(axis=0)['gradient'])
+    sku = [sku]
         
     list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count))
     df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count'])
