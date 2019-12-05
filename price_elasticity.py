@@ -261,6 +261,8 @@ if __name__ == "__main__":
     # loop through each category
     for i_sec, each in enumerate(category):
         
+        section_time = time.time()
+        
         logger.info("Processing category {a}...".format(a=each))
         
         category_table = load_daily_trans_from_bq(each, project_id)
@@ -321,6 +323,6 @@ if __name__ == "__main__":
     #     baseline_query.baseline_dashboard(project_id, dataset_id)
     #     logger.info('Completed creating baseline tables in Bigquery...')
 
-        total_time = round((time.time() - start_time) / 60, 1)
+        total_time = round((time.time() - section_time) / 60, 1)
         logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
             
