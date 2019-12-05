@@ -15,7 +15,7 @@ import baseline_query
 # linear regression variables
 max_limit = 2
 min_limit = 1/max_limit
-min_points = 4
+min_points = 2
 
 # Project ID
 project_id = "gum-eroski-dev"
