@@ -14,7 +14,7 @@ def promotion_prediction_(project_id, dataset_id, area):
         job_config = bigquery.QueryJobConfig()      
         
         promotion_pred_sql = """
-        WITH
+         WITH
         temp_aggr_promo AS (
         SELECT
           sku_root_id,
@@ -39,7 +39,7 @@ def promotion_prediction_(project_id, dataset_id, area):
           promo_id,
           promo_year,
           promo_mechanic,
-          Promo_mechanic_en,
+          promo_mechanic_description as Promo_mechanic_en,
           name,
           type,
           start_date,
@@ -59,26 +59,29 @@ def promotion_prediction_(project_id, dataset_id, area):
           in_both_leaflet_gondola_flag,
           discount_depth,
           CASE
-            WHEN promo_flag_binary =1 THEN 'promotion'
+            WHEN change_flag in (1,2) THEN 'promotion'
           ELSE
           'post_promotion'
         END
           AS period,
-          SUM(p_discount) AS p_discount,
-          SUM(p_sale_bl) AS p_sale_bl,
-          SUM(p_qty_bl) AS p_qty_bl,
-          SUM(p_margin_bl) AS p_margin_bl,
-          SUM(p_sale_amt) AS p_sale_amt,
-          SUM(p_sale_qty) AS p_sale_qty,
-          SUM(p_margin_amt) AS p_margin_amt,
-          SUM(p_cal_inc_sale_amt) AS p_cal_inc_sale_amt,
-          SUM(p_cal_inc_sale_qty) AS p_cal_inc_sale_qty,
-          SUM(p_cal_inc_margin_amt) AS p_cal_inc_margin_amt,
-          AVG(pct_inc_sale) AS pct_inc_sale,
-          AVG(pct_inc_qty) AS pct_inc_qty,
-          AVG(pct_inc_margin) AS pct_inc_margin
+          SUM(tt_discount) AS p_discount,
+          SUM(sale_amt_bl) AS p_sale_bl,
+          SUM(sale_qty_bl) AS p_qty_bl,
+          SUM(margin_amt_bl) AS p_margin_bl,
+          SUM(tt_sale_amt) AS p_sale_amt,
+          SUM(tt_sale_qty) AS p_sale_qty,
+          SUM(tt_margin_amt) AS p_margin_amt,
+          SUM(inc_sale_amt) AS p_cal_inc_sale_amt,
+          SUM(inc_sale_qty) AS p_cal_inc_sale_qty,
+          SUM(inc_margin_amt) AS p_cal_inc_margin_amt,
+          SUM(avg_bline_sale) AS p_avg_sale_bl,
+          SUM(avg_bline_qty) AS p_avg_qty_bl,
+          SUM(avg_bline_margin) AS p_avg_margin_bl,
+          SUM(avg_bl_inc_sale) AS p_cal_inc_avg_sale,
+          SUM(avg_bl_inc_qty) AS p_cal_inc_avg_qty,
+          SUM(avg_bl_inc_margin) AS p_cal_avg_margin
         FROM
-          `gum-eroski-dev.baseline_performance.baseline_promo`
+          `gum-eroski-dev.baseline.baseline_promo`
         WHERE
           promo_mechanic IN ('10',
             '20')
@@ -105,7 +108,7 @@ def promotion_prediction_(project_id, dataset_id, area):
           promo_id,
           promo_year,
           promo_mechanic,
-          Promo_mechanic_en,
+          promo_mechanic_description,
           name,
           type,
           start_date,
@@ -144,8 +147,7 @@ def promotion_prediction_(project_id, dataset_id, area):
       FROM
         temp_aggr_promo_f
       WHERE
-        pct_inc_sale IS NOT NULL
-        AND discount_depth IS NOT NULL
+        discount_depth IS NOT NULL
         AND promo_mechanic IS NOT NULL
         AND sku_root_id IS NOT NULL
         AND segment IS NOT NULL
