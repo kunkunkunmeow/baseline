@@ -286,8 +286,8 @@ if __name__ == "__main__":
                 start_time_batch = time.time()
                 batch = skus[i:i+batchsize] # the result might be shorter than batchsize at the end
 
-                for id in batch:
-                    p = Process(target=linear_reg, args=(frame, category_table, id, max_limit, min_limit, min_points))  # Passing the list
+                for product in batch:
+                    p = Process(target=linear_reg, args=(frame, category_table, product, max_limit, min_limit, min_points))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
