@@ -308,7 +308,7 @@ if __name__ == "__main__":
         
         category_table = load_daily_trans_from_bq(each, project_id)
         #category_table['sku_root_id'] = category_table['sku_root_id'].astype(str)
-        category_table['sku_root_id'] = pd.to_numeric['sku_root_id']
+        category_table['sku_root_id'] = pd.to_numeric(category_table['sku_root_id'])
         
         cost_per_unit_table = unit_cost_table(each, project_id)
         
