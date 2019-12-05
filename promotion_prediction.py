@@ -71,6 +71,18 @@ test_months_exclusion = ['Jan', 'Aug', 'Nov', 'Dec']
 # Specify promo mechanics
 mechanic = [10,20]
 
+# Specify the min no. of impacted stores
+impact_stores_outlier = 20
+
+# Specify the max promo duration
+promo_duration_outlier = 21
+
+# Specify the list of discount depths to include
+discount_depths_outlier = ['0% off','2.5% off','5% off','10% off','15% off','20% off','25% off','30% off','35% off','40% off','45% off',
+'50% off','55% off','60% off','65% off','70% off','75% off','80% off','85% off','buy 1 pay 1','buy 2 pay 1','buy 2 pay 1.2',
+'buy 2 pay 1.3','buy 2 pay 1.4','buy 2 pay 1.5','buy 2 pay 1.53','buy 2 pay 1.6','buy 2 pay 1.7','buy 2 pay 1.8','buy 3 pay 2',
+'buy 4 pay 3']
+
 # Specify train, test, forecast
 run_config = 'train-predict' # values include 'train', 'train-predict', 'forecast'
 
@@ -286,7 +298,8 @@ def run_prediction_model_single(input_data, train_model, mapping_dict, train_mae
 def train_promotion_prediction_model(input_data, input_features, cat_columns, model, learning_rate, max_depth,
                                      num_leaves, n_iter, n_estimators,
                                      train_size, test_months_exclusion, cat_var_exclusion,
-                                     remove_outliers):
+                                     remove_outliers, impact_stores_outlier=None, promo_duration_outlier=None,
+                                     discount_depths_outlier=None):
     """train the promotion model during the promotion weeks
     :Args
         X(dataframe): dataframe containing the input data to train the model
@@ -309,7 +322,10 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     for col in list(input_data.columns):
             if col not in list(cat_columns):
                 input_data[col] = pd.to_numeric(input_data[col])
-
+    
+    # Check no. of input sample data rows
+    logger.info("Input sample data includes {b} samples...".format(b=input_data.shape[0]))
+    
     # Lets remove data with months Aug, Nov, Dec, Jan from the input data
     if 'campaign_start_month' in list(input_data.columns):
         logger.info("Removing sample data for the following months:\n{}".format(test_months_exclusion))
@@ -318,10 +334,41 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
 
     if remove_outliers:
         logger.info("Removing outliers from sample data...")
+        
+        if 'no_impacted_stores' in list(input_data.columns) and impact_stores_outlier is not None:
+          
+            # outlier removal based on impacted stores
+            outliers = input_data[input_data['no_impacted_stores'] < impact_stores_outlier]
+            
+            logger.info("Removing sample data where impacted stores < {a}, {b} sample data points removed...".format(a=impact_stores_outlier,
+                                                                                                                     b=outliers.shape[0]))
+
+            input_data = input_data[input_data['no_impacted_stores'] >= impact_stores_outlier]
+        
+        if 'duration_days' in list(input_data.columns) and promo_duration_outlier is not None:
+          
+            # outlier removal based on promotional duration
+            outliers = input_data[input_data['duration_days'] > promo_duration_outlier]
+            
+            logger.info("Removing sample data where promotion duration > {a}, {b} sample data points removed...".format(a=promo_duration_outlier,
+                                                                                                                     b=outliers.shape[0]))
+
+            input_data = input_data[input_data['duration_days'] <= promo_duration_outlier]
+            
+        if 'discount_depth' in list(input_data.columns) and discount_depths_outlier is not None:
+          
+            # outlier removal based on promotional duration
+            outliers = input_data[~input_data.discount_depth.isin(discount_depths_outlier)]
+            
+            logger.info("Removing sample data where discount depth is not in {a}, {b} sample data points removed...".format(a=discount_depths_outlier,
+                                                                                                                     b=outliers.shape[0]))
+
+            input_data = input_data[input_data.discount_depth.isin(discount_depths_outlier)]
 
         # outlier removal based on negative values
         outliers = input_data[input_data[output_features[0]] <= 0]
-        logger.info("Removing all negative values from inc. sales qty, {} sample data points removed...".format(outliers.shape[0]))
+        logger.info("Removing all negative values from {a}, {b} sample data points removed...".format(a=output_features[0],
+                                                                                                      b=outliers.shape[0]))
 
         input_data = input_data[input_data[output_features[0]] > 0]
 
@@ -332,8 +379,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         logger.info("Based on 95% quantiles, {} sample data points removed...".format(outliers.shape[0]))
 
         input_data = input_data[input_data[output_features[0]] < q]
-
-
+        
 
     # Filter on only the input features
     X = input_data[input_features]
@@ -585,7 +631,10 @@ if __name__ == "__main__":
                                                                             train_size=0.8, # test train split
                                                                             test_months_exclusion=test_months_exclusion, # exclude certain months
                                                                             cat_var_exclusion=False, # exclude specification of categorical variables (lightgbm)
-                                                                            remove_outliers=True)  # remove outliers
+                                                                            remove_outliers=True,
+                                                                            impact_stores_outlier=impact_stores_outlier, 
+                                                                            promo_duration_outlier=promo_duration_outlier,
+                                                                            discount_depths_outlier=discount_depths_outlier)  # remove outliers
     
     # Run the model to predict 
     if run_config == 'train-predict':
