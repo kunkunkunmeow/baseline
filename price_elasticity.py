@@ -227,7 +227,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         
         predictions = lm.predict(y)
         if (data.shape[0]<= min_points) or ((lm.coef_[0][0]/Nfactor)>=0):
-            # skip
+            pass
         else:
             store.append(store_id)
             coeficient.append(lm.coef_[0][0])
