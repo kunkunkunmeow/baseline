@@ -30,8 +30,9 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category = "PESCADO Y MARISCO CONGELADO"
+category = "BOMBONES"
 """
+PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
@@ -278,8 +279,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     percentage = (opt_price-avg_price)/avg_price
     percentage_change.append(percentage)
     
-    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, average_price, optimal_price))
-    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'average_price', 'optimal_price'])
+    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, average_price, optimal_price, percentage_change))
+    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'average_price', 'optimal_price','percentage_change'])
         
     logger.info(f'{sku} - completed baseline perc change calculation')
     
