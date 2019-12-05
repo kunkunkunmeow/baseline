@@ -341,7 +341,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     logger.info("Input sample data includes {b} samples...".format(b=input_data.shape[0]))
     
     # Lets remove data within the test exclusion months list
-    if 'campaign_start_month' in list(input_data.columns):
+    if 'campaign_start_month' in list(input_data.columns) and test_months_exclusion is not None:
         outliers = input_data[input_data.campaign_start_month.isin(test_months_exclusion)]
         logger.info("Removing sample data where campaign start months is in {a}, {b} sample data points removed...".format(a=test_months_exclusion,
                                                                                                                  b=outliers.shape[0]))
