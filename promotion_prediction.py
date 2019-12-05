@@ -56,7 +56,7 @@ logger.addHandler(ch)
 #                   'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag', 'in_both_leaflet_gondola_flag',
 #                   'discount_depth', 'brand_price_label', 'no_hipermercados_stores',	'no_supermercados_stores'	
  #                    'no_gasolineras_stores',	'no_comercio_electronico_stores',	'no_otros_negocio_stores',
- #                     'no_plataformas_stores',	'no_other_stores']
+ #                     'no_plataformas_stores',	'no_other_stores', 'discount_depth_rank']
 
 input_features = ['segment', 'brand_name',
                   'no_hipermercados_stores', 'no_supermercados_stores', 'Promo_mechanic_en',
@@ -113,11 +113,6 @@ cat_columns = ['sku_root_id', 'description', 'segment', 'subcategory', 'category
                'campaign_start_quarter',
                'campaign_start_week', 'leaflet_cover', 'leaflet_priv_space', 'in_leaflet_flag', 'in_gondola_flag',
                'in_both_leaflet_gondola_flag', 'discount_depth', 'period', 'brand_price_label', 'type', 'promo_id', 'promo_year']
-
-# Specify cols to take the avg values
-avg_cols = ['sku_root_id', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'Promo_mechanic_en',
-            'brand_price_label',  'discount_depth']
-
 
 # Function to load distinct section data at a sku level from bigquery
 def load_t0_from_bq(area, project_id):
@@ -584,26 +579,6 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
 
         pred = train_model.predict(X_validation)
 
-    elif model=='average':
-
-        # compute the model average - use avg_cols
-        avg_c = [col for col in avg_cols if col in list(X.columns)]
-
-        # add the target variable col
-        tot_c = avg_c + output_features
-
-        # combine two dataframes into 1
-        X_train_avg = pd.concat([X_train, y_train], ignore_index=True, sort=False, axis=1)
-        X_train_avg = X_train_avg[tot_c]
-
-        # group by the avg_c
-        X_train_avg = X_train_avg.groupby(avg_c).avg()
-
-        # test accuracy on test set
-        # ensure all values in test set are in train set
-        y_val_avg = pd.concat([X_train, y_train], ignore_index=True, sort=False, axis=1)
-        y_val_avg = pd.merge(y_val_avg, X_train_avg, on=avg_c, how='left')
-        #pred = y_val_avg[]
 
     # Evaluate the model
     rmse = np.sqrt(mean_squared_error(y_validation, pred))
