@@ -212,7 +212,8 @@ def promotion_prediction_res(project_id, dataset_id):
         job_config = bigquery.QueryJobConfig()
         
         promo_update = """
-        SELECT 
+        WITH prelim AS 
+        (SELECT 
         CAST(pred.p_cal_inc_sale_qty AS NUMERIC) AS p_cal_inc_sale_qty,
         CAST(pred.prediction_interval AS NUMERIC) AS prediction_interval,
         CAST(pred.prediction_error_perc AS NUMERIC) AS prediction_error_perc,
@@ -257,16 +258,13 @@ def promotion_prediction_res(project_id, dataset_id):
         FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` pred
         LEFT JOIN `gum-eroski-dev.ETL.aggregate_std_price_margin` std_price
         on std_price.sku_root_id = pred.sku_root_id
-        """
-        
-        promo_update_final = """
+        ) 
         SELECT 
         *, 
         SAFE_DIVIDE(p_cal_inc_sale_qty, p_qty_bl) AS perc_uplift_qty,
         SAFE_DIVIDE(p_cal_inc_sale_amt, p_sale_bl) AS perc_uplift_amt,
         SAFE_DIVIDE(p_cal_inc_margin_amt, p_margin_bl) AS perc_uplift_margin
-        FROM `gum-eroski-dev.prediction_results.prediction_promotion_results` pred
-
+        FROM prelim pred
         """
 
         promotion_pred_sql = """
@@ -296,7 +294,6 @@ def promotion_prediction_res(project_id, dataset_id):
          
         # Create a disctionary to loop over all destination tables and scripts
         tables = {'prediction_promotion_results':promo_update,
-                  'prediction_promotion_results':promo_update_final,
                   'prediction_promotion_results_cat_brand':promotion_pred_sql} 
         
         job_config.write_disposition = "WRITE_TRUNCATE"
