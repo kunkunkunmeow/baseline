@@ -30,8 +30,7 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category = "BEBIDAS REFRESCANTES"
-"""PESCADO Y MARISCO CONGELADO
+category ="""PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
@@ -133,6 +132,7 @@ def load_daily_trans_from_bq(cat, project_id):
             FROM `gum-eroski-dev.ETL.aggregate_daily_transaction_to_sku`
                 WHERE area in ("ALIMENTACION", "FRESCOS")
                 AND category = {c}
+                #AND sku_root_id = "302851"
                 AND promo_flag = false
                 AND store_id in ('149','155','157','159','164','165','182','184','185','190','192','201','207','208','209','212','213','5','6','16','22','25','26','28','29','30','31','36','41','46','47','51','52','68','74','86','87','88','96','98','99','101','103','106','108','119','120','125','138','143','144','263','264','266','280','281','282','283','290','300','302','308','316','320','323','326','330','217','219','223','224','230','231','233','234','235','236','238','240','243','245','248','249','259','393','397','400','401','403','410','418','419','420','422','424','427','429','430','475','331','334','335','346','352','357','358','359','371','378','379','380','381','383','385','387','390','476','479','480','484','488','489','495','496','498','501','502','505','510','512','544','546','547','548','549','550','551','552','553','555','556','558','562','587','599','602','607','727','730','733','734','735','736','748','890','996','1000','1362','1373','1374','1392','1393','1499','1501','1504','2003','2005','3001','608','663','664','665','666','668','669','671','673','674','677','678','679','690','691','718','719','720','721','723','726','3057','3058','3059','3090','3091','3092','3095','3097','3098','3100','3102','3104','3105','3106','3107','3108','3109','3110','3111','3112','3113','3114','3116','3004','3008','3011','3013','3017','3020','3023','3024','3025','3026','3027','3028','3029','3034','3036','3042','3045','3049','3052','3053','3054','3055','3056','3177','3183','3188','3189','3194','3196','3203','3204','3206','3207','3208','3209','3213','3214','3219','3224','3226','3228','3229','3230','3232','3235','3238','3117','3118','3119','3120','3121','3122','3123','3125','3126','3127','3128','3129','3130','3131','3138','3139','3154','3155','3156','3162','3163','3165','3175','3239','3240','3242','3244','3245','3247','3249','3250','3252','3254','3256','3257','3259','3261','3262','3263','3264','3266','3268','3294','3295','3297','3298','3299','3368','3369','3370','3371','3372','3373','3382','3384','3387','3643','3978','3979','3981','3982','3984','3986','3987','3988','3989','3991','3992','3994','3995','3644','3646','3647','3648','3885','3886','3888','3902','3906','3907','3908','3911','3912','3913','3914','3917','3919','3922','3971','3972','3975','3976','3977','4264','4273','4277','4296','4297','4299','4357','4360','4361','4041','4047','4090','4091','4102','4103','4106','4111','4128','4134','4203','4247','4261','4484','4600','4369','4371','4373','4374','4382','4384','4388','4390','4469','4705','4749','4750','4751','4752','4753','4754','4755','4756','4757','4758','4759','4761','4763','4764','4767','4768','4785','4786','4935','4937','5382','6413','6414','6438','6483','7514','7564','7565','7566','7567','7569','7573','8122','8133','8143','8144','8149','8206','8212','8216','8219','8221','9050','9059','9064','6767','6768','9891','271','288','262','3985','3990','4395','6136','6282','6283','6284','7575','8121','8127','8135','8211','9026','9030','9061','9706','9803','9877','9879','9887','9889','9959','210','433','5007','5091','5106','5111','5301','5318','5725','5744','7444','5016','5086','5371','175','187','202','250','399','445','5009','5021','5040','5052','5083','5908','7423')
                 AND total_sale_qty <> 0
@@ -142,16 +142,17 @@ def load_daily_trans_from_bq(cat, project_id):
                     std_price_per_unit
                 )
     SELECT
-        MIN(sku_root_id) as sku_root_id,
+        sku_root_id,
         store_id, std_price_per_unit,
         AVG(avg_sales_qty_per_week) as avg_sales_qty,
         AVG(actual_price) as actual_price,
         COUNT(week_start_date) as duration_weeks,
         STDDEV(avg_sales_qty_per_week) as std_dev_sales_qty
     FROM temp
-    GROUP BY store_id,
+    GROUP BY sku_root_id,
+        store_id,
         std_price_per_unit
-    ORDER BY sku_root_id
+    ORDER BY std_price_per_unit
     """.format(c=cat)
     start = time.time()
     
@@ -194,23 +195,17 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     average_price = []
     optimal_price = []
     percentage_change = []
-    #fullData = pd.DataFrame()
+    fullData = pd.DataFrame()
     
     logger.info(f'{sku} - being processed...')
 
-    if sku == 3407590: 
-        logger.info(f"dataframe has {agg_np.shape[0]} rows")
+        
     # set dataframe for each sku
-    #fullData = agg_np.loc[agg_np['sku_root_id']==sku]sort_values(by=['col1'])
-        #df_sku = summary_table[summary_table.sku_root_id == sku].sort_values(by=['date']).reset_index(drop=True)
-        fullData = agg_np[agg_np.sku_root_id==sku].sort_values(by=['std_price_per_unit']).reset_index(drop=True)
-        #fullData = tt[tt['std_price_per_unit'] == 13.59]
-        logger.info(f"new dataframe has {fullData.shape[0]} rows")
-        logger.info(fullData)
-        #if sku == "3407590": logger.info(f"new dataframe has {fullData.shape[0]} rows")
+    fullData = agg_np.loc[agg_np['sku_root_id']==sku]
+    
     # get store ids
     store_ids = fullData.store_id.unique()
-    if sku == "3407590": logger.info(fullData)
+    
     # initialise output lists
     store = []
     coeficient = []
@@ -232,20 +227,17 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         model = lm.fit(X,y)
         
         predictions = lm.predict(y)
-        if (data.shape[0]<= min_points) or ((lm.coef_[0][0]/Nfactor)>=0):
-            pass
-        else:
-            store.append(store_id)
-            coeficient.append(lm.coef_[0][0])
-            R2.append(lm.score(X,y))
-            points.append(data.shape[0])
-            c.append(lm.intercept_[0])
-            gradient.append(lm.coef_[0][0]/Nfactor)
-
+        
+        store.append(store_id)
+        coeficient.append(lm.coef_[0][0])
+        R2.append(lm.score(X,y))
+        points.append(data.shape[0])
+        c.append(lm.intercept_[0])
+        gradient.append(lm.coef_[0][0]/Nfactor)
         
     list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points)) 
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
-    if sku == "302851": logger.info(df)
+    
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
     avg_price = fullData.mean(axis=0)['actual_price']
     average_price.append(float(avg_price))
@@ -309,14 +301,6 @@ if __name__ == "__main__":
         logger.info("Processing category {a}...".format(a=each))
         
         category_table = load_daily_trans_from_bq(each, project_id)
-        #category_table['sku_root_id'] = category_table['sku_root_id'].astype(str)
-        category_table['sku_root_id'] = pd.to_numeric(category_table['sku_root_id'])
-        category_table['std_price_per_unit'] = pd.to_numeric(category_table['std_price_per_unit'])
-        category_table['avg_sales_qty'] = pd.to_numeric(category_table['avg_sales_qty'])
-        category_table['actual_price'] = pd.to_numeric(category_table['actual_price'])
-        category_table['duration_weeks'] = pd.to_numeric(category_table['duration_weeks'])
-        category_table['std_dev_sales_qty'] = pd.to_numeric(category_table['std_dev_sales_qty'])
-        pandas_gbq.to_gbq(category_table, 'WIP.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
         
         cost_per_unit_table = unit_cost_table(each, project_id)
         
@@ -334,8 +318,8 @@ if __name__ == "__main__":
                 processes[:] = []
 
                 start_time_batch = time.time()
-                #batch = skus[i:i+batchsize] # the result might be shorter than batchsize at the end
-                batch = [3407590]
+                batch = skus[i:i+batchsize] # the result might be shorter than batchsize at the end
+
                 for product in batch:
                     p = Process(target=linear_reg, args=(frame, category_table, cost_per_unit_table, product, max_limit, min_limit, min_points))  # Passing the list
                     p.start()
@@ -365,11 +349,9 @@ if __name__ == "__main__":
             logger.info(i_sec)
             
             if (i_sec == 0):
-                print()
-                pandas_gbq.to_gbq(category_table, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
             else:
-                print()
-                #pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
 
 
             logger.info('Completed upload of section baseline to Bigquery...')
@@ -381,4 +363,3 @@ if __name__ == "__main__":
 
         #total_time = round((time.time() - section_time) / 60, 1)
         #logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
-            
