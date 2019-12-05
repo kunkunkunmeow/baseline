@@ -191,6 +191,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     Pmax = []
     avg_R2 = []
     standard_dev = []
+    average_price = []
     fullData = pd.DataFrame()
     
     logger.info(f'{sku} - being processed...')
@@ -235,7 +236,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
     
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
-    avg_price = [fullData.mean(axis=0)['actual_price']]
+    avg_price = fullData.mean(axis=0)['actual_price']
+    average_price.append(avg_price)
     
     # where gradient is positive drop row
     #median = df.loc[df['gradient']<0].median(axis=0)['gradient']
