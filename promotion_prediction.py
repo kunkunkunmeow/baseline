@@ -642,7 +642,7 @@ if __name__ == "__main__":
                                                                             n_iter=10000, # for lightgbm, no. of iterations, 20000
                                                                             n_estimators = 150, # for xgboost, no of estimators
                                                                             train_size=0.8, # test train split
-                                                                            test_months_exclusion=test_months_exclusion, # exclude certain months
+                                                                            test_months_exclusion=None, # exclude certain months
                                                                             cat_var_exclusion=False, # exclude specification of categorical variables (lightgbm)
                                                                             remove_outliers=True,
                                                                             impact_stores_outlier=impact_stores_outlier, 
