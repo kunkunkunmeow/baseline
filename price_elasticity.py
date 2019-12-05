@@ -175,6 +175,9 @@ def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):
     avg_R2 = []
     standard_dev = []
     fullData = pd.DataFrame()
+    
+    logger.info(f'{sku} - being processed...')
+
         
     # set dataframe for each sku
     fullData = agg_np.loc[agg_np['sku_root_id']==sku]
