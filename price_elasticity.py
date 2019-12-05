@@ -163,8 +163,25 @@ def load_daily_trans_from_bq(cat, project_id):
     
     return category_table
 
+def unit_cost_table(category, project_id):
+    sql_str = """
+    SELECT price.sku_root_id as sku_root_id, price.cost_per_unit as cost_per_unit, cat.category as category
+    FROM `gum-eroski-dev.ETL.aggregate_std_price_margin` as price
+    JOIN `gum-eroski-dev.ETL.sku` as cat
+    ON price.sku_root_id = cat.sku_root_id
+    WHERE cat.category = {c}
+    """.format(c=category)
+    start = time.time()
+    
+    for i in tqdm(range(1), desc='Loading table...'):
+        cost_per_unit_table = pandas_gbq.read_gbq(sql_str, project_id=project_id)
+    
+    total_time = round((time.time() - start_time) / 60, 1)
+    logger.info("Completed loading of category table from Bigquery {a} mins...".format(a=total_time))
+    
+    return cost_per_unit_table
 
-def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):        
+def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, min_points):        
     # get the aggregated none promotion data for the group that the SKU belongs to
     avg_gradient = []
     store_count = []
@@ -246,11 +263,13 @@ def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):
     Pmax.append(-intercept_sum/slope)
     
     standard_dev.append(df.std(axis=0)['gradient'])
-    sku = [sku]
-        
-    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count))
-    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count'])
     
+    cost_per_unit = [cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']]
+    sku = [sku]
+    
+    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit))
+    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit'])
+        
     logger.info(f'{sku} - completed baseline perc change calculation')
     
     frame.append(df_summary)
@@ -271,6 +290,8 @@ if __name__ == "__main__":
         
         category_table = load_daily_trans_from_bq(each, project_id)
         
+        cost_per_unit_table = unit_cost_table(each, project_id)
+        
         skus = list(category_table['sku_root_id'].unique())
         
         results_df = pd.DataFrame()
@@ -288,7 +309,7 @@ if __name__ == "__main__":
                 batch = skus[i:i+batchsize] # the result might be shorter than batchsize at the end
 
                 for product in batch:
-                    p = Process(target=linear_reg, args=(frame, category_table, product, max_limit, min_limit, min_points))  # Passing the list
+                    p = Process(target=linear_reg, args=(frame, category_table, cost_per_unit_table, product, max_limit, min_limit, min_points))  # Passing the list
                     p.start()
                     processes.append(p)
                 for p in processes:
