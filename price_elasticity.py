@@ -173,7 +173,7 @@ def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):
     Pmax = []
     avg_R2 = []
     standard_dev = []
-    fullData = pd.Dataframe()
+    fullData = pd.DataFrame()
         
     # set dataframe for each sku
     fullData = agg_np.loc[agg_np['sku_root_id']==sku]
