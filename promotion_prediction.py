@@ -65,7 +65,7 @@ input_features = ['segment', 'brand_name',
                   'discount_depth', 'p_qty_bl', 'in_leaflet_flag', 'in_gondola_flag']
 
 # Specify output features
-output_features = ['p_cal_inc_sale_qty']
+output_features = ['p_cal_inc_avg_qty']
 
 # Specify exclusion months
 test_months_exclusion = ['Jan', 'Aug', 'Nov', 'Dec']
