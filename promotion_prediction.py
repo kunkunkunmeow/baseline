@@ -59,7 +59,7 @@ logger.addHandler(ch)
  #                     'no_plataformas_stores',	'no_other_stores']
 
 input_features = ['segment', 'brand_name',
-                  'no_impacted_stores', 'Promo_mechanic_en',
+                  'no_hipermercados_stores', 'no_supermercados_stores', 'Promo_mechanic_en',
                   'duration_days',
                   'campaign_start_month', 'campaign_start_week',
                   'discount_depth', 'p_qty_bl', 'in_leaflet_flag', 'in_gondola_flag']
