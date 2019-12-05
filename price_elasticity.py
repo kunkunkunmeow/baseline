@@ -344,8 +344,9 @@ if __name__ == "__main__":
 
             # upload the final dataframe onto Bigquery
             logger.info('Uploading baseline table to Bigquery...')
-
-
+            
+            logger.info(i_sec)
+            
             if (i_sec == 0):
                 pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
             else:
