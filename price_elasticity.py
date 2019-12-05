@@ -303,7 +303,7 @@ if __name__ == "__main__":
             results_df = results_df.where((pd.notnull(results_df)), None)
 
 
-            total_time = round((time.time() - section_start_time) / 60, 1)
+            #total_time = round((time.time() - section_start_time) / 60, 1)
             logger.info('Completed baseline processing in {a} mins...'.format(a=total_time))
 
             # upload the final dataframe onto Bigquery
