@@ -81,12 +81,18 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
           SUM(inc_sale_amt) AS p_cal_inc_sale_amt,
           SUM(inc_sale_qty) AS p_cal_inc_sale_qty,
           SUM(inc_margin_amt) AS p_cal_inc_margin_amt,
+          SAFE_DIVIDE(SUM(inc_sale_amt),no_impacted_stores) AS p_cal_inc_sale_amt_per_store,
+          SAFE_DIVIDE(SUM(inc_sale_qty),no_impacted_stores) AS p_cal_inc_sale_qty_per_store,
+          SAFE_DIVIDE(SUM(inc_margin_amt),no_impacted_stores) AS p_cal_inc_margin_amt_per_store,
           SUM(avg_bline_sale) AS p_avg_sale_bl,
           SUM(avg_bline_qty) AS p_avg_qty_bl,
           SUM(avg_bline_margin) AS p_avg_margin_bl,
           SUM(avg_bl_inc_sale) AS p_cal_inc_avg_sale,
           SUM(avg_bl_inc_qty) AS p_cal_inc_avg_qty,
-          SUM(avg_bl_inc_margin) AS p_cal_avg_margin
+          SUM(avg_bl_inc_margin) AS p_cal_avg_margin,
+          SAFE_DIVIDE(SUM(avg_bl_inc_sale),no_impacted_stores) AS p_cal_inc_avg_sale_per_store,
+          SAFE_DIVIDE(SUM(avg_bl_inc_qty),no_impacted_stores) AS p_cal_inc_avg_qty_per_store,
+          SAFE_DIVIDE(SUM(avg_bl_inc_margin),no_impacted_stores) AS p_cal_avg_margin_per_store
         FROM
           `gum-eroski-dev.baseline.baseline_promo`
         WHERE
@@ -170,7 +176,7 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
         promo_id,
         promo_year,
         period
-        """ .format("(\'"+"\',\'".join(str(mech) for x in mechanic)+"\')", area)
+        """.format("(\'"+"\',\'".join(str(x) for x in mechanic)+"\')", area)
          
         # Create a disctionary to loop over all destination tables and scripts
         tables = {'prediction_train_input':promotion_pred_sql} 
