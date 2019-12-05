@@ -311,6 +311,11 @@ if __name__ == "__main__":
         category_table = load_daily_trans_from_bq(each, project_id)
         #category_table['sku_root_id'] = category_table['sku_root_id'].astype(str)
         category_table['sku_root_id'] = pd.to_numeric(category_table['sku_root_id'])
+        category_table['std_price_per_unit'] = pd.to_numeric(category_table['std_price_per_unit'])
+        category_table['avg_sale_qty'] = pd.to_numeric(category_table['avg_sale_qty'])
+        category_table['actual_price'] = pd.to_numeric(category_table['actual_price'])
+        category_table['duration_weeks'] = pd.to_numeric(category_table['duration_weeks'])
+        category_table['std_dev_sales_qty'] = pd.to_numeric(category_table['std_dev_sales_qty'])
         
         cost_per_unit_table = unit_cost_table(each, project_id)
         
