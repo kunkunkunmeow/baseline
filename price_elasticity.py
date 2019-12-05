@@ -12,9 +12,14 @@ import baseline_query
 # Input global variables 
 # Reformat code to accept these variables as input
 
+# linear regression variables
+max_limit = 2
+min_limit = 1/max_limit
+min_points = 2
+
 # Project ID
 project_id = "gum-eroski-dev"
-dataset_id = "baseline"
+dataset_id = "price_elast"
 
 # Define key baseline parameters
 # Category level used to compute the baseline
@@ -27,7 +32,9 @@ bl_s = "ALIMENTACION"
 # Category scope
 category = """PESCADO Y MARISCO CONGELADO
 LECHE
-YOGURES Y POSTRES
+YOGURES Y POSTRES"""
+
+"""
 QUESOS
 HUEVOS FRESCOS
 PATATAS FRITAS Y SNACKS
@@ -91,11 +98,11 @@ bl_table_config = 'replace'
 batchsize = 100
 
 # Set logger properties
-logger = logging.getLogger('baseline_calculation')
+logger = logging.getLogger('price_elasticity_calculation')
 logger.setLevel(logging.DEBUG)
 
 # create file handler which logs even debug messages
-fh = logging.FileHandler('baseline.log')
+fh = logging.FileHandler('price_elasticity.log')
 fh.setLevel(logging.DEBUG)
 
 # create console handler with a higher log level
@@ -152,9 +159,94 @@ def load_daily_trans_from_bq(cat, project_id):
         category_table = pandas_gbq.read_gbq(sql_str, project_id=project_id)
     
     total_time = round((time.time() - start_time) / 60, 1)
-    logger.info("Completed loading of distinct sections table from Bigquery {a} mins...".format(a=total_time))
+    logger.info("Completed loading of category table from Bigquery {a} mins...".format(a=total_time))
     
     return category_table
+
+
+def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):        
+    # get the aggregated none promotion data for the group that the SKU belongs to
+    avg_gradient = []
+    m = []
+    slope = []
+    intercept = []
+    Pmax = []
+    avg_R2 = []
+    standard_dev = []
+    fullData = pd.Dataframe()
+        
+    # set dataframe for each sku
+    fullData = agg_np.loc[agg_np['sku_root_id']==sku]
+    
+    # get store ids
+    store_ids = fullData.store_id.unique()
+    
+    # initialise output lists
+    store = []
+    coeficient = []
+    R2 = []
+    points = []
+    c = []
+    gradient = []
+    
+    for store_id in store_ids:
+        data = fullData.loc[fullData['store_id']==store_id]
+        Nfactor = data.mean(axis=0)['avg_sales_qty']
+    
+        feat = data[['actual_price']]
+        qty = data[['avg_sales_qty']]
+        
+        X = feat
+        y = qty
+        lm = linear_model.LinearRegression()
+        model = lm.fit(X,y)
+        
+        predictions = lm.predict(y)
+        
+        store.append(store_id)
+        coeficient.append(lm.coef_[0][0])
+        R2.append(lm.score(X,y))
+        points.append(data.shape[0])
+        c.append(lm.intercept_[0])
+        gradient.append(lm.coef_[0][0]/Nfactor)
+        
+    list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points)) 
+    df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
+    
+    avg_qty = fullData.mean(axis=0)['avg_sales_qty']
+    avg_price = fullData.mean(axis=0)['actual_price']
+    
+    # where gradient is negative, calculate median
+    median = df.loc[df['gradient']<0].median(axis=0)['gradient']
+    indexNames = df[(df['gradient']/median > max_limit) | (df['gradient']/median < min_limit) ].index
+    df.drop(indexNames , inplace=True)
+    df.drop(df[(df['points']<= min_points)].index, inplace=True)
+    
+    #df.to_csv(path_or_buf=f'{SKU}_regression_n.csv',index=False)
+    
+    average_r2 = df.mean(axis=0)['R2']
+    avg_R2.append(average_r2)
+    
+    average_gradient = df.mean(axis=0)['gradient']
+    avg_gradient.append(average_gradient)
+    
+    slope = average_gradient*avg_qty
+    m.append(slope)
+    
+    intercept_sum = avg_qty-(slope*avg_price)
+    intercept.append(intercept_sum)
+    
+    Pmax.append(-intercept_sum/slope)
+    
+    standard_dev.append(df.std(axis=0)['gradient'])
+        
+    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev))
+    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std'])
+    
+    logger.info(f'{id} - completed baseline perc change calculation')
+    
+    frame.append(df_summary)
+
 
 if __name__ == "__main__":
     
@@ -168,3 +260,38 @@ if __name__ == "__main__":
         logger.info("Processing category {a}...".format(a=each))
         
         category_table = load_daily_trans_from_bq(each, project_id)
+        
+        skus = list(category_table['sku_root_id'].unique())
+        
+        results_df = pd.DataFrame()
+        
+        with Manager() as manager:
+            frame = manager.list()  # <-- can be shared between processes.
+            processes = []
+            
+            for i in range(0, len(skus), batchsize):
+
+                # Clear the processes list
+                processes[:] = []
+
+                start_time_batch = time.time()
+                batch = skus[i:i+batchsize] # the result might be shorter than batchsize at the end
+
+                for id in batch:
+                    p = Process(target=linear_reg, args=(frame, category_table, id, max_limit, min_limit, min_points))  # Passing the list
+                    p.start()
+                    processes.append(p)
+                for p in processes:
+                    p.join()
+                output = pd.concat(frame)
+                results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
+                results_df.reset_index(drop=True, inplace=True)
+                frame[:] = [] 
+
+                total_time_batch = round((time.time() - start_time_batch), 2)
+                logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
+
+                logger.info('Results dataframe has {a} rows and {b} cols...'.format(a=results_df.shape[0], b=results_df.shape[1]))
+
+                
+            
