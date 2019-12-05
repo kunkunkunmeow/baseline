@@ -259,7 +259,7 @@ if __name__ == "__main__":
     logger.info("Loading input tables from Bigquery....")
     
     # loop through each category
-    for i_sec, each enumerate(category):
+    for i_sec, each in enumerate(category):
         
         logger.info("Processing category {a}...".format(a=each))
         
