@@ -30,7 +30,7 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category = "BOMBONES"
+category =
 """
 PESCADO Y MARISCO CONGELADO
 LECHE
