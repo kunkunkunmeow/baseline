@@ -245,7 +245,7 @@ def linear_reg(frame, agg_np, sku, max_limit, min_limit, min_points):
     standard_dev.append(df.std(axis=0)['gradient'])
         
     list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count))
-    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store count'])
+    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count'])
     
     logger.info(f'{id} - completed baseline perc change calculation')
     
