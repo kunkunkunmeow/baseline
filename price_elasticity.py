@@ -30,8 +30,7 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category =
-"""
+category ="""
 PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
