@@ -225,9 +225,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         data = fullData.loc[fullData['store_id']==store_id]
         Nfactor = data.mean(axis=0)['avg_sales_qty']
         
-        if sku == "10296796":
-            logger.info(counting)
-            counting+=data.shape[0]
+        #if sku == "10296796":
+        #    logger.info(counting)
+        #    counting+=data.shape[0]
         
         feat = data[['actual_price']]
         qty = data[['avg_sales_qty']]
@@ -251,8 +251,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     list_of_tuples1 = list(zip(sku, store, coeficient, gradient, R2, c, norm_factor, points))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points'])
     
-    
-    #df.to_csv(path_or_buf=f'{SKU}_regression_n.csv',index=False)
+    if sku == "10296796":
+        logger.info(df)
         
     frame.append(df)
 
