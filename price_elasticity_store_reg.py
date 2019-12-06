@@ -224,7 +224,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         data = fullData.loc[fullData['store_id']==store_id]
         Nfactor = data.mean(axis=0)['avg_sales_qty']
         
-        if sku == "10296796": logger.info(data)
+        if sku == "10296796": logger.info(store_id)
         
         feat = data[['actual_price']]
         qty = data[['avg_sales_qty']]
@@ -295,7 +295,7 @@ if __name__ == "__main__":
                 output = pd.concat(frame)
                 results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
                 results_df.reset_index(drop=True, inplace=True)
-                frame[:] = [] 
+                frame[:] = []
 
                 total_time_batch = round((time.time() - start_time_batch), 2)
                 #logger.debug('Processing with batch size {a} took {b} secs...'.format(a=batchsize, b=total_time_batch))
