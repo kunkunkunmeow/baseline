@@ -60,14 +60,14 @@ logger.addHandler(ch)
  #                    'no_gasolineras_stores',	'no_comercio_electronico_stores',	'no_otros_negocio_stores',
  #                     'no_plataformas_stores',	'no_other_stores', 'discount_depth_rank']
 
-input_features = ['segment', 'brand_name',
+input_features = ['category', 'segment', 'brand_name',
                   'no_hipermercados_stores', 'no_supermercados_stores', 'Promo_mechanic_en',
                   'duration_days',
                   'campaign_start_month', 'campaign_start_week',
-                  'discount_depth', 'p_qty_bl', 'in_leaflet_flag', 'in_gondola_flag']
+                  'discount_depth', 'in_leaflet_flag', 'in_gondola_flag']
 
 # Specify output features
-output_features = ['p_cal_inc_sale_qty']
+output_features = ['p_cal_perc_inc_sale_qty']
 
 # Specify exclusion months
 test_months_exclusion = ['Jan', 'Aug', 'Nov', 'Dec']
@@ -76,10 +76,10 @@ test_months_exclusion = ['Jan', 'Aug', 'Nov', 'Dec']
 mechanic = [10,20]
 
 # Specify the min no. of impacted stores
-impact_stores_outlier = 20
+impact_stores_outlier = 1
 
 # Specify the max promo duration
-promo_duration_outlier = 21
+promo_duration_outlier = 30
 
 # Specify the list of discount depths to include
 # discount_depths_outlier = ['0% off','2.5% off','5% off','10% off','15% off','20% off','25% off','30% off','35% off','40% off','45% off',
