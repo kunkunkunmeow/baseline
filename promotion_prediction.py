@@ -93,7 +93,7 @@ discount_depths_outlier = ['2.5% off','5% off','10% off','15% off','20% off','25
 'buy 4 pay 3']
 
 # Specify train, test, forecast
-run_config = 'train-predict' # values include 'train', 'train-predict', 'forecast'
+run_config = 'train' # values include 'train', 'train-predict', 'forecast'
 
 # Specify categorical cols
 cat_columns = ['sku_root_id', 'description', 'segment', 'subcategory', 'category', 'section', 'area', 'brand_name', 'flag_healthy',
