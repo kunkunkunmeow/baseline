@@ -197,7 +197,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     standard_dev = []
     average_price = []
     optimal_price = []
+    cost_per_unit = []
     percentage_change = []
+    sku_id = []
     fullData = pd.DataFrame()
     
     logger.info(f'{sku} - being processed...')
@@ -281,15 +283,15 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     standard_dev.append(df.std(axis=0)['gradient'])
     
-    cost_per_unit = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
-    sku = [sku]
+    cost_per_unit.append(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'])
+    sku_id.append(sku)
     
     opt_price = (intercept_sum + (-average_gradient*float(cost_per_unit)))/(-average_gradient*2)
     optimal_price.append(opt_price)
     percentage = (opt_price-avg_price)/avg_price
     percentage_change.append(percentage)
     
-    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, average_price, optimal_price, percentage_change))
+    list_of_tuples2 = list(zip(sku_id, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, average_price, optimal_price, percentage_change))
     df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'average_price', 'optimal_price','percentage_change'])
         
     logger.info(f'{sku} - completed baseline perc change calculation')
