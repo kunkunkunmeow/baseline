@@ -580,8 +580,8 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         # threshold, use the subcategory model
         
         # We will only thus be able to predict values for segments/ categories and subcategories where there has been a promotion in the past      
-        if ('subcategory' not in list(input_data[input_features].columns)) or 
-        ('brand_name' not in list(input_data[input_features].columns)) or 
+        if ('subcategory' not in list(input_data[input_features].columns)) or \
+        ('brand_name' not in list(input_data[input_features].columns)) or \
         ('segment' not in list(input_data[input_features].columns)):
             logger.error("Currently performing a linear regression per subcategory and/ or brand and/ or segment. However subcategory or brand name or segment is not defined as an input variable!"
             raise ValueError('Subcategory or brand name or segment is not defined as an input variable')
