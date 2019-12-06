@@ -221,7 +221,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         data = fullData.loc[fullData['store_id']==store_id]
         Nfactor = data.mean(axis=0)['avg_sales_qty']
     
-        feat = data[['std_price_per_unit']]
+        feat = data[['actual_price']]
         qty = data[['avg_sales_qty']]
         
         X = feat
@@ -245,7 +245,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
     
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
-    avg_price = fullData.mean(axis=0)['std_price_per_unit']
+    avg_price = fullData.mean(axis=0)['actual_price']
     average_price.append(float(avg_price))
     
     # where gradient is positive drop row
