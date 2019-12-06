@@ -30,7 +30,14 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category ="""PESCADO Y MARISCO CONGELADO
+category ="""LECHE
+HUEVOS FRESCOS
+BEBIDAS REFRESCANTES
+PAPEL HIGIENICO
+BOMBONES
+"""
+
+"""PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
@@ -347,9 +354,9 @@ if __name__ == "__main__":
             logger.info(i_sec)
             
             if (i_sec == 0):
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists=bl_table_config)
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs_check', project_id=project_id, if_exists=bl_table_config)
             else:
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs', project_id=project_id, if_exists='append')
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs_check', project_id=project_id, if_exists='append')
 
 
             logger.info('Completed upload of section baseline to Bigquery...')
