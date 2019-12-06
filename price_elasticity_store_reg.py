@@ -30,7 +30,8 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category ="""PESCADO Y MARISCO CONGELADO
+category ="BEBIDAS REFRESCANTES"
+"""PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
@@ -192,13 +193,14 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     average_price = []
     optimal_price = []
     percentage_change = []
-    fullData = pd.DataFrame()
+    #fullData = pd.DataFrame()
     
     logger.info(f'{sku} - being processed...')
 
         
     # set dataframe for each sku
     fullData = agg_np.loc[agg_np['sku_root_id']==sku]
+    #df.loc[df['column_name'] == some_value]
     
     # get store ids
     store_ids = fullData.store_id.unique()
