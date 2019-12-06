@@ -14,42 +14,42 @@ def baseline_dashboard(project_id, dataset_id):
         job_config = bigquery.QueryJobConfig()
         
         promo_dashboard_sql = """
-        WITH 
-        bline_end AS (
-                    SELECT * EXCEPT (discount_depth, no_to_pay, no_to_buy), 
-                    IFNULL(discount_depth, 'ISNULL') AS discount_depth, 
-                    IFNULL(CAST(no_to_pay AS STRING), 'ISNULL') AS no_to_pay, 
-                    IFNULL(CAST(no_to_buy  AS STRING), 'ISNULL') AS no_to_buy, 
-                    DATE_ADD(DATE_TRUNC(end_date, WEEK(MONDAY)), INTERVAL 7 DAY) AS promo_bline_end_date
-                    FROM `gum-eroski-dev.WIP.aggregate_promo_to_sku`), 
-        bline_dist AS (
-                    SELECT distinct
-                    promo_id, promo_year, sku_root_id, store_id, promo_mechanic, discount_depth, no_to_pay, no_to_buy, 
-                    promo_bline_end_date
-                    FROM bline_end), 
+      with unnest_tb AS(
+SELECT distinct promo_id, promo_year, sku_root_id, promo_mechanic, discount_depth, no_to_pay, no_to_buy, end_date,
+                DATE_ADD(DATE_TRUNC(end_date, WEEK(MONDAY)), INTERVAL 7 DAY) AS promo_bline_end_date, store_ids
+FROM `ETL.aggregate_promo_to_sku_summary`
+CROSS JOIN UNNEST(store_ids) as store_ids),
 
-        bline_end_store AS (
-                    SELECT bline_end_qty.*,  
-                    trans.date,
-                    trans.total_sale_qty as s_fw_bl_qty ,
-                    trans.total_sale_amt as s_fw_bl_sale ,
-                    trans.total_margin_amt as s_fw_bl_margin,
-                    (trans.total_price_if_sku_std_price -  trans.total_sale_amt) as s_fw_bl_discount
-                    FROM bline_dist bline_end_qty
-                    LEFT JOIN 
-                      `ETL.aggregate_weekly_transaction_to_sku` trans
-                    ON trans.date >= promo_bline_end_date
-                    AND trans.date <= DATE_ADD(promo_bline_end_date, INTERVAL 21 DAY) #(forward period (wks)-1)*7
-                    AND trans.sku_root_id = bline_end_qty.sku_root_id
-                    AND trans.store_id = bline_end_qty.store_id
-                    WHERE trans.date is not null),
-        post_promo AS(
-                    SELECT 
-                    promo_id,CAST(promo_year AS STRING) AS promo_year,sku_root_id,promo_mechanic,discount_depth, no_to_pay, no_to_buy, date,
-                    sum(s_fw_bl_qty) as s_fw_bl_qty,sum(s_fw_bl_sale) as s_fw_bl_sale, sum(s_fw_bl_margin) as s_fw_bl_margin, sum(s_fw_bl_discount) as s_fw_bl_discount
-                    FROM bline_end_store
-                    GROUP BY 
-                    promo_id,promo_year,sku_root_id,promo_mechanic,discount_depth,no_to_pay, no_to_buy, date),
+store_level AS(
+SELECT unnest_tb.*, 
+       trans.date,
+        trans.total_sale_qty as s_fw_bl_qty ,
+        trans.total_sale_amt as s_fw_bl_sale ,
+        trans.total_margin_amt as s_fw_bl_margin,
+        (trans.total_price_if_sku_std_price -  trans.total_sale_amt) as s_fw_bl_discount
+FROM unnest_tb
+LEFT JOIN 
+  `ETL.aggregate_weekly_transaction_to_sku` trans
+ON trans.date >= promo_bline_end_date
+AND trans.date <= DATE_ADD(promo_bline_end_date, INTERVAL 21 DAY) #(forward period (wks)-1)*7
+AND trans.sku_root_id = unnest_tb.sku_root_id
+AND trans.store_id = unnest_tb.store_ids
+WHERE trans.date is not null),
+
+post_promo AS(
+ SELECT 
+date, promo_id, CAST(promo_year AS STRING) AS promo_year, sku_root_id, promo_mechanic, 
+IFNULL(discount_depth, "ISNULL") AS discount_depth, 
+IFNULL(CAST(no_to_pay AS STRING), "ISNULL") AS no_to_pay, 
+IFNULL(CAST(no_to_buy AS STRING), "ISNULL") AS no_to_buy,
+sum(s_fw_bl_qty) as s_fw_bl_qty,
+sum(s_fw_bl_sale) as s_fw_bl_sale, 
+sum(s_fw_bl_margin) as s_fw_bl_margin, 
+sum(s_fw_bl_discount) as s_fw_bl_discount
+FROM store_level
+GROUP BY promo_id, promo_year, sku_root_id, promo_mechanic, discount_depth, no_to_pay, no_to_buy, date),
+--        post_promo as(select *from baseline.post_promo),
+
 
         baseline AS(
         SELECT 
@@ -71,12 +71,13 @@ def baseline_dashboard(project_id, dataset_id):
                CASE WHEN change_flag = 3 THEN post_promo.s_fw_bl_sale ELSE promo.total_sale_amt END AS tt_sale_amt,
                CASE WHEN change_flag = 3 THEN post_promo.s_fw_bl_margin ELSE promo.total_margin_amt END AS tt_margin_amt,
                CASE WHEN change_flag = 3 THEN post_promo.s_fw_bl_discount ELSE promo.total_discount_amt END AS tt_discount,
-               sale_qty_bl, sale_qty_bl * std.std_price_per_unit AS sale_amt_bl, sale_qty_bl * std.margin_per_unit AS margin_amt_bl,
-               promo.* EXCEPT (date, sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy)
+               sale_qty_bl, sale_qty_bl * std.std_price_per_unit AS sale_amt_bl, sale_qty_bl * std.margin_per_unit AS margin_amt_bl,            
+               avg_bline_qty * std.std_price_per_unit AS avg_bline_sale, avg_bline_qty * std.margin_per_unit AS avg_bline_margin,
+               promo.* EXCEPT (date, sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy, std_price)
         FROM baseline bl
         LEFT JOIN post_promo
         USING (date, sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy)
-        LEFT JOIN (SELECT * EXCEPT (promo_year, discount_depth, no_to_pay, no_to_buy), 
+        LEFT JOIN (SELECT * EXCEPT (store_ids, promo_year, discount_depth, no_to_pay, no_to_buy), 
                     CAST(promo_year AS STRING) AS promo_year, 
                     IFNULL(discount_depth, 'ISNULL') AS discount_depth, 
                     IFNULL(CAST(no_to_pay AS STRING), 'ISNULL') AS no_to_pay, 
@@ -87,15 +88,15 @@ def baseline_dashboard(project_id, dataset_id):
         USING (sku_root_id)),
         
         uniq_id_table as (
-        SELECT DISTINCT * EXCEPT (date,  change_flag, includes_weekend, tt_sale_qty_ref, sale_qty_pct, tt_sale_qty, tt_sale_amt, tt_margin_amt, 
-                                  sale_qty_bl, sale_amt_bl, margin_amt_bl, total_sale_amt, total_margin_amt, total_sale_qty, s_prev_bl_qty, total_discount_amt)
+        SELECT DISTINCT * EXCEPT (date,  change_flag, includes_weekend, tt_sale_qty_ref, sale_qty_pct, tt_sale_qty, tt_sale_amt, tt_margin_amt, tt_discount,
+                                  sale_qty_bl, sale_amt_bl, margin_amt_bl, avg_bline_qty, avg_bline_sale, avg_bline_margin, total_sale_amt, total_margin_amt, total_sale_qty, s_prev_bl_qty, pf_after_bl_qty, total_discount_amt)
         FROM agg_table 
         WHERE change_flag <>3),
         
         final_tb as (
         SELECT date, sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy, 
-               change_flag, includes_weekend, tt_sale_qty_ref, sale_qty_pct, tt_sale_qty, tt_sale_amt, tt_margin_amt, 
-               sale_qty_bl, sale_amt_bl, margin_amt_bl, total_sale_amt, total_margin_amt, total_sale_qty, s_prev_bl_qty, total_discount_amt,
+               change_flag, includes_weekend, tt_sale_qty_ref, sale_qty_pct, tt_sale_qty, tt_sale_amt, tt_margin_amt, tt_discount,
+               sale_qty_bl, sale_amt_bl, margin_amt_bl, avg_bline_qty, avg_bline_sale, avg_bline_margin, total_sale_amt as promo_sale_amt, total_margin_amt as promo_margin_amt, total_sale_qty as promo_sale_qty, s_prev_bl_qty, pf_after_bl_qty, total_discount_amt,
                uniq_id_table.* EXCEPT(sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy)
         FROM agg_table
         LEFT JOIN uniq_id_table
@@ -105,8 +106,15 @@ def baseline_dashboard(project_id, dataset_id):
         IFNULL(includes_weekend, true) as includes_weekend,
         (tt_sale_amt - sale_amt_bl) as inc_sale_amt,
         (tt_sale_qty - sale_qty_bl) as inc_sale_qty,
-        (tt_margin_amt - margin_amt_bl) as inc_margin_amt
+        (tt_margin_amt - margin_amt_bl) as inc_margin_amt,
+        (tt_sale_amt - avg_bline_sale) as avg_bl_inc_sale,
+        (tt_sale_qty - avg_bline_qty) as avg_bl_inc_qty,
+        (tt_margin_amt - avg_bline_margin) as avg_bl_inc_margin,
+        CASE WHEN change_flag =3 THEN sale_amt_bl ELSE NULL END AS ext_sale_amt_bl,
+        CASE WHEN change_flag =3 THEN sale_qty_bl ELSE NULL END AS ext_sale_qty_bl,
+        CASE WHEN change_flag =3 THEN margin_amt_bl ELSE NULL END AS ext_margin_amt_bl
         FROM final_tb
+        
    
         """
         
