@@ -583,7 +583,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         if ('subcategory' not in list(input_data[input_features].columns)) or \
         ('brand_name' not in list(input_data[input_features].columns)) or \
         ('segment' not in list(input_data[input_features].columns)):
-            logger.error("Currently performing a linear regression per subcategory and/ or brand and/ or segment. However subcategory or brand name or segment is not defined as an input variable!"
+            logger.error("Currently performing a linear regression per subcategory and/ or brand and/ or segment. However subcategory or brand name or segment is not defined as an input variable!")
             raise ValueError('Subcategory or brand name or segment is not defined as an input variable')
         
         # For simplicity, use all data to train the model and compute the R2, stdev, intercept and coefficient  
