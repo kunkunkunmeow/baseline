@@ -219,14 +219,15 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     c = []
     gradient = []
     norm_factor = []
-    
+    counting = 0
     
     for store_id in store_ids:
         data = fullData.loc[fullData['store_id']==store_id]
         Nfactor = data.mean(axis=0)['avg_sales_qty']
         
         if sku == "10296796":
-            logger.info(data)
+            logger.info(counting)
+            counting+=data.shape[0]
         
         feat = data[['actual_price']]
         qty = data[['avg_sales_qty']]
