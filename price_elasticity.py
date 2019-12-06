@@ -284,7 +284,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     standard_dev.append(df.std(axis=0)['gradient'])
     
-    cost = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
+    cost = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'][1]
     cost_per_unit.append(cost)
     sku_id.append(sku)
     
