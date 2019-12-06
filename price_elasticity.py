@@ -30,16 +30,14 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category ="""PAN
-CURADOS, EMBUT. E IBERICOS
+category ="""CURADOS, EMBUT. E IBERICOS
 PASTELERIA
 CORDERO ENVASADO
 CONEJO ENVASADO
 MATERIAS PRIMAS Y MASAS CONGELADAS
 QUESOS RECIEN CORTADOS
 STAND IBERICOS
-COCINA IN SITU
-"""
+COCINA IN SITU"""
 
 """PESCADO Y MARISCO CONGELADO
 LECHE
@@ -87,10 +85,8 @@ PAVO Y OTRAS AVES ENVASADO
 ECOLOGICO
 LISTO PARA COMER
 PATÉS PORCIÓN
-"""
+PAN"""
 
-
-category="\'"+category.replace("\n","\',\'")+"\'"
 category = list(category.split(","))
 
 # Append or replace destination table (either 'append' or 'replace')
