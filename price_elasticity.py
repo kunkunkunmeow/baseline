@@ -241,7 +241,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         else:
             pass
         
-    list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points)) 
+    list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points))
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
     
     avg_qty = fullData.mean(axis=0)['avg_sales_qty']
@@ -249,12 +249,16 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     average_price.append(float(avg_price))
     
     # where gradient is positive drop row
-    #median = df.loc[df['gradient']<0].median(axis=0)['gradient']
-    #indexNames = df[(df['gradient']/median > max_limit) | (df['gradient']/median < min_limit) ].index
     indexNames = df[(df['gradient']>=0)].index
     df.drop(indexNames , inplace=True)
     # drop rows where points less than or equal to min_points
     df.drop(df[(df['points']<= min_points)].index, inplace=True)
+            
+    # mean of negative gradients
+    mean_gradient = df.loc[df['gradient']<0].mean(axis=0)['gradient']
+    # drop negative gradients that are above mean gradient
+    meanIndices = df[(df['gradient'] > mean_gradient)].index
+    df.drop(meanIndices , inplace=True)
     
     #df.to_csv(path_or_buf=f'{SKU}_regression_n.csv',index=False)
     
