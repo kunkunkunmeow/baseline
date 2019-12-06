@@ -581,14 +581,27 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     
     elif model == 'regression':
         
-        # Use linear regression only if subcategory or brand name is included in the list
-        if ('subcategory' not in list(X.columns)) and ('brand_name' not in list(X.columns)):
-            logger.error("Currently performing a linear regression per subcategory and/ or brand. However subcategory or brand name is not defined as an input variable!"
-            raise ValueError('Subcategory or brand name is not defined as an input variable')
+        # Use linear regression only if subcategory and brand name and segment is included in the list
+        # Compute linear regression coefficients for the following combinations
+        # 1) Subcategory and brand
+        # 2) Segment
+        # 3) Subcategory
+        
+        # Compute coefficients for the remaining fields in the input data set
+        # Output the R^2, p_value, and stdev for each combination
+        # Follow a hierarchy when applying the model to each sku
+        # If the subcategory and brand the sku sits in has an R^2, p_value and stdev smaller/ larger than a given threshold,
+        # use, the segment model and likewise, when the segment model has an R^2, p_value and stdev smaller/ larger than a given 
+        # threshold, use the subcategory model
+        
+        # We will only thus be able to predict values for segments/ categories and subcategories where there has been a promotion in the past      
+        if ('subcategory' not in list(X.columns)) and ('brand_name' not in list(X.columns)) and ('segment' not in list(X.columns)):
+            logger.error("Currently performing a linear regression per subcategory and/ or brand and/ or segment. However subcategory or brand name or segment is not defined as an input variable!"
+            raise ValueError('Subcategory or brand name or segment is not defined as an input variable')
         
         # Loop through each subcategory/ and or brand and compute the regression 
         # For simplicity, use all data to train the model and compute the R2, stdev, intercept and coefficient  
-        logger.info("For regression, all both train and test data will be used to compute the train the model...")
+        logger.info("For regression, both train and test datasets will be used to train the model...")
         logger.info("Combined sample dataset includes {} samples...".format(X.shape[0]))
         
         # Perform regression at both subcat and brand if both are included, else perform on category, or brand
@@ -607,6 +620,9 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         # get unique values of both subcat and brand 
         unique_df=X.drop_duplicates(agg_list)[agg_list]             
         logger.info("There are {a} unique {b}...".format(unique_df.shape[0], agg_list))
+                         
+        # group by agg_list
+        X_model = X.groupby(agg_list)
             
         # exclude both subcat and brand from the input variable list        
         for index, row in unique_df.iterrows():
