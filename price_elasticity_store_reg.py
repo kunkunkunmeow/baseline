@@ -251,7 +251,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     list_of_tuples1 = list(zip(sku, store, coeficient, gradient, R2, c, norm_factor, points))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points'])
     
-    if sku == "10296796":
+    if sku[0] == "10296796":
         logger.info(df)
         
     frame.append(df)
