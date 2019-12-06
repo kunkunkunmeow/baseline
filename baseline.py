@@ -28,7 +28,6 @@ bl_s = "ALIMENTACION"
 bl_table_config = 'replace'
 
 # Pull forward week
-# TODO - need to test
 ext_week = 4
 
 
@@ -78,13 +77,15 @@ def load_section_from_bq(area, project_id):
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level from bigquery
-def load_promo_from_bq(section, project_id):
+def load_promo_from_bq(area, section, project_id):
     start_time = time.time()
 
     summary_sql = """
     SELECT date, sku_root_id , {bl_l} , promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy, total_sale_qty, s_prev_bl_qty, pf_after_bl_qty
     FROM `ETL.aggregate_promo_to_sku_summary`
-    WHERE section = "{section}"   """.format(bl_l = bl_l, section = section)
+    WHERE section = "{section}"
+    AND area = "{area}" 
+    """.format(bl_l = bl_l, section = section, area = area)
     start = time.time()
 
     for i in tqdm(range(1), desc='Loading table...'):
@@ -97,7 +98,7 @@ def load_promo_from_bq(section, project_id):
 
 
 # Function to load aggregate_weekly_transaction_summary data at a sku level (for non-promotional periods) from bigquery
-def load_np_from_bq(section, project_id):
+def load_np_from_bq(area, section, project_id):
     start_time = time.time()
 
     weeklyagg_sql = """
@@ -105,7 +106,8 @@ def load_np_from_bq(section, project_id):
     FROM `ETL.aggregate_weekly_transaction_to_sku`
     WHERE promo_flag = false
     AND section =  "{section}"
-    group by date, sku_root_id, {bl_l} """.format(bl_l = bl_l, section = section)
+    AND area = "{area}" 
+    group by date, sku_root_id, {bl_l} """.format(bl_l = bl_l, section = section, area = area)
 
     for i in tqdm(range(1), desc='Loading table...'):
         weekly_agg = pandas_gbq.read_gbq(weeklyagg_sql, project_id=project_id)
@@ -160,7 +162,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     df_id = summary_table[summary_table.uniq_id == id].sort_values(by=['date']).reset_index(drop=True)
     
 
-    # define change_flag to be the reference of baseline and cannibalisation calculation
+    # define change_flag to be the reference of baseline calculation
     # set 1 : for the first day on promotion
     # set 2: for the rest days on promotion after first day
     # set 3: for the extension days of baseline calculation
@@ -206,7 +208,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
                                                     2)
                                     
-    logger.debug(f'section {section} - {id} - completed baseline')
+    logger.debug(f'{section} - {id} - completed baseline')
 
     # # produce extended baseline
     # for i in range(0, len(table)):
@@ -225,7 +227,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
     final_df = table[
         ['date', 'uniq_id','sku_root_id', 'promo_id', 'promo_year', 'promo_mechanic', 'discount_depth', 'no_to_pay','no_to_buy', 'change_flag', 'total_sale_qty', 'sale_qty_bl', 'sale_qty_pct']]
 
-    logger.info(f'section {section} - {id} - completed baseline and pull forward calculation')
+    logger.info(f'{section} - {id} - completed baseline and pull forward calculation')
   
     frame.append(final_df)
     
@@ -253,7 +255,7 @@ if __name__ == "__main__":
         logger.info("Processing section {a}...".format(a=section))
             
         logger.info("Loading promo table from Bigquery....")
-        summary_table = load_promo_from_bq(section, project_id)
+        summary_table = load_promo_from_bq(bl_s, section, project_id)
         summary_table['promo_year'] = summary_table['promo_year'].apply(str)
         summary_table['discount_depth_2'] = summary_table['discount_depth'].fillna('ISNULL')
         summary_table['no_to_pay_2'] = summary_table['no_to_pay'].fillna('ISNULL')
@@ -265,7 +267,7 @@ if __name__ == "__main__":
         
 
         logger.info("Loading summary non-promotional transaction table from Bigquery....")
-        weekly_agg = load_np_from_bq(section, project_id)
+        weekly_agg = load_np_from_bq(bl_s, section, project_id)
 
         logger.info("Aggregating summary non-promotional transaction table at {a} level".format(a=bl_l))
         agg_np = aggregate_np(weekly_agg, bl_l)
