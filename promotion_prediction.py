@@ -578,6 +578,46 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         train_model.fit(X_train, y_train)
 
         pred = train_model.predict(X_validation)
+    
+    elif model == 'regression':
+        
+        # Use linear regression only if subcategory or brand name is included in the list
+        if ('subcategory' not in list(X.columns)) and ('brand_name' not in list(X.columns)):
+            logger.error("Currently performing a linear regression per subcategory and/ or brand. However subcategory or brand name is not defined as an input variable!"
+            raise ValueError('Subcategory or brand name is not defined as an input variable')
+        
+        # Loop through each subcategory/ and or brand and compute the regression 
+        # For simplicity, use all data to train the model and compute the R2, stdev, intercept and coefficient  
+        logger.info("For regression, all both train and test data will be used to compute the train the model...")
+        logger.info("Combined sample dataset includes {} samples...".format(X.shape[0]))
+        
+        # Perform regression at both subcat and brand if both are included, else perform on category, or brand
+        if 'subcategory' in list(X.columns) and 'brand_name' in list(X.columns):
+            # get the comb list
+            agg_list = ['subcategory','brand_name']
+        
+        elif 'subcategory' in list(X.columns) and 'brand_name' not in list(X.columns):
+            # get the comb list
+            agg_list = ['subcategory']
+        
+        elif 'subcategory' not in list(X.columns) and 'brand_name' in list(X.columns):
+            # get the comb list
+            agg_list = ['brand_name']
+                         
+        # get unique values of both subcat and brand 
+        unique_df=X.drop_duplicates(agg_list)[agg_list]             
+        logger.info("There are {a} unique {b}...".format(unique_df.shape[0], agg_list))
+            
+        # exclude both subcat and brand from the input variable list        
+        for index, row in unique_df.iterrows():
+
+            # get the input variables excluding those in the agg list
+            X_model = X[(X[Gender]=='Male') & (df[Year]==2014)]
+            X_model = X.drop(agg_list, axis=1)
+            
+            print(row['c1'], row['c2']) 
+
+                           
 
 
     # Evaluate the model
