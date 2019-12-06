@@ -87,6 +87,9 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
           SAFE_DIVIDE(SUM(inc_sale_amt),no_impacted_stores) AS p_cal_inc_sale_amt_per_store,
           SAFE_DIVIDE(SUM(inc_sale_qty),no_impacted_stores) AS p_cal_inc_sale_qty_per_store,
           SAFE_DIVIDE(SUM(inc_margin_amt),no_impacted_stores) AS p_cal_inc_margin_amt_per_store,
+          SAFE_DIVIDE(SUM(inc_sale_amt),SUM(sale_amt_bl)) AS p_cal_perc_inc_sale_amt,
+          SAFE_DIVIDE(SUM(inc_sale_qty),SUM(sale_qty_bl)) AS p_cal_perc_inc_sale_qty,
+          SAFE_DIVIDE(SUM(inc_margin_amt),SUM(margin_amt_bl)) AS p_cal_perc_inc_margin,
           SUM(avg_bline_sale) AS p_avg_sale_bl,
           SUM(avg_bline_qty) AS p_avg_qty_bl,
           SUM(avg_bline_margin) AS p_avg_margin_bl,
@@ -95,7 +98,10 @@ def promotion_prediction_(project_id, dataset_id, area, mechanic):
           SUM(avg_bl_inc_margin) AS p_cal_avg_margin,
           SAFE_DIVIDE(SUM(avg_bl_inc_sale),no_impacted_stores) AS p_cal_inc_avg_sale_per_store,
           SAFE_DIVIDE(SUM(avg_bl_inc_qty),no_impacted_stores) AS p_cal_inc_avg_qty_per_store,
-          SAFE_DIVIDE(SUM(avg_bl_inc_margin),no_impacted_stores) AS p_cal_avg_margin_per_store
+          SAFE_DIVIDE(SUM(avg_bl_inc_margin),no_impacted_stores) AS p_cal_avg_margin_per_store,
+          SAFE_DIVIDE(SUM(avg_bl_inc_sale),SUM(avg_bline_sale)) AS p_cal_perc_inc_avg_sale_amt,
+          SAFE_DIVIDE(SUM(avg_bl_inc_qty),SUM(avg_bline_qty)) AS p_cal_perc_inc_avg_sale_qty,
+          SAFE_DIVIDE(SUM(avg_bl_inc_margin),SUM(avg_bline_margin)) AS p_cal_perc_inc_avg_margin
         FROM
           `gum-eroski-dev.baseline.baseline_promo`
         WHERE
