@@ -116,28 +116,32 @@ def baseline_dashboard(project_id, dataset_id):
         """
         baseline_dashborad_sql = """
         
-        with baseline as (
-        SELECT date, sku_root_id, 
-              SUM(CASE WHEN change_flag = 3 THEN tt_sale_qty ELSE NULL END) AS post_promo_sale_qty, 
-              SUM(CASE WHEN change_flag = 3 THEN sale_qty_bl ELSE NULL END) AS post_promo_sale_qty_bl, 
-              SUM(CASE WHEN change_flag <> 3 THEN tt_sale_qty ELSE NULL END) AS promo_sale_qty, 
-              SUM(CASE WHEN change_flag <> 3 THEN sale_qty_bl ELSE NULL END) AS promo_sale_qty_bl
-        FROM `baseline.baseline_promo` 
-        WHERE change_flag <> 3
-        GROUP BY date, sku_root_id),
-        agg AS (
-        SELECT date, sku_root_id, section, category, subcategory, 
-               SUM(CASE WHEN promo_flag = false THEN total_sale_qty ELSE 0 END) as non_promo_sale_qty
-        FROM `ETL.aggregate_weekly_transaction_to_sku` 
-        WHERE area = "ALIMENTACION"
-        GROUP BY date, sku_root_id, section, area, category, subcategory
-        )
-        select *,
-        IFNULL(promo_sale_qty, 0) + non_promo_sale_qty as total_sale_qty,
-        IFNULL(promo_sale_qty_bl,0)  + non_promo_sale_qty as total_sale_qty_bl
-        from agg
+        with store_mapping as (
+              SELECT distinct sku_root_id, promo_id, CAST(promo_year AS STRING) AS promo_year, promo_mechanic, IFNULL(discount_depth, "ISNULL") as discount_depth, 
+              IFNULL(no_to_pay, "ISNULL") as no_to_pay, IFNULL(no_to_buy, "ISNULL") as no_to_buy, store_id
+              FROM `ETL.aggregate_promo_to_sku_summary` , UNNEST(store_ids) as store_id),
+        store_flag as (
+                      SELECT DISTINCT date, sku_root_id, store_id, 1 AS store_promo_flag
+                      FROM `ETL.aggregate_promo_to_sku_summary` , UNNEST(store_ids) as store_id),
+        baseline as (
+                      SELECT date, uniq_id,  sum(store_promo_flag) as store_promo_flag
+                      from `baseline.baseline_promo` 
+                      LEFT JOIN store_mapping
+                      USING (sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy)
+                      left join store_flag
+                      using (date, sku_root_id, store_id)
+                      GROUP BY date, uniq_id)
+
+        SELECT date, uniq_id, sku_root_id, promo_id, promo_year, promo_mechanic, discount_depth, no_to_pay, no_to_buy, change_flag, 
+                tt_sale_qty, tt_sale_amt, tt_margin_amt, tt_discount, sale_amt_bl, sale_qty_bl, margin_amt_bl, inc_sale_amt, inc_sale_qty, inc_margin_amt,
+                promo_sale_amt, promo_sale_qty, promo_margin_amt, s_prev_bl_qty, avg_bline_qty,
+                CASE WHEN change_flag <> 3 THEN sale_amt_bl ELSE NULL END AS promo_sale_amt_bl, 
+                CASE WHEN change_flag <> 3 THEN sale_qty_bl ELSE NULL END AS promo_sale_qty_bl, 
+                CASE WHEN change_flag <> 3 THEN margin_amt_bl ELSE NULL END AS promo_margin_amt_bl, 
+                CASE WHEN change_flag =3 THEN NULL ELSE 1 END AS promo_flag, area, section, category, subcategory, segment, description, store_promo_flag   
+        from `baseline.baseline_promo` 
         LEFT JOIN baseline 
-        USING (date, sku_root_id) 
+        USING (date, uniq_id)
         """
         
         # Create a disctionary to loop over all destination tables and scripts
