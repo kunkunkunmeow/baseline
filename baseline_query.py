@@ -145,7 +145,7 @@ def baseline_dashboard(project_id, dataset_id):
         """
         
         # Create a disctionary to loop over all destination tables and scripts
-        baseline_tables = {'baseline_promo': promo_dashboard_sql, 'baseline_dashboard': baseline_dashborad_sql} 
+        baseline_tables = {'baseline_promo': promo_dashboard_sql, 'promo_dashboard': baseline_dashborad_sql} 
         
         job_config.write_disposition = "WRITE_TRUNCATE"
         for key in baseline_tables:
