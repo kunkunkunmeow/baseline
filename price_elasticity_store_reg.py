@@ -197,13 +197,13 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     logger.info(f'{sku} - being processed...')
     
-    logger.info(agg_np)
+    #logger.info(agg_np)
         
     # set dataframe for each sku
     fullData = agg_np.loc[agg_np['sku_root_id']==sku]
     #df.loc[df['column_name'] == some_value]
     
-    logger.info(agg_np)
+    #logger.info(agg_np)
     
     # get store ids
     store_ids = fullData.store_id.unique()
