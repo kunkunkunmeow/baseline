@@ -207,8 +207,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     # get store ids
     store_ids = fullData.store_id.unique()
-    
-    if sku == "10296796": logger.info("number of stores= {z}".format(z=len(store_ids)))
+    if sku == "10296796":
+        logger.info("number of stores= {z}".format(z=len(store_ids)))
+        logger.info(store_ids)
     
     # initialise output lists
     store = []
