@@ -225,7 +225,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         data = fullData.loc[fullData['store_id']==store_id]
         Nfactor = data.mean(axis=0)['avg_sales_qty']
         
-        if sku == "10296796": logger.info("---------------------------------")
+        logger.info("---------------------------------")
         
         feat = data[['actual_price']]
         qty = data[['avg_sales_qty']]
