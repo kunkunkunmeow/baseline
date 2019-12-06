@@ -87,7 +87,7 @@ LISTO PARA COMER
 PATÉS PORCIÓN
 PAN"""
 
-category = ["\'"+each+"\'" for each in list(test.split("\n"))]
+category = ["\'"+each+"\'" for each in list(category.split("\n"))]
 
 # Append or replace destination table (either 'append' or 'replace')
 bl_table_config = 'replace'
