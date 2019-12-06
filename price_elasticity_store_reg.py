@@ -311,9 +311,9 @@ if __name__ == "__main__":
             logger.info(i_sec)
             
             if (i_sec == 0):
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each), project_id=project_id, if_exists=bl_table_config)
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'",""), project_id=project_id, if_exists=bl_table_config)
             else:
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each), project_id=project_id, if_exists='append')
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'",""), project_id=project_id, if_exists='append')
 
 
             logger.info('Completed upload of section baseline to Bigquery...')
