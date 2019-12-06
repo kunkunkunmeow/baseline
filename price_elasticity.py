@@ -272,7 +272,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     cost_per_unit = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
     sku = [sku]
     
-    opt_price = (intercept_sum + (average_gradient*float(cost_per_unit)))/(average_gradient*2)
+    opt_price = (intercept_sum + (-average_gradient*float(cost_per_unit)))/(-average_gradient*2)
     optimal_price.append(opt_price)
     percentage = (opt_price-avg_price)/avg_price
     percentage_change.append(percentage)
