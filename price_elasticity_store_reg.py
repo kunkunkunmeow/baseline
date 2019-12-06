@@ -217,6 +217,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     c = []
     gradient = []
     norm_factor = []
+    sku = [sku]
     
     for store_id in store_ids:
         data = fullData.loc[fullData['store_id']==store_id]
@@ -240,8 +241,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         gradient.append(lm.coef_[0][0]/Nfactor)
         norm_factor.append(Nfactor)
 
-    list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, norm_factor, points))
-    df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points'])
+    list_of_tuples1 = list(zip(sku, store, coeficient, gradient, R2, c, norm_factor, points))
+    df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points'])
     
     
     #df.to_csv(path_or_buf=f'{SKU}_regression_n.csv',index=False)
