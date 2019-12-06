@@ -213,6 +213,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     # initialise output lists
     store = []
+    sku_id = []
     coeficient = []
     R2 = []
     points = []
@@ -246,14 +247,11 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         c.append(lm.intercept_[0])
         gradient.append(lm.coef_[0][0]/Nfactor)
         norm_factor.append(Nfactor)
+        sku_id.append(sku)
 
-    sku = [sku]
-    list_of_tuples1 = list(zip(sku, store, coeficient, gradient, R2, c, norm_factor, points))
+    list_of_tuples1 = list(zip(sku_id, store, coeficient, gradient, R2, c, norm_factor, points))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points'])
-    
-    if sku[0] == "10296796":
-        logger.info(df)
-        
+            
     frame.append(df)
 
 
