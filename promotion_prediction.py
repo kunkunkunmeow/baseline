@@ -4,6 +4,8 @@ from catboost import CatBoostRegressor, Pool, cv
 from sklearn.metrics import mean_squared_error, accuracy_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
+from sklearn import linear_model
+import statsmodels.api as sm
 import pandas as pd
 import numpy as np
 import time
@@ -89,18 +91,6 @@ discount_depths_outlier = ['2.5% off','5% off','10% off','15% off','20% off','25
 '50% off','55% off','60% off','buy 2 pay 1','buy 2 pay 1.2',
 'buy 2 pay 1.3','buy 2 pay 1.4','buy 2 pay 1.5','buy 2 pay 1.6','buy 2 pay 1.7','buy 2 pay 1.8','buy 3 pay 2',
 'buy 4 pay 3']
-
-# Specify the in-scope categories to train the model on
-segment_outlier = ['QUESO FRESCOS','PIMIENTO PIQUILLO','DENTIFRICOS','YOGURES BASICOS','YOGURES SALUD','CARAMELO','VINOS D.O. TINTOS',
-'PIZZAS','VINOS D.O.BLANCOS','SUAVIZANTES ESTANDAR','CERVEZAS EXTRA','ACEITES OLIVA','ACEITE OLIVA VIRGEN','PATATAS FRITAS','PAPEL HIGIENICO SECO',
-'SNACKS/APERITIVOS','LECHE LARGA VIDA UHT','AGUAS SIN GAS','GALLETAS SALUD','CERVEZAS 0,0','CAFE MOLIDO','CERVEZAS LAGER','JUDIAS',
-'SNACKS','LECHE LARGA VIDA ESPECIALES','VERDURA NATURAL','TOMATE FRITO','C/G NARANJA','CEREALES','CAFE SOLUBLE','PREPARADOS VEGETALES',
-'BONITO','ATUN CLARO','MERIENDA','ENERGETICO','GALLETAS MERIENDA','ZUMO Y NECTAR','MAYONESAS, S.FINAS Y S.LIGERAS','GELES FAMILIARES',
-'GALLETAS DESAYUNO FAMILIAR','POSTRES ESPECIALES','S/G SABOR','DESAYUNO','ACEITES GIRASOL','YOGURES ESPECIALES','ESPARRAGOS BLANCOS',
-'SOLUBLES DE CACAO','RESTO HOGAR','AMBIENTADORES CONTINUOS','C/G COLA','POSTRES BASICOS','TRADICIONALES SIN CASCARA','GALLETAS INFANTILES',
-'CREMAS CACAO','ROLLO COCINA','PESCADO NATURAL','CEFALOPODO','SURIMI','TOALLITAS','CHOCOLATE LECHE','LAVAVAJILLAS MAQUINA',
-'SOPAS Y CREMAS SOBRE','YOGURES INFANTILES Y PETIT','GARBANZO SECO','LENTEJA SECA','LAVAVAJILLAS MANO','DETERGENTE MAQUINA LIQUIDO',
-'LECHE LARGA VIDA BOTELLA','PAN BLANCO','PAN ESPECIALIDADES','PATATAS','DETERGENTE CAPSULAS','CALDOS EN PASTILLAS']
 
 # Specify train, test, forecast
 run_config = 'train-predict' # values include 'train', 'train-predict', 'forecast'
@@ -330,7 +320,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
                                      num_leaves, n_iter, n_estimators,
                                      train_size, test_months_exclusion, cat_var_exclusion,
                                      remove_outliers, impact_stores_outlier=None, promo_duration_outlier=None,
-                                     discount_depths_outlier=None, segment_outlier=None):
+                                     discount_depths_outlier=None):
     """train the promotion model during the promotion weeks
     :Args
         X(dataframe): dataframe containing the input data to train the model
@@ -385,13 +375,6 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
                                                                                                                  b=outliers.shape[0]))
         input_data = input_data[input_data.discount_depth.isin(discount_depths_outlier)]
     
-    # Lets remove data where segment is not in in-scope segment
-    if 'segment' in list(input_data.columns) and segment_outlier is not None:
-        outliers = input_data[~input_data.segment.isin(segment_outlier)]
-        logger.info("Removing sample data where segment is not in {a}, {b} sample data points removed...".format(a=segment_outlier,
-                                                                                                                 b=outliers.shape[0]))
-        input_data = input_data[input_data.segment.isin(segment_outlier)]
-
     if remove_outliers:
         logger.info("Removing outliers from sample data...")
         
@@ -412,30 +395,32 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         
 
     # Filter on only the input features
-    X = input_data[input_features]
-    y = input_data[output_features]
+    total_features = input_features+output_features
+    input_data = input_data[total_features]
 
     # Check absent values
-    null_value_stats_x = X.isnull().sum(axis=0)
+    null_value_stats_x = input_data[input_features].isnull().sum(axis=0)
     logger.info("Null values for input features include:\n{}".format(null_value_stats_x[null_value_stats_x != 0]))
 
-    null_value_stats_y = y.isnull().sum(axis=0)
+    null_value_stats_y = input_data[output_features].isnull().sum(axis=0)
     logger.info("Null values for target variable include:\n{}".format(null_value_stats_y[null_value_stats_y != 0]))
 
     # Throw error if any values are null in y
-    if y.isnull().values.any():
+    if input_data[output_features].isnull().values.any():
         logger.error("Null values found in target data...")
-        raise ValueError('Null values found in target data-frame: y')
+        raise ValueError('Null values found in target data!')
 
     # Fill remaining absent values in X with -999
-    X.fillna(-999, inplace=True)
-
+    input_data.fillna(-999, inplace=True)
+    
+    # Describe the dataset
+    print(input_data.describe())
+    
     # Check data types
+    X = input_data[input_features]
+    y = input_data[output_features]
     logger.info("Input dataset data types include:\n{}".format(X.dtypes))
     logger.info("Target variable data types include:\n{}".format(y.dtypes))
-
-    logger.info("Target variable mean is: {}".format(y[output_features[0]].mean()))
-    logger.info("Target variable stdev is: {}".format(y[output_features[0]].std()))
 
     # Lets split the data into training and validation sets
     X_train, X_validation, y_train, y_validation = train_test_split(X, y, train_size=train_size, random_state=42)
@@ -595,46 +580,44 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
         # threshold, use the subcategory model
         
         # We will only thus be able to predict values for segments/ categories and subcategories where there has been a promotion in the past      
-        if ('subcategory' not in list(X.columns)) and ('brand_name' not in list(X.columns)) and ('segment' not in list(X.columns)):
+        if ('subcategory' not in list(input_data[input_features].columns)) or 
+        ('brand_name' not in list(input_data[input_features].columns)) or 
+        ('segment' not in list(input_data[input_features].columns)):
             logger.error("Currently performing a linear regression per subcategory and/ or brand and/ or segment. However subcategory or brand name or segment is not defined as an input variable!"
             raise ValueError('Subcategory or brand name or segment is not defined as an input variable')
         
-        # Loop through each subcategory/ and or brand and compute the regression 
         # For simplicity, use all data to train the model and compute the R2, stdev, intercept and coefficient  
         logger.info("For regression, both train and test datasets will be used to train the model...")
-        logger.info("Combined sample dataset includes {} samples...".format(X.shape[0]))
+        logger.info("Combined sample dataset includes {} samples...".format(input_data.shape[0]))
         
-        # Perform regression at both subcat and brand if both are included, else perform on category, or brand
-        if 'subcategory' in list(X.columns) and 'brand_name' in list(X.columns):
-            # get the comb list
-            agg_list = ['subcategory','brand_name']
+        # Loop through each combination and compute the regression 
+        combination =  [['subcategory','brand_name'],['segment'],['subcategory']]
         
-        elif 'subcategory' in list(X.columns) and 'brand_name' not in list(X.columns):
-            # get the comb list
-            agg_list = ['subcategory']
-        
-        elif 'subcategory' not in list(X.columns) and 'brand_name' in list(X.columns):
-            # get the comb list
-            agg_list = ['brand_name']
+        for agg_list in combination:
                          
-        # get unique values of both subcat and brand 
-        unique_df=X.drop_duplicates(agg_list)[agg_list]             
-        logger.info("There are {a} unique {b}...".format(unique_df.shape[0], agg_list))
+            # get unique values of both subcat and brand 
+            unique_df=input_data.drop_duplicates(agg_list)[agg_list]             
+            logger.info("There are {a} unique {b} in the data...".format(a=unique_df.shape[0], b=agg_list))
+
+            # group by agg_list
+            input_data_model = input_data.groupby(agg_list)
+            
+            # Select the list of input attributes not in agg_list
+            training_list = list(set(list(input_data[input_features].columns)) - set(agg_list))
+            logger.debug("Training features include {}...".format(training_list))
+
+            for key, group in input_data_model:
                          
-        # group by agg_list
-        X_model = X.groupby(agg_list)
-            
-        # exclude both subcat and brand from the input variable list        
-        for index, row in unique_df.iterrows():
-
-            # get the input variables excluding those in the agg list
-            X_model = X[(X[Gender]=='Male') & (df[Year]==2014)]
-            X_model = X.drop(agg_list, axis=1)
-            
-            print(row['c1'], row['c2']) 
-
-                           
-
+                # Train the model for each group              
+                logger.info("Training linear regression model for {a}...".format(a=key))
+                X_reg = group[training_list]
+                X_reg = sm.add_constant(X_reg)
+                y_reg = group[output_features]
+                         
+                train_model = sm.OLS(y_reg, X_reg).fit()
+                
+                # Log the model results
+                print(train_model.summary())
 
     # Evaluate the model
     rmse = np.sqrt(mean_squared_error(y_validation, pred))
@@ -700,8 +683,7 @@ if __name__ == "__main__":
                                                                             remove_outliers=True,
                                                                             impact_stores_outlier=impact_stores_outlier, 
                                                                             promo_duration_outlier=promo_duration_outlier,
-                                                                            discount_depths_outlier=discount_depths_outlier,
-                                                                            segment_outlier=None)  # remove outliers
+                                                                            discount_depths_outlier=discount_depths_outlier)  # remove outliers
     
     # Run the model to predict 
     if run_config == 'train-predict':
