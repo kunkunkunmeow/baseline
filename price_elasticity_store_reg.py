@@ -197,19 +197,19 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     logger.info(f'{sku} - being processed...')
     
-    if sku == "10296796": logger.info(agg_np)
+    #if sku == "10296796": logger.info(agg_np)
         
     # set dataframe for each sku
     fullData = agg_np.loc[agg_np['sku_root_id']==sku]
     #df.loc[df['column_name'] == some_value]
     
-    if sku == "10296796": logger.info(fullData)
+    #if sku == "10296796": logger.info(fullData)
     
     # get store ids
     store_ids = fullData.store_id.unique()
-    if sku == "10296796":
-        logger.info("number of stores= {z}".format(z=len(store_ids)))
-        logger.info(store_ids)
+    #if sku == "10296796":
+    #    logger.info("number of stores= {z}".format(z=len(store_ids)))
+    #    logger.info(store_ids)
     
     # initialise output lists
     store = []
@@ -221,7 +221,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     norm_factor = []
     sku = [sku]
     
-    for item in store_ids:
+    for store_id in store_ids:
         data = fullData.loc[fullData['store_id']==store_id]
         Nfactor = data.mean(axis=0)['avg_sales_qty']
         
