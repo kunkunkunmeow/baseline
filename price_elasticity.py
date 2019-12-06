@@ -233,12 +233,15 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         
         predictions = lm.predict(y)
         
-        store.append(store_id)
-        coeficient.append(lm.coef_[0][0])
-        R2.append(lm.score(X,y))
-        points.append(data.shape[0])
-        c.append(lm.intercept_[0])
-        gradient.append(lm.coef_[0][0]/Nfactor)
+        if (lm.coef_[0][0] < 0) and (data.shape[0] > min_points):
+            store.append(store_id)
+            coeficient.append(lm.coef_[0][0])
+            R2.append(lm.score(X,y))
+            points.append(data.shape[0])
+            c.append(lm.intercept_[0])
+            gradient.append(lm.coef_[0][0]/Nfactor)
+        else:
+            pass
         
     list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points)) 
     df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
