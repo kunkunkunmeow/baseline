@@ -231,70 +231,20 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         
         predictions = lm.predict(y)
         
-        if (lm.coef_[0][0] < 0) and (data.shape[0] > min_points):
-            store.append(store_id)
-            coeficient.append(lm.coef_[0][0])
-            R2.append(lm.score(X,y))
-            points.append(data.shape[0])
-            c.append(lm.intercept_[0])
-            gradient.append(lm.coef_[0][0]/Nfactor)
-        else:
-            pass
-        
-    list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, points))
-    df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient', 'R2', 'intercept', 'points'])
+        store.append(store_id)
+        coeficient.append(lm.coef_[0][0])
+        R2.append(lm.score(X,y))
+        points.append(data.shape[0])
+        c.append(lm.intercept_[0])
+        gradient.append(lm.coef_[0][0]/Nfactor)
+
+    list_of_tuples1 = list(zip(store, coeficient, gradient, R2, c, Nfactor, points))
+    df = pd.DataFrame(list_of_tuples1, columns = ['store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points'])
     
-    avg_qty = fullData.mean(axis=0)['avg_sales_qty']
-    avg_price = fullData.mean(axis=0)['actual_price']
-    average_price.append(float(avg_price))
-    
-    # where gradient is positive drop row
-    indexNames = df[(df['gradient']>=0)].index
-    df.drop(indexNames , inplace=True)
-    # drop rows where points less than or equal to min_points
-    df.drop(df[(df['points']<= min_points)].index, inplace=True)
-            
-    # mean of negative gradients
-    mean_gradient = df.loc[df['gradient']<0].mean(axis=0)['gradient']
-    # drop negative gradients that are above mean gradient
-    meanIndices = df[(df['gradient'] > mean_gradient)].index
-    df.drop(meanIndices , inplace=True)
     
     #df.to_csv(path_or_buf=f'{SKU}_regression_n.csv',index=False)
-    
-    average_r2 = df.mean(axis=0)['R2']
-    avg_R2.append(average_r2)
-    
-    unique_stores = len(df.store.unique())
-    store_count.append(unique_stores)
-    
-    average_gradient = df.mean(axis=0)['gradient']
-    avg_gradient.append(average_gradient)
-    
-    slope = average_gradient*avg_qty
-    m.append(slope)
-    
-    intercept_sum = 1-(average_gradient*avg_price)
-    intercept.append(intercept_sum)
-    
-    Pmax.append(-intercept_sum/average_gradient)
-    
-    standard_dev.append(df.std(axis=0)['gradient'])
-    
-    cost_per_unit = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
-    sku = [sku]
-    
-    opt_price = (intercept_sum + (-average_gradient*float(cost_per_unit)))/(-average_gradient*2)
-    optimal_price.append(opt_price)
-    percentage = (opt_price-avg_price)/avg_price
-    percentage_change.append(percentage)
-    
-    list_of_tuples2 = list(zip(sku, avg_gradient, m, intercept, Pmax, avg_R2, standard_dev, store_count, cost_per_unit, average_price, optimal_price, percentage_change))
-    df_summary = pd.DataFrame(list_of_tuples2, columns = ['sku','gradient','m','intercept','Pmax','R2','std', 'store_count', 'cost_per_unit', 'average_price', 'optimal_price','percentage_change'])
         
-    logger.info(f'{sku} - completed baseline perc change calculation')
-    
-    frame.append(df_summary)
+    frame.append(df)
 
 
 if __name__ == "__main__":
@@ -359,9 +309,9 @@ if __name__ == "__main__":
             logger.info(i_sec)
             
             if (i_sec == 0):
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs_check', project_id=project_id, if_exists=bl_table_config)
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level', project_id=project_id, if_exists=bl_table_config)
             else:
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_outputs_check', project_id=project_id, if_exists='append')
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level', project_id=project_id, if_exists='append')
 
 
             logger.info('Completed upload of section baseline to Bigquery...')
