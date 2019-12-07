@@ -413,9 +413,9 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
     # Fill remaining absent values in X with -999
     input_data.fillna(-999, inplace=True)
     
-    # Describe the dataset, only numeric features are described
-    print("Summary of statistics for numeric features in input data:")
-    print(input_data.describe())
+    # Describe the dataset
+    logger.info("Summary statistics for numeric features in input data are...")
+    logger.info("{}".format(input_data.describe()))
     
     # Check data types
     X = input_data[input_features]
