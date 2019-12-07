@@ -201,7 +201,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         #    logger.info(counting)
         #    counting+=data.shape[0]
         
-        feat = data[['actual_price']]
+        feat = data[['std_price_per_unit']]
         qty = data[['avg_sales_qty']]
         
         X = feat
