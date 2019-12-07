@@ -193,7 +193,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     norm_factor = []
     cost_per_unit = []
     
-    cost = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique()
+    cost = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique())
     avg_price = fullData.mean(axis=0)['actual_price']
     
     for store_id in store_ids:
