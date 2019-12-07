@@ -191,7 +191,10 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     c = []
     gradient = []
     norm_factor = []
-    counting = 0
+    cost_per_unit = []
+    
+    cost = cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit']
+    avg_price = fullData.mean(axis=0)['actual_price']
     
     for store_id in store_ids:
         data = fullData.loc[fullData['store_id']==store_id]
@@ -219,9 +222,11 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         gradient.append(lm.coef_[0][0]/Nfactor)
         norm_factor.append(Nfactor)
         sku_id.append(sku)
-
-    list_of_tuples1 = list(zip(sku_id, store, coeficient, gradient, R2, c, norm_factor, points))
-    df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points'])
+        average_price.append(avg_price)
+        cost_per_unit.append(cost)
+        
+    list_of_tuples1 = list(zip(sku_id, store, coeficient, gradient, R2, c, norm_factor, points, average_price, cost_per_unit))
+    df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points', 'avg_price', 'cost_per_unit'])
             
     frame.append(df)
 
@@ -286,12 +291,13 @@ if __name__ == "__main__":
             logger.info('Uploading baseline table to Bigquery...')
             
             logger.info(i_sec)
-            
+            pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists=bl_table_config)
+            """
             if (i_sec == 0):
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","")), project_id=project_id, if_exists=bl_table_config)
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists=bl_table_config)
             else:
-                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","")), project_id=project_id, if_exists='append')
-
+                pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists='append')
+            """
 
             logger.info('Completed upload of section baseline to Bigquery...')
 
