@@ -30,10 +30,7 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category ="PATÉS PORCIÓN"
-
-
-"""PESCADO Y MARISCO CONGELADO
+category ="""PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
