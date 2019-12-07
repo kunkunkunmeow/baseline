@@ -479,7 +479,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
 
                 # get unique values
                 unique_vals = X[col].unique()
-                unique_vals_dict = dict([(val, num + 1) for num, val in enumerate(unique_vals)])
+                unique_vals_dict = dict([(val, num) for num, val in enumerate(unique_vals)])
 
                 # map them for the train and test data sets
                 X_train = X_train.copy()
@@ -542,7 +542,7 @@ def train_promotion_prediction_model(input_data, input_features, cat_columns, mo
             if col in list(X.columns):
                 # get unique values
                 unique_vals = X[col].unique()
-                unique_vals_dict = dict([(val, num + 1) for num, val in enumerate(unique_vals)])
+                unique_vals_dict = dict([(val, num) for num, val in enumerate(unique_vals)])
 
                 # map them for the train and test data sets
                 X_train = X_train.copy()
