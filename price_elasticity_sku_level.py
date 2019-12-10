@@ -35,64 +35,6 @@ GALLETAS
 BEBIDAS REFRESCANTES
 """
 
-"""PESCADO Y MARISCO CONGELADO
-LECHE
-YOGURES Y POSTRES
-QUESOS
-HUEVOS FRESCOS
-PATATAS FRITAS Y SNACKS
-TOMATE
-LEGUMBRES
-AZUCAR Y EDULCORANTES
-GALLETAS
-PAN DE MOLDE
-AGUAS
-BEBIDAS REFRESCANTES
-LIMPIADORES
-ROLLOS DE COCINA Y SERVILLETAS
-HIGIENE BUCAL
-PARAFARMACIA
-COMPLEMENTOS BASICOS
-VITRINA
-FRUTA
-LISTO PARA CONSUMIR
-HORTALIZA
-GRANELES
-IV GAMA
-QUESOS MOSTRADOR
-CALENTAR Y LISTO
-CARNICOS MOSTRADOR
-PATES MOSTRADOR
-CARNICOS PIEZA"""
-
-"""POLLO ENVASADO AVES
-VACUNO ENVASADO
-PORCINO ENVASADO
-ELABORADOS ENVASADO
-MOSTRADOR PESCADERIA
-COCIDOS PORCION
-PESCADO FRESCO ENVASADO
-ESPECIALIDADES
-BOLLERIA
-SALCHICHAS
-DISFRUTA COCINANDO
-JAMONES PIEZA
-PAVO Y OTRAS AVES ENVASADO
-ECOLOGICO
-LISTO PARA COMER
-PAN
-CURADOS, EMBUT. E IBERICOS
-PASTELERIA
-CORDERO ENVASADO
-CONEJO ENVASADO
-MATERIAS PRIMAS Y MASAS CONGELADAS
-QUESOS RECIEN CORTADOS
-STAND IBERICOS
-COCINA IN SITU"""
-
-#QUESOS PORCIÓN
-#PATÉS PORCIÓN
-
 category = ["\'"+each+"\'" for each in list(category.split("\n"))]
 
 # Append or replace destination table (either 'append' or 'replace')
@@ -196,7 +138,6 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     Pmax = []
     avg_R2 = []
     standard_dev = []
-    average_price = []
     optimal_price = []
     percentage_change = []
     #fullData = pd.DataFrame()
@@ -218,14 +159,15 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     #    logger.info(store_ids)
     
     # initialise output lists
-    store = []
     sku_id = []
+    store = []
     coeficient = []
-    R2 = []
-    points = []
-    c = []
     gradient = []
+    R2 = []
+    c = []
     norm_factor = []
+    points = []
+    average_price = []
     cost_per_unit = []
     
     cost = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique())
@@ -262,7 +204,60 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         
     list_of_tuples1 = list(zip(sku_id, store, coeficient, gradient, R2, c, norm_factor, points, average_price, cost_per_unit))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points', 'avg_price', 'cost_per_unit'])
-            
+    
+    # drop rows where points less than or equal to min_points
+    df.drop(df[(df['points']<= min_points)].index, inplace=True)
+    
+    # select negative all
+    neg_all = df
+    # drop any rows with positive gradients
+    indexNames = neg_all[(neg_all['gradient_Nfactor_applied']>=0)].index
+    neg_all.drop(indexNames , inplace=True)
+    
+    # select negative strong
+    # already dropped rows with positive gradients
+    neg_strong = neg_all
+    # drop any rows with less than 0.6 R2 values
+    indexNames = neg_strong[(neg_strong['R2']<0.6)].index
+    neg_strong.drop(indexNames , inplace=True)
+    
+    # check percentage of stores in each group
+    total_stores = len(store_ids)
+    neg_all_store = neg_all.shape[0]/total_stores
+    neg_strong_store = neg_strong.shape[0]/total_stores
+    
+    
+    def aggregate_group(group):
+        # calculates avg gradient, avg R2, optimal price, % price change for group
+        grad = group.mean(axis=0)['gradient_Nfactor_applied']
+        R2 = group.mean(axis=0)['R2']
+        opt_price = (1-grad(group.mean(axis=0)['avg_price']+group.mean(axis=0)['cost_per_unit']))/(-2*grad)
+        price_change = (opt_price/group.mean(axis=0)['avg_price'])-1
+        
+        return grad, R2, opt_price, price_change
+    
+    # check whether groups meet minumum threshold for percentage stores
+    store_threshold = 0.1
+    if neg_all_store < store_threshold & neg_strong_store < store_threshold:
+        break
+    elif neg_strong_store < store_threshold:
+        # calculate avg gradient, avg R2, optimal price, % price change for neg_all
+        neg_all_grad, neg_all_R2, neg_all_opt_price, neg_all_price_change = aggregate_group(neg_all)
+        
+    elif neg_all_store < store_threshold:
+        # calculate avg gradient, avg R2, optimal price, % price change for neg_strong
+        neg_strong_grad, neg_strong_R2, neg_strong_opt_price, neg_strong_price_change = aggregate_group(neg_strong)
+        
+    else:
+        # calculate avg gradient, avg R2, optimal price, % price change for neg_all
+        neg_all_grad, neg_all_R2, neg_all_opt_price, neg_all_price_change = aggregate_group(neg_all)
+        
+        # calculate avg gradient, avg R2, optimal price, % price change for neg_strong
+        neg_strong_grad, neg_strong_R2, neg_strong_opt_price, neg_strong_price_change = aggregate_group(neg_strong)
+        
+    
+    
+    
     frame.append(df)
 
 
