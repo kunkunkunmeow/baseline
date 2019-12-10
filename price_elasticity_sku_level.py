@@ -229,7 +229,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         # calculates avg gradient, avg R2, optimal price, % price change for group
         grad = group.mean(axis=0)['gradient_Nfactor_applied']
         R2 = group.mean(axis=0)['R2']
-        opt_price = (1-grad(group.mean(axis=0)['avg_price']+group.mean(axis=0)['cost_per_unit']))/(-2*grad)
+        opt_price = (1-grad*(group.mean(axis=0)['avg_price']+group.mean(axis=0)['cost_per_unit']))/(-2*grad)
         price_change = (opt_price/group.mean(axis=0)['avg_price'])-1
         avg_Nfactor = group.mean(axis=0)['Nfactor']
         avg_price = group.mean(axis=0)['avg_price']
@@ -248,7 +248,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
             sku_id = [sku]
             avg_gradient = [neg_all_grad]
             store_percentage = [neg_all_store]
-            intercept = [neg_all_avg_Nfactor-neg_all_grad(neg_all_avg_price)]
+            intercept = [neg_all_avg_Nfactor-neg_all_grad*(neg_all_avg_price)]
             avg_R2 = [neg_all_R2]
             optimal_price = [neg_all_opt_price]
             percentage_change = [neg_all_price_change]
@@ -259,7 +259,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
             sku_id = [sku]
             avg_gradient = [neg_strong_grad]
             store_percentage = [neg_strong_store]
-            intercept = [neg_strong_avg_Nfactor-neg_strong_grad(neg_strong_avg_price)]
+            intercept = [neg_strong_avg_Nfactor-neg_strong_grad*(neg_strong_avg_price)]
             avg_R2 = [neg_strong_R2]
             optimal_price = [neg_strong_opt_price]
             percentage_change = [neg_strong_price_change]
@@ -273,7 +273,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
             sku_id = [sku]
             avg_gradient = [neg_all_grad]
             store_percentage = [neg_all_store]
-            intercept = [neg_all_avg_Nfactor-neg_all_grad(neg_all_avg_price)]
+            intercept = [neg_all_avg_Nfactor-neg_all_grad*(neg_all_avg_price)]
             avg_R2 = [neg_all_R2]
             optimal_price = [neg_all_opt_price]
             percentage_change = [neg_all_price_change]
@@ -289,7 +289,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
             sku_id = [sku]
             avg_gradient = [neg_strong_grad]
             store_percentage = [neg_strong_store]
-            intercept = [neg_strong_avg_Nfactor-neg_strong_grad(neg_strong_avg_price)]
+            intercept = [neg_strong_avg_Nfactor-neg_strong_grad*(neg_strong_avg_price)]
             avg_R2 = [neg_strong_R2]
             optimal_price = [neg_strong_opt_price]
             percentage_change = [neg_strong_price_change]
