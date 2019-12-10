@@ -238,7 +238,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     # check whether groups meet minumum threshold for percentage stores
     if neg_all_store < store_threshold & neg_strong_store < store_threshold:
-        break
+        pass
     elif neg_strong_store < store_threshold:
         # calculate avg gradient, avg R2, optimal price, % price change for neg_all
         neg_all_grad, neg_all_R2, neg_all_opt_price, neg_all_price_change, neg_all_avg_Nfactor, neg_all_avg_price = aggregate_group(neg_all)
@@ -255,7 +255,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         neg_strong_grad, neg_strong_R2, neg_strong_opt_price, neg_strong_price_change, neg_strong_avg_Nfactor, neg_strong_avg_price = aggregate_group(neg_strong)
         
     if neg_all_price_change > max_price_change & neg_strong_price_change > max_price_change:
-        break
+        pass
     elif neg_all_price_change <= max_price_change & neg_all_price_change < neg_strong_price_change:
         sku_id = [sku]
         avg_gradient = [neg_all_grad]
