@@ -228,6 +228,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     #logger.info(neg_all.shape[0])
     if sku == "19530880":
         logger.info(neg_all.head())
+        logger.info(neg_strong.head())
     
     def aggregate_group(group):
         # calculates avg gradient, avg R2, optimal price, % price change for group
