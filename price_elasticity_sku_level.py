@@ -264,8 +264,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         avg_R2 = [neg_all_R2]
         optimal_price = [neg_all_opt_price]
         percentage_change = [neg_all_price_change]
-        df_list = list(zip(sku_id, avg_gradient, avg_R2, intercept, optimal_price, percentage_change, intercept))
-        sku_df = pd.DataFrame(list_of_tuples1, columns = ['sku_id', 'avg_gradient', 'avg_R2', 'intercept', 'optimal_price', 'percentage_change', 'intercept'])
+        df_list = list(zip(sku_id, avg_gradient, avg_R2, intercept, optimal_price, percentage_change, store_percentage))
+        sku_df = pd.DataFrame(df_list, columns = ['sku_id', 'avg_gradient', 'avg_R2', 'intercept', 'optimal_price', 'percentage_change', 'store_percentage'])
         frame.append(sku_df)
     elif neg_strong_price_change <= max_price_change & neg_strong_price_change < neg_all_price_change:
         sku_id = [sku]
@@ -275,8 +275,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         avg_R2 = [neg_strong_R2]
         optimal_price = [neg_strong_opt_price]
         percentage_change = [neg_strong_price_change]
-        df_list = list(zip(sku_id, avg_gradient, avg_R2, intercept, optimal_price, percentage_change, intercept))
-        sku_df = pd.DataFrame(list_of_tuples1, columns = ['sku_id', 'avg_gradient', 'avg_R2', 'intercept', 'optimal_price', 'percentage_change', 'intercept'])
+        df_list = list(zip(sku_id, avg_gradient, avg_R2, intercept, optimal_price, percentage_change, store_percentage))
+        sku_df = pd.DataFrame(df_list, columns = ['sku_id', 'avg_gradient', 'avg_R2', 'intercept', 'optimal_price', 'percentage_change', 'store_percentage'])
         frame.append(sku_df)
     
 
