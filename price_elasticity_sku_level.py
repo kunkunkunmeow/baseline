@@ -224,6 +224,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     neg_all_store = neg_all.shape[0]/total_stores
     neg_strong_store = neg_strong.shape[0]/total_stores
     
+    logger.info(neg_all_store)
     
     def aggregate_group(group):
         # calculates avg gradient, avg R2, optimal price, % price change for group
