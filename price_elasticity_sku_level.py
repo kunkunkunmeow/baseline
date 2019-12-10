@@ -271,7 +271,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
             df_list = list(zip(sku_id, avg_gradient, avg_R2, intercept, optimal_price, percentage_change, store_percentage))
             sku_df = pd.DataFrame(df_list, columns = ['sku_id', 'avg_gradient', 'avg_R2', 'intercept', 'optimal_price', 'percentage_change', 'store_percentage'])
             frame.append(sku_df)
-        elseif neg_all_price_change == neg_strong_price_change:
+        elif neg_all_price_change == neg_strong_price_change:
             sku_id = [sku]
             avg_gradient = [neg_strong_grad]
             store_percentage = [neg_strong_store]
