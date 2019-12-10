@@ -341,8 +341,8 @@ if __name__ == "__main__":
                     p.join()
                 if frame:
                     output = pd.concat(frame)
-                results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
-                results_df.reset_index(drop=True, inplace=True)
+                    results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
+                    results_df.reset_index(drop=True, inplace=True)
                 frame[:] = []
 
                 total_time_batch = round((time.time() - start_time_batch), 2)
