@@ -30,7 +30,9 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category ="""PESCADO Y MARISCO CONGELADO
+category ="LECHE"
+
+"""PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
@@ -132,7 +134,7 @@ def load_daily_trans_from_bq(cat, project_id):
                 sku_root_id,
                 store_id,
                 DATE_TRUNC(date, WEEK(MONDAY)) as week_start_date,
-                std_price_per_unit, AVG(total_sale_qty) as avg_sales_qty_per_week,
+                std_price_per_unit, SUM(total_sale_qty) as avg_sales_qty_per_week,
                 SAFE_DIVIDE(SUM(total_sale_amt),
                 SUM(total_sale_qty)) as actual_price
             FROM `gum-eroski-dev.ETL.aggregate_daily_transaction_to_sku`
