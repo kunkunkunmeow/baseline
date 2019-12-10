@@ -341,7 +341,7 @@ if __name__ == "__main__":
             logger.info('Uploading baseline table to Bigquery...')
             
             logger.info(i_sec)
-            pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_sku_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists=bl_table_config)
             """
             if (i_sec == 0):
                 pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists=bl_table_config)
