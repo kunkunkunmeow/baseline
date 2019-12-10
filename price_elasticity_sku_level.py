@@ -17,6 +17,11 @@ max_limit = 2
 min_limit = 1/max_limit
 min_points = 2
 
+# thresholds
+store_threshold = 0.1
+R2_threshold = 0.6
+max_price_change = 0.3
+
 # Project ID
 project_id = "gum-eroski-dev"
 dataset_id = "price_elast"
@@ -29,7 +34,8 @@ bl_l = "section"
 # Scope for the baseline (at an area level)
 bl_s = "ALIMENTACION"
 
-# Category scope
+# Category metadata
+#category_df = pd.read_csv('category_metadata.csv')
 category ="""LECHE
 GALLETAS
 BEBIDAS REFRESCANTES
@@ -130,16 +136,7 @@ def unit_cost_table(category, project_id):
 
 def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, min_points):        
     # get the aggregated none promotion data for the group that the SKU belongs to
-    avg_gradient = []
-    store_count = []
-    m = []
-    slope = []
-    intercept = []
-    Pmax = []
-    avg_R2 = []
-    standard_dev = []
-    optimal_price = []
-    percentage_change = []
+ 
     #fullData = pd.DataFrame()
     
     logger.info(f'{sku} - being processed...')
@@ -205,6 +202,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     list_of_tuples1 = list(zip(sku_id, store, coeficient, gradient, R2, c, norm_factor, points, average_price, cost_per_unit))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points', 'avg_price', 'cost_per_unit'])
     
+    
     # drop rows where points less than or equal to min_points
     df.drop(df[(df['points']<= min_points)].index, inplace=True)
     
@@ -218,7 +216,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     # already dropped rows with positive gradients
     neg_strong = neg_all
     # drop any rows with less than 0.6 R2 values
-    indexNames = neg_strong[(neg_strong['R2']<0.6)].index
+    indexNames = neg_strong[(neg_strong['R2']<R2_threshold)].index
     neg_strong.drop(indexNames , inplace=True)
     
     # check percentage of stores in each group
@@ -233,32 +231,54 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         R2 = group.mean(axis=0)['R2']
         opt_price = (1-grad(group.mean(axis=0)['avg_price']+group.mean(axis=0)['cost_per_unit']))/(-2*grad)
         price_change = (opt_price/group.mean(axis=0)['avg_price'])-1
+        avg_Nfactor = group.mean(axis=0)['Nfactor']
+        avg_price = group.mean(axis=0)['avg_price']
         
-        return grad, R2, opt_price, price_change
+        return grad, R2, opt_price, price_change, avg_Nfactor, avg_price
     
     # check whether groups meet minumum threshold for percentage stores
-    store_threshold = 0.1
     if neg_all_store < store_threshold & neg_strong_store < store_threshold:
         break
     elif neg_strong_store < store_threshold:
         # calculate avg gradient, avg R2, optimal price, % price change for neg_all
-        neg_all_grad, neg_all_R2, neg_all_opt_price, neg_all_price_change = aggregate_group(neg_all)
+        neg_all_grad, neg_all_R2, neg_all_opt_price, neg_all_price_change, neg_all_avg_Nfactor, neg_all_avg_price = aggregate_group(neg_all)
         
     elif neg_all_store < store_threshold:
         # calculate avg gradient, avg R2, optimal price, % price change for neg_strong
-        neg_strong_grad, neg_strong_R2, neg_strong_opt_price, neg_strong_price_change = aggregate_group(neg_strong)
+        neg_strong_grad, neg_strong_R2, neg_strong_opt_price, neg_strong_price_change, neg_strong_avg_Nfactor, neg_strong_avg_price = aggregate_group(neg_strong)
         
     else:
         # calculate avg gradient, avg R2, optimal price, % price change for neg_all
-        neg_all_grad, neg_all_R2, neg_all_opt_price, neg_all_price_change = aggregate_group(neg_all)
+        neg_all_grad, neg_all_R2, neg_all_opt_price, neg_all_price_change, neg_all_avg_Nfactor, neg_all_avg_price = aggregate_group(neg_all)
         
         # calculate avg gradient, avg R2, optimal price, % price change for neg_strong
-        neg_strong_grad, neg_strong_R2, neg_strong_opt_price, neg_strong_price_change = aggregate_group(neg_strong)
+        neg_strong_grad, neg_strong_R2, neg_strong_opt_price, neg_strong_price_change, neg_strong_avg_Nfactor, neg_strong_avg_price = aggregate_group(neg_strong)
         
+    if neg_all_price_change > max_price_change & neg_strong_price_change > max_price_change:
+        break
+    elif neg_all_price_change <= max_price_change & neg_all_price_change < neg_strong_price_change:
+        sku_id = [sku]
+        avg_gradient = [neg_all_grad]
+        store_percentage = [neg_all_store]
+        intercept = [neg_all_avg_Nfactor-neg_all_grad(neg_all_avg_price)]
+        avg_R2 = [neg_all_R2]
+        optimal_price = [neg_all_opt_price]
+        percentage_change = [neg_all_price_change]
+        df_list = list(zip(sku_id, avg_gradient, avg_R2, intercept, optimal_price, percentage_change, intercept))
+        sku_df = pd.DataFrame(list_of_tuples1, columns = ['sku_id', 'avg_gradient', 'avg_R2', 'intercept', 'optimal_price', 'percentage_change', 'intercept'])
+        frame.append(sku_df)
+    elif neg_strong_price_change <= max_price_change & neg_strong_price_change < neg_all_price_change:
+        sku_id = [sku]
+        avg_gradient = [neg_strong_grad]
+        store_percentage = [neg_strong_store]
+        intercept = [neg_strong_avg_Nfactor-neg_strong_grad(neg_strong_avg_price)]
+        avg_R2 = [neg_strong_R2]
+        optimal_price = [neg_strong_opt_price]
+        percentage_change = [neg_strong_price_change]
+        df_list = list(zip(sku_id, avg_gradient, avg_R2, intercept, optimal_price, percentage_change, intercept))
+        sku_df = pd.DataFrame(list_of_tuples1, columns = ['sku_id', 'avg_gradient', 'avg_R2', 'intercept', 'optimal_price', 'percentage_change', 'intercept'])
+        frame.append(sku_df)
     
-    
-    
-    frame.append(df)
 
 
 if __name__ == "__main__":
