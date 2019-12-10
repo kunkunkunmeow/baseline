@@ -30,7 +30,10 @@ bl_l = "section"
 bl_s = "ALIMENTACION"
 
 # Category scope
-category ="LECHE"
+category ="""LECHE
+GALLETAS
+BEBIDAS REFRESCANTES
+"""
 
 """PESCADO Y MARISCO CONGELADO
 LECHE
