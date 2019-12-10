@@ -355,10 +355,10 @@ if __name__ == "__main__":
                     processes.append(p)
                 for p in processes:
                     p.join()
-                #if len(frame) != 0:
-                output = pd.concat(frame)
-                results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
-                results_df.reset_index(drop=True, inplace=True)
+                if len(frame) != 0:
+                    output = pd.concat(frame)
+                    results_df = pd.concat([results_df, output], ignore_index=True, sort =False)
+                    results_df.reset_index(drop=True, inplace=True)
                 frame[:] = []
 
                 total_time_batch = round((time.time() - start_time_batch), 2)
