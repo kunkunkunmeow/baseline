@@ -202,16 +202,17 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     list_of_tuples1 = list(zip(sku_id, store, coeficient, gradient, R2, c, norm_factor, points, average_price, cost_per_unit))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points', 'avg_price', 'cost_per_unit'])
     
-    logger.info(df.shape[0])
     # drop rows where points less than or equal to min_points
     df.drop(df[(df['points']<= min_points)].index, inplace=True)
-    logger.info(df.shape[0])
+    
     # select negative all
     neg_all = df
     # drop any rows with positive gradients
     indexNames = neg_all[(neg_all['gradient_Nfactor_applied']>=0)].index
     neg_all.drop(indexNames , inplace=True)
+    
     logger.info(neg_all.shape[0])
+    
     # select negative strong
     # already dropped rows with positive gradients
     neg_strong = neg_all
