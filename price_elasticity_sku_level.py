@@ -18,9 +18,9 @@ min_limit = 1/max_limit
 min_points = 2
 
 # thresholds
-store_threshold = 0.5
-R2_threshold = 0.5
-max_price_change = 0.5
+store_threshold = 0.1
+R2_threshold = 0.6
+max_price_change = 0.3
 
 # Project ID
 project_id = "gum-eroski-dev"
