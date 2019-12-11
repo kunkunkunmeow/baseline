@@ -302,17 +302,32 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         logger.info(fullData)
         logger.info(store_selection_df)
     
-    def aggregate_group(group):
-        # calculates avg gradient, avg R2, optimal price, % price change for group
-        grad = group.mean(axis=0)['gradient_Nfactor_applied']
-        R2 = group.mean(axis=0)['R2']
-        opt_price = (1-grad*(group.mean(axis=0)['avg_price']+group.mean(axis=0)['cost_per_unit']))/(-2*grad)
-        price_change = (opt_price/group.mean(axis=0)['avg_price'])-1
-        avg_Nfactor = group.mean(axis=0)['Nfactor']
-        avg_price = group.mean(axis=0)['avg_price']
-        
-        return grad, R2, opt_price, price_change, avg_Nfactor, avg_price
+    feat = store_selection_df[['std_price_per_unit']]
+    qty = store_selection_df[['avg_qty_norm']]
 
+    X = feat
+    y = qty
+    lin_reg = linear_model.LinearRegression()
+    model = lm.fit(X,y)
+
+    predictions = lin_reg.predict(y)
+    
+    sku_id = []
+    coeficient = []
+    R2 = []
+    c = []
+    cost_per_unit = []
+    
+    cost = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique())
+    
+    sku_id.append(sku)
+    coeficient.append(lin_reg.coef_[0][0])
+    R2.append(lin_reg.score(X,y))
+    c.append(lin_reg.intercept_[0])
+    cost_per_unit.append(cost)
+    
+    list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, cost_per_unit))
+    df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'coeficient', 'R2', 'intercept', 'cost_per_unit'])
 
 if __name__ == "__main__":
     
