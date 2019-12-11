@@ -299,7 +299,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         logger.info(store_selection_df)
     
     
-    feat = store_selection_df[['std_price_per_unit']]
+    feat = store_selection_df[['actual_price']]
     qty = store_selection_df[['avg_qty_norm']]
     
     
