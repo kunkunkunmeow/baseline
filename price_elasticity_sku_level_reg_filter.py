@@ -302,9 +302,15 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         logger.info(fullData)
         logger.info(store_selection_df)
     
+    
     feat = store_selection_df[['std_price_per_unit']]
     qty = store_selection_df[['avg_qty_norm']]
-
+    
+    if sku == "89961":
+        logger.info(store_selection_df[['std_price_per_unit']])
+        logger.info(store_selection_df[['avg_qty_norm']])
+    
+    """
     X = feat
     y = qty
     lin_reg = linear_model.LinearRegression()
@@ -328,6 +334,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, cost_per_unit))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'coeficient', 'R2', 'intercept', 'cost_per_unit'])
+    """
 
 if __name__ == "__main__":
     
