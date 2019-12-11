@@ -274,6 +274,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     store_selection_df = fullData.loc[fullData['store_id'].isin(store_selection)]
     
     if sku == "89961":
+        logger.info(fullData.head())
         logger.info(store_selection)
         logger.info(type(store_selection))
     
