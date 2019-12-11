@@ -269,7 +269,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     neg_all.drop(indexNames , inplace=True)
     
     # get list of stores
-    store_selection = [for x in x neg_all.store.unique()]
+    store_selection = [x for x in neg_all.store.unique()]
     # select df using store_selection
     store_selection_df = fullData.loc[fullData['store_id'].isin(store_selection)]
     
