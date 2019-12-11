@@ -282,10 +282,21 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     temp_df = pd.DataFrame(list_of_tuples2, columns = ['store_id','norm_factor'])
     temp_df = temp_df.astype({'norm_factor': 'float'})
     
+    # merge to store_selection_df
     store_selection_df = store_selection_df.merge(temp_df, how= 'left', on='store_id')
     
+    # calculate average qty normalised for each price
     store_selection_df = store_selection_df.astype({'avg_sales_qty': 'float'})
     store_selection_df['avg_qty_norm'] = store_selection_df['avg_sales_qty']/store_selection_df['norm_factor']
+    
+    # filter table for (avg-stddev) < avg_qty_norm < (avg+stddev)
+    average_qty = store_selection_df.mean(axis=0)['avg_qty_norm']
+    standard_dev = store_selection_df.std(axis=0)['avg_qty_norm']
+    
+    indexNames = store_selection_df[(store_selection_df['gradient_Nfactor_applied']<(average_qty-standard_dev))].index
+    store_selection_df.drop(indexNames , inplace=True)
+    indexNames = store_selection_df[(store_selection_df['gradient_Nfactor_applied']>(average_qty+standard_dev))].index
+    store_selection_df.drop(indexNames , inplace=True)
     
     if sku == "89961":
         logger.info(fullData)
