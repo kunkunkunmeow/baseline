@@ -267,19 +267,15 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     # drop any rows with positive gradients
     indexNames = neg_all[(neg_all['gradient_Nfactor_applied']>=0)].index
     neg_all.drop(indexNames , inplace=True)
-    
-    if sku == "89961":
-        logger.info(fullData.head())
-    
+        
     # get list of stores
     store_selection = [str(x) for x in neg_all.store.unique()]
     # select df using store_selection
     store_selection_df = fullData.loc[fullData['store_id'].isin(store_selection)]
     
     if sku == "89961":
-        logger.info(fullData.head())
-        logger.info(store_selection)
-        logger.info(type(store_selection))
+        logger.info(fullData)
+        logger.info(store_selection_df)
     
     def aggregate_group(group):
         # calculates avg gradient, avg R2, optimal price, % price change for group
