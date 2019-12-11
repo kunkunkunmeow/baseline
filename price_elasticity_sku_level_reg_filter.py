@@ -194,7 +194,7 @@ def unit_cost_table(category, project_id):
 def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, min_points):        
     # get the aggregated none promotion data for the group that the SKU belongs to
  
-    #fullData = pd.DataFrame()
+    fullData = pd.DataFrame()
     
     logger.info(f'{sku} - being processed...')
     
