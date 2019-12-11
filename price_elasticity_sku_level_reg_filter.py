@@ -276,10 +276,10 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     # calculate average weekly sales per store across all price points and append to df
     norm_factor = []
     for store in store_selection:
-        norm_factor.append(float(store_selection_df.loc[store_selection_df['store_id']==store].mean(axis=0)['avg_sales_qty']))
+        norm_factor.append(store_selection_df.loc[store_selection_df['store_id']==store].mean(axis=0)['avg_sales_qty'])
         
     list_of_tuples2 = list(zip(store_selection, norm_factor))
-    temp_df = pd.DataFrame(list_of_tuples2, columns = ['store_id','norm_factor'])
+    temp_df = pd.DataFrame(list_of_tuples2, columns = ['store_id','norm_factor'], dtype=['int', 'float'])
     
     store_selection_df = store_selection_df.merge(temp_df, how= 'left', on='store_id')
     
