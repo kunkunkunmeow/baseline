@@ -279,7 +279,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         norm_factor.append(store_selection_df.loc[store_selection_df['store_id']==store].mean(axis=0)['avg_sales_qty'])
         
     list_of_tuples2 = list(zip(store_selection, norm_factor))
-    temp_df = pd.DataFrame(list_of_tuples2, columns = ['store_id','norm_factor'], dtype=['np.int','np.float'])
+    temp_df = pd.DataFrame(list_of_tuples2, columns = ['store_id','norm_factor'], dtype=float)
     
     store_selection_df = store_selection_df.merge(temp_df, how= 'left', on='store_id')
     
