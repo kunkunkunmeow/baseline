@@ -308,7 +308,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     X = feat
     y = qty
     lin_reg = linear_model.LinearRegression()
-    model = lm.fit(X,y)
+    model = lin_reg.fit(X,y)
 
     predictions = lin_reg.predict(y)
     
