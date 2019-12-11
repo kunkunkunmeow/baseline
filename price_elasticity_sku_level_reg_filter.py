@@ -284,7 +284,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     store_selection_df = store_selection_df.astype({'avg_sales_qty': 'float'})
     store_selection_df['avg_qty_norm'] = store_selection_df['avg_sales_qty']/store_selection_df['norm_factor']
     
-    
+    """
     # filter table for (avg-stddev) < avg_qty_norm < (avg+stddev)
     average_qty = store_selection_df.mean(axis=0)['avg_qty_norm']
     standard_dev = store_selection_df.std(axis=0)['avg_qty_norm']
@@ -297,11 +297,11 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     if sku == "89961":
         logger.info(fullData)
         logger.info(store_selection_df)
-    
+    """
     
     feat = store_selection_df[['actual_price']]
+    feat_std = store_selection_df[['std_price_per_unit']]
     qty = store_selection_df[['avg_qty_norm']]
-    
     
     if store_selection_df.shape[0]>3:
         X = feat
@@ -309,14 +309,22 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         lin_reg = linear_model.LinearRegression()
         model = lin_reg.fit(X,y)
         
+        lin_reg_std = linear_model.LinearRegression()
+        model_std = lin_reg_std.fit(feat_std,y)
+        
         predictions = lin_reg.predict(y)
+        predictions_std = lin_reg_std.predict(y)
 
         sku_id = []
         coeficient = []
         R2 = []
         c = []
         cost_per_unit = []
-
+        
+        coeficient_std = []
+        R2_std = []
+        c_std = []
+        
         cost = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique())
 
         sku_id.append(sku)
@@ -324,9 +332,13 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         R2.append(lin_reg.score(X,y))
         c.append(lin_reg.intercept_[0])
         cost_per_unit.append(cost)
+        
+        coeficient_std.append(lin_reg_std.coef_[0][0])
+        R2_std.append(lin_reg_std.score(X,y))
+        c_std.append(lin_reg_std.intercept_[0])
 
-        list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, cost_per_unit))
-        sku_lin_reg_df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'cost_per_unit'])
+        list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, coeficient_std, R2_std, c_std, cost_per_unit))
+        sku_lin_reg_df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'coeficient_std', 'R2_std', 'intercept_std','cost_per_unit'])
         frame.append(sku_lin_reg_df)
 
 
