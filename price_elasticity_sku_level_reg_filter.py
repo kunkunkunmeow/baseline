@@ -273,6 +273,18 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     # select df using store_selection
     store_selection_df = fullData.loc[fullData['store_id'].isin(store_selection)]
     
+    # calculate average weekly sales per store across all price points and append to df
+    norm_factor = []
+    for store in store_selection:
+        norm_factor.append(store_selection_df.loc[store_selection_df['store_id']==store].mean(axis=0)['avg_sales_qty'])
+    
+    #df['norm_factor'] = pd.where(df['hours'] < 1, df['hours'], df['$']/df['hours'])
+    
+    list_of_tuples2 = list(zip(store_selection, norm_factor))
+    temp_df = pd.DataFrame(list_of_tuples2, columns = ['store_id','norm_factor'])
+    
+    store_selection_df = store_selection_df.merge(temp_df, how= 'left', on='store_id')
+    
     if sku == "89961":
         logger.info(fullData)
         logger.info(store_selection_df)
