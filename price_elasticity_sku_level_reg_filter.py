@@ -310,12 +310,13 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         logger.info(store_selection_df[['std_price_per_unit']])
         logger.info(store_selection_df[['avg_qty_norm']])
     
-    """
+    
     X = feat
     y = qty
     lin_reg = linear_model.LinearRegression()
     model = lin_reg.fit(X,y)
-
+    
+    """
     predictions = lin_reg.predict(y)
     
     sku_id = []
