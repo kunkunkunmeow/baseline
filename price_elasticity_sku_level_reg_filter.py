@@ -268,6 +268,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     indexNames = neg_all[(neg_all['gradient_Nfactor_applied']>=0)].index
     neg_all.drop(indexNames , inplace=True)
     
+    if sku == "89961":
+        logger.info(fullData.head())
+    
     # get list of stores
     store_selection = [str(x) for x in neg_all.store.unique()]
     # select df using store_selection
