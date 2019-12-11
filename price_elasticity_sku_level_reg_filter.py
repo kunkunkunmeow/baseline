@@ -293,9 +293,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     average_qty = store_selection_df.mean(axis=0)['avg_qty_norm']
     standard_dev = store_selection_df.std(axis=0)['avg_qty_norm']
     
-    indexNames = store_selection_df[(store_selection_df['gradient_Nfactor_applied']<(average_qty-standard_dev))].index
+    indexNames = store_selection_df[(store_selection_df['avg_qty_norm']<(average_qty-standard_dev))].index
     store_selection_df.drop(indexNames , inplace=True)
-    indexNames = store_selection_df[(store_selection_df['gradient_Nfactor_applied']>(average_qty+standard_dev))].index
+    indexNames = store_selection_df[(store_selection_df['avg_qty_norm']>(average_qty+standard_dev))].index
     store_selection_df.drop(indexNames , inplace=True)
     
     if sku == "89961":
