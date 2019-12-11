@@ -37,11 +37,7 @@ bl_s = "ALIMENTACION"
 
 # Category metadata
 #category_df = pd.read_csv('category_metadata.csv')
-category ="""LECHE
-GALLETAS
-"""
-
-"""PESCADO Y MARISCO CONGELADO
+category ="""PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
