@@ -310,32 +310,31 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         logger.info(store_selection_df[['std_price_per_unit']])
         logger.info(store_selection_df[['avg_qty_norm']])
     
-    
-    X = feat
-    y = qty
-    lin_reg = linear_model.LinearRegression()
-    model = lin_reg.fit(X,y)
-    
-    """
-    predictions = lin_reg.predict(y)
-    
-    sku_id = []
-    coeficient = []
-    R2 = []
-    c = []
-    cost_per_unit = []
-    
-    cost = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique())
-    
-    sku_id.append(sku)
-    coeficient.append(lin_reg.coef_[0][0])
-    R2.append(lin_reg.score(X,y))
-    c.append(lin_reg.intercept_[0])
-    cost_per_unit.append(cost)
-    
-    list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, cost_per_unit))
-    df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'coeficient', 'R2', 'intercept', 'cost_per_unit'])
-    """
+    if store_selection_df.shape[0]>3:
+        X = feat
+        y = qty
+        lin_reg = linear_model.LinearRegression()
+        model = lin_reg.fit(X,y)
+        
+        predictions = lin_reg.predict(y)
+
+        sku_id = []
+        coeficient = []
+        R2 = []
+        c = []
+        cost_per_unit = []
+
+        cost = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique())
+
+        sku_id.append(sku)
+        coeficient.append(lin_reg.coef_[0][0])
+        R2.append(lin_reg.score(X,y))
+        c.append(lin_reg.intercept_[0])
+        cost_per_unit.append(cost)
+
+        list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, cost_per_unit))
+        df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'coeficient', 'R2', 'intercept', 'cost_per_unit'])
+
 
 if __name__ == "__main__":
     
