@@ -304,12 +304,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         logger.info(store_selection_df)
     
     
-    feat = store_selection_df[['actual_price']]
+    feat = store_selection_df[['std_price_per_unit']]
     qty = store_selection_df[['avg_qty_norm']]
     
-    if sku == "89961":
-        logger.info(store_selection_df[['std_price_per_unit']])
-        logger.info(store_selection_df[['avg_qty_norm']])
     
     if store_selection_df.shape[0]>3:
         X = feat
