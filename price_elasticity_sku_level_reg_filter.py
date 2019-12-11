@@ -284,6 +284,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     store_selection_df = store_selection_df.merge(temp_df, how= 'left', on='store_id')
     
+    store_selection_df = store_selection_df.astype({'avg_sales_qty': 'float'})
     store_selection_df['avg_qty_norm'] = store_selection_df['avg_sales_qty']/store_selection_df['norm_factor']
     
     if sku == "89961":
