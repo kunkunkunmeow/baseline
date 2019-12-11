@@ -277,13 +277,13 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     norm_factor = []
     for store in store_selection:
         norm_factor.append(store_selection_df.loc[store_selection_df['store_id']==store].mean(axis=0)['avg_sales_qty'])
-    
-    #df['norm_factor'] = pd.where(df['hours'] < 1, df['hours'], df['$']/df['hours'])
-    
+        
     list_of_tuples2 = list(zip(store_selection, norm_factor))
     temp_df = pd.DataFrame(list_of_tuples2, columns = ['store_id','norm_factor'])
     
     store_selection_df = store_selection_df.merge(temp_df, how= 'left', on='store_id')
+    
+    store_selection_df['avg_qty_norm'] = store_selection_df['avg_sales_qty']/store_selection_df['norm_factor']
     
     if sku == "89961":
         logger.info(fullData)
