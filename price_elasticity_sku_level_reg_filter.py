@@ -8,6 +8,7 @@ import time
 import logging
 from datetime import timedelta  
 import baseline_query
+import unidecode
 
 # Input global variables 
 # Reformat code to accept these variables as input
@@ -36,12 +37,7 @@ bl_s = "ALIMENTACION"
 
 # Category metadata
 #category_df = pd.read_csv('category_metadata.csv')
-category ="""LECHE
-GALLETAS
-"""
-
-
-"""PESCADO Y MARISCO CONGELADO
+category ="""PESCADO Y MARISCO CONGELADO
 LECHE
 YOGURES Y POSTRES
 QUESOS
@@ -70,6 +66,7 @@ CALENTAR Y LISTO
 CARNICOS MOSTRADOR
 PATES MOSTRADOR
 CARNICOS PIEZA
+QUESOS PORCIÓN
 POLLO ENVASADO AVES
 VACUNO ENVASADO
 PORCINO ENVASADO
@@ -85,6 +82,7 @@ JAMONES PIEZA
 PAVO Y OTRAS AVES ENVASADO
 ECOLOGICO
 LISTO PARA COMER
+PATÉS PORCIÓN
 PAN
 CURADOS, EMBUT. E IBERICOS
 PASTELERIA
@@ -94,9 +92,6 @@ MATERIAS PRIMAS Y MASAS CONGELADAS
 QUESOS RECIEN CORTADOS
 STAND IBERICOS
 COCINA IN SITU"""
-
-#QUESOS PORCIÓN
-#PATÉS PORCIÓN
 
 category = ["\'"+each+"\'" for each in list(category.split("\n"))]
 
@@ -396,7 +391,7 @@ if __name__ == "__main__":
             logger.info('Uploading baseline table to Bigquery...')
             
             logger.info(i_sec)
-            pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_sku_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists=bl_table_config)
+            pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_sku_level_{c}'.format(c=unidecode.unidecode(each.replace("\'","").replace(".","").replace(" ","").replace(",",""))), project_id=project_id, if_exists=bl_table_config)
             """
             if (i_sec == 0):
                 pandas_gbq.to_gbq(results_df, 'price_elast.lin_reg_store_level_{c}'.format(c=each.replace("\'","").replace(".","").replace(" ","").replace(",","")), project_id=project_id, if_exists=bl_table_config)
