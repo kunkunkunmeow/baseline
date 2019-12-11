@@ -273,7 +273,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     # select df using store_selection
     store_selection_df = fullData.loc[fullData['store_id'].isin(store_selection)]
     
-    if sku == "89961": logger.info(store_selection)
+    if sku == "89961": logger.info(store_selection.dtypes)
     
     def aggregate_group(group):
         # calculates avg gradient, avg R2, optimal price, % price change for group
