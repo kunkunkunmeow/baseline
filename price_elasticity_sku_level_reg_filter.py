@@ -333,7 +333,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         cost_per_unit.append(cost)
 
         list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, cost_per_unit))
-        df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'coeficient', 'R2', 'intercept', 'cost_per_unit'])
+        df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'cost_per_unit'])
 
 
 if __name__ == "__main__":
