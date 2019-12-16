@@ -301,7 +301,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     # calculate average std price across each store
     store_selection_df = store_selection_df.astype({'std_price_per_unit': 'float'})
     std_price_norm = store_selection_df.groupby(['store_id'])['std_price_per_unit'].mean()
-    store_selection_df = store_selection_df.merge(std_price_norm, how= 'left', on='store_id')
+    store_selection_df = store_selection_df.merge(std_price_norm, how= 'left', on='store_id', suffixes=(‘’, ‘_norm’))
     
     if sku == "89961":
         logger.info(fullData)
