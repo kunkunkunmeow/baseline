@@ -302,7 +302,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     store_selection_df = store_selection_df.astype({'std_price_per_unit': 'float'})
     std_price_norm = store_selection_df.groupby(['store_id'])['std_price_per_unit'].mean()
     store_selection_df = store_selection_df.merge(std_price_norm, how= 'left', on='store_id', suffixes=('_x', '_factor'))
-    store_selection_df['std_price_per_unit_norm'] = store_selection_df['std_price_per_unit']/store_selection_df['std_price_per_unit_factor']
+    store_selection_df['std_price_per_unit_norm'] = store_selection_df['std_price_per_unit_x']/store_selection_df['std_price_per_unit_factor']
     
     if sku == "89961":
         logger.info(fullData)
