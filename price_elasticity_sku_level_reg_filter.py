@@ -330,25 +330,32 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         R2 = []
         c = []
         cost_per_unit = []
+        max_norm_price = []
+        min_norm_price = []
         
         coeficient_std = []
         R2_std = []
         c_std = []
         
         cost = float(cost_per_unit_table.loc[cost_per_unit_table['sku_root_id']==sku]['cost_per_unit'].unique())
+        
+        max_price = store_selection_df.loc[store_selection_df['sku_root_id']==sku]['std_price_per_unit_norm'].max()
+        min_price = store_selection_df.loc[store_selection_df['sku_root_id']==sku]['std_price_per_unit_norm'].min()
 
         sku_id.append(sku)
         coeficient.append(lin_reg.coef_[0][0])
         R2.append(lin_reg.score(X,y))
         c.append(lin_reg.intercept_[0])
         cost_per_unit.append(cost)
+        max_norm_price.append(max_price)
+        min_norm_price.append(min_price)
         
         coeficient_std.append(lin_reg_std.coef_[0][0])
         R2_std.append(lin_reg_std.score(X,y))
         c_std.append(lin_reg_std.intercept_[0])
 
-        list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, coeficient_std, R2_std, c_std, cost_per_unit))
-        sku_lin_reg_df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'coeficient_std', 'R2_std', 'intercept_std','cost_per_unit'])
+        list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, coeficient_std, R2_std, c_std, cost_per_unit, max_norm_price, min_norm_price))
+        sku_lin_reg_df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'coeficient_std', 'R2_std', 'intercept_std','cost_per_unit', 'max_price', 'min_price'])
         frame.append(sku_lin_reg_df)
 
 
