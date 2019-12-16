@@ -298,6 +298,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     indexNames = store_selection_df[(store_selection_df['avg_qty_norm']>(average_qty+2*standard_dev))].index
     store_selection_df.drop(indexNames , inplace=True)
     
+    std_price_norm = store_selection_df.groupby(['store_id'])['std_price_per_unit'].mean()
+    store_selection_df = store_selection_df.merge(std_price_norm, how= 'left', on='store_id')
+    
     if sku == "89961":
         logger.info(fullData)
         logger.info(store_selection_df)
