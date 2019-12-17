@@ -356,8 +356,8 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         cost_per_unit.append(cost)
         max_norm_price.append(max_price)
         min_norm_price.append(min_price)
-        store_count.append(store_selection_df.shape[0])
-        point_count.append(float(len(store_selection_df['store_id'].unique())))
+        point_count.append(store_selection_df.shape[0])
+        store_count.append(float(len(store_selection_df['store_id'].unique())))
         
         coeficient_std.append(lin_reg_std.coef_[0][0])
         R2_std.append(lin_reg_std.score(feat_std,y))
