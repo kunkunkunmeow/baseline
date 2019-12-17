@@ -211,6 +211,9 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     #    logger.info("number of stores= {z}".format(z=len(store_ids)))
     #    logger.info(store_ids)
     
+    # drop prices that were active for < 3 weeks
+    fullData.drop(fullData[(fullData['duration_weeks']< 3)].index, inplace=True)
+    
     # initialise output lists
     sku_id = []
     store = []
