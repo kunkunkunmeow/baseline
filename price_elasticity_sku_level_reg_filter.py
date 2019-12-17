@@ -365,7 +365,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
 
         list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, coeficient_std, R2_std, c_std, cost_per_unit, max_norm_price, min_norm_price, store_count, point_count))
         sku_lin_reg_df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'coeficient_std', 'R2_std', 'intercept_std','cost_per_unit', 'max_price', 'min_price', 'store_count', 'point_count'])
-        frame.append(sku_lin_reg_df)
+        frame.append(store_selection_df)
 
 
 if __name__ == "__main__":
