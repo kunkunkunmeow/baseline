@@ -230,33 +230,34 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     
     for store_id in store_ids:
         data = fullData.loc[fullData['store_id']==store_id]
-        Nfactor = data.mean(axis=0)['avg_sales_qty']
-        avg_price = data.mean(axis=0)['actual_price']
-        
-        #if sku == "10296796":
-        #    logger.info(counting)
-        #    counting+=data.shape[0]
-        
-        feat = data[['std_price_per_unit']]
-        qty = data[['avg_sales_qty']]
-        
-        X = feat
-        y = qty
-        lm = linear_model.LinearRegression()
-        model = lm.fit(X,y)
-        
-        predictions = lm.predict(y)
-        
-        store.append(store_id)
-        coeficient.append(lm.coef_[0][0])
-        R2.append(lm.score(X,y))
-        points.append(data.shape[0])
-        c.append(lm.intercept_[0])
-        gradient.append(lm.coef_[0][0]/Nfactor)
-        norm_factor.append(Nfactor)
-        sku_id.append(sku)
-        average_price.append(avg_price)
-        cost_per_unit.append(cost)
+        if data.shape[0] > 2:
+            Nfactor = data.mean(axis=0)['avg_sales_qty']
+            avg_price = data.mean(axis=0)['actual_price']
+
+            #if sku == "10296796":
+            #    logger.info(counting)
+            #    counting+=data.shape[0]
+
+            feat = data[['std_price_per_unit']]
+            qty = data[['avg_sales_qty']]
+
+            X = feat
+            y = qty
+            lm = linear_model.LinearRegression()
+            model = lm.fit(X,y)
+
+            predictions = lm.predict(y)
+
+            store.append(store_id)
+            coeficient.append(lm.coef_[0][0])
+            R2.append(lm.score(X,y))
+            points.append(data.shape[0])
+            c.append(lm.intercept_[0])
+            gradient.append(lm.coef_[0][0]/Nfactor)
+            norm_factor.append(Nfactor)
+            sku_id.append(sku)
+            average_price.append(avg_price)
+            cost_per_unit.append(cost)
         
     list_of_tuples1 = list(zip(sku_id, store, coeficient, gradient, R2, c, norm_factor, points, average_price, cost_per_unit))
     df = pd.DataFrame(list_of_tuples1, columns = ['sku', 'store', 'coeficient', 'gradient_Nfactor_applied', 'R2', 'intercept', 'Nfactor', 'points', 'avg_price', 'cost_per_unit'])
