@@ -313,6 +313,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
     feat_std = store_selection_df[['std_price_per_unit_norm']]
     qty = store_selection_df[['avg_qty_norm']]
     
+        
     if store_selection_df.shape[0]>3:
         X = feat
         y = qty
@@ -332,6 +333,7 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         cost_per_unit = []
         max_norm_price = []
         min_norm_price = []
+        store_count = []
         
         coeficient_std = []
         R2_std = []
@@ -349,13 +351,14 @@ def linear_reg(frame, agg_np, cost_per_unit_table, sku, max_limit, min_limit, mi
         cost_per_unit.append(cost)
         max_norm_price.append(max_price)
         min_norm_price.append(min_price)
+        store_count.append(store_selection_df.shape[0])
         
         coeficient_std.append(lin_reg_std.coef_[0][0])
-        R2_std.append(lin_reg_std.score(X,y))
+        R2_std.append(lin_reg_std.score(feat_std,y))
         c_std.append(lin_reg_std.intercept_[0])
 
-        list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, coeficient_std, R2_std, c_std, cost_per_unit, max_norm_price, min_norm_price))
-        sku_lin_reg_df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'coeficient_std', 'R2_std', 'intercept_std','cost_per_unit', 'max_price', 'min_price'])
+        list_of_tuples3 = list(zip(sku_id, coeficient, R2, c, coeficient_std, R2_std, c_std, cost_per_unit, max_norm_price, min_norm_price, store_count))
+        sku_lin_reg_df = pd.DataFrame(list_of_tuples3, columns = ['sku', 'coeficient', 'R2', 'intercept', 'coeficient_std', 'R2_std', 'intercept_std','cost_per_unit', 'max_price', 'min_price', 'store_count'])
         frame.append(sku_lin_reg_df)
 
 
