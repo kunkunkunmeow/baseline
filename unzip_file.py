@@ -22,7 +22,8 @@ print(type(blob_list))
 
 #path_to_file = "~/etl_test/" + blob_list[0].split("/")[-1]
 
-local_directory = os.fsencode("~/etl_test/")
+local_dir = os.path.abspath("~/etl_test")
+#local_directory = os.fsencode("~/etl_test/")
 
 
 def download_blob(bucket_name, source_blob_name, destination_file_name):
@@ -64,6 +65,6 @@ def change_extension(old_extension, new_extension, directory):
 
 
 if __name__ == "__main__":
-    download_blob(bucket, blob_list[0], local_directory)
+    download_blob(bucket, blob_list[0], local_dir)
     #gunzip(path_to_file, path_to_file)
     #change_extension(".dat", ".csv", local_directory)
