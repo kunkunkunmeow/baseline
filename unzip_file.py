@@ -18,9 +18,9 @@ bucket = storage_client.get_bucket("erk-data-feed")
 print(bucket.exists())
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter="/")
 print(len(blobs)
-blobs = [blob.name for blob in blobs]
+blob_list = [blob.name for blob in blobs]
 
-path_to_file = "~/etl_test/" + blobs[0]
+path_to_file = "~/etl_test/" + blob_list[0]
 
 local_directory = os.fsencode("~/etl_test/")
 
@@ -64,6 +64,6 @@ def change_extension(old_extension, new_extension, directory):
 
 
 if __name__ == "__main__":
-    download_blob(bucket, blobs[0], path_to_file)
+    download_blob(bucket, blob_list[0], path_to_file)
     gunzip(path_to_file, path_to_file)
     change_extension(".dat", ".csv", local_directory)
