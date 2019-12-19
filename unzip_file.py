@@ -20,6 +20,9 @@ blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", d
 
 blobs = [blob.name for blob in blobs]
 
+for x in blobs:
+    print(x)
+
 path_to_file = "~/etl_test/" + blobs[0]
 
 local_directory = os.fsencode("~/etl_test/")
