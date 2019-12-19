@@ -1,7 +1,6 @@
 # python script to decompress .dat.gz files
 
 from google.cloud import storage
-import cloudstorage as gcs
 import os
 import gzip
 import shutil
