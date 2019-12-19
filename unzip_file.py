@@ -65,6 +65,6 @@ def change_extension(old_extension, new_extension, directory):
 
 
 if __name__ == "__main__":
-    #download_blob(bucket, blob_list[0], path_to_file)
+    download_blob(bucket, blob_list[0], path_to_file)
     #gunzip(path_to_file, path_to_file)
     #change_extension(".dat", ".csv", local_directory)
