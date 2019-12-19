@@ -16,13 +16,10 @@ storage_client = storage.Client()
 
 bucket = storage_client.get_bucket("erk-data-feed")
 print(bucket.exists())
-blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter="/")
+blobs = storage_client.list_blobs(bucket, prefix="/Working_folder/AT/ETL_test", delimiter="/")
 
-for blob in blobs:
-    print(blob.name)
-
-#blob_list = [blob.name for blob in blobs]
-#print(len(blob_list))
+blob_list = [blob.name for blob in blobs]
+print(len(blob_list))
 
 path_to_file = "~/etl_test/" + blob_list[0]
 
