@@ -19,7 +19,7 @@ print(bucket.exists())
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter='/')
 
 for blob in blobs:
-    print(blob.exists())
+    print(blob.name)
 
 
 path_to_file = "~/etl_test/" + blob_list[0]
