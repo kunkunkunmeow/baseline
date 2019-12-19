@@ -14,9 +14,9 @@ storage_client = storage.Client()
 # Creates the new bucket
 # bucket = storage_client.create_bucket(bucket_name)
 
-bucket = "erk-data-feed/Working_folder/AT/ETL_test/"
+bucket = "erk-data-feed"
 
-blobs = storage_client.list_blobs(bucket)
+blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter="/")
 
 blobs = [blob.name for blob in blobs]
 
