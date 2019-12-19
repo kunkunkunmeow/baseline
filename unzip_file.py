@@ -14,12 +14,11 @@ storage_client = storage.Client()
 # Creates the new bucket
 # bucket = storage_client.create_bucket(bucket_name)
 
-bucket = "erk-data-feed"
+bucket = storage_client.get_bucket("erk-data-feed")
 
-blobs = storage_client.objects.list(bucket, prefix=bucket+"/Working_folder/AT/ETL_test", delimiter="/")
+blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter="/")
 
 blobs = [blob.name for blob in blobs]
-print(len(blobs))
 
 path_to_file = "~/etl_test/" + blobs[0]
 
