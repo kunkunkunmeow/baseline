@@ -19,9 +19,7 @@ bucket = "erk-data-feed"
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter="/")
 
 blobs = [blob.name for blob in blobs]
-
-for x in blobs:
-    print(x)
+print(len(blobs))
 
 path_to_file = "~/etl_test/" + blobs[0]
 
