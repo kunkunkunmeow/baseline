@@ -15,7 +15,7 @@ storage_client = storage.Client()
 # bucket = storage_client.create_bucket(bucket_name)
 
 bucket = storage_client.get_bucket("erk-data-feed")
-print(bucket)
+print(bucket.exists())
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter="/")
 print(len(blobs)
 blobs = [blob.name for blob in blobs]
