@@ -18,7 +18,8 @@ storage_client = storage.Client()
 bucket = "erk-data-feed"
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test/")
 
-blob_list = [blob.name.split("/")[-1] for blob in blobs]
+blob_list = [blob.name for blob in blobs]
+blob_fname = [blob.name.split("/")[-1] for blob in blobs]
 print(blob_list)
 
 home = str(Path.home())
