@@ -22,7 +22,7 @@ blob_list = [blob.name for blob in blobs]
 print(type(blob_list))
 
 home = str(Path.home())
-local_dir = os.path.abspath(home+"antsoi/etl_test")
+local_dir = os.path.abspath(home+"/etl_test")
 #local_directory = os.fsencode("~/etl_test/")
 
 
