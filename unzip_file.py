@@ -34,7 +34,7 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
     # destination_file_name = "local/path/to/file"
 
     # check if file exists
-    if path.exists(destination_file_name):
+    if os.path.exists(destination_file_name):
         print(
             "Blob {} already exists in {}.".format(
                 source_blob_name, destination_file_name
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     for blob in blob_list:
         blob_fn = blob.split("/")[-1]
         download_blob(bucket, blob, os.path.abspath(local_dir + "/" + blob_fn))
-        if path.exists(
+        if os.path.exists(
             os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv")
         ):
             print(
