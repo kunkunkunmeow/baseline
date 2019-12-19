@@ -4,6 +4,7 @@ from google.cloud import storage
 import os
 import gzip
 import shutil
+from pathlib import Path
 
 # Instantiates a client
 storage_client = storage.Client()
@@ -20,9 +21,8 @@ blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test/")
 blob_list = [blob.name for blob in blobs]
 print(type(blob_list))
 
-#path_to_file = "~/etl_test/" + blob_list[0].split("/")[-1]
-
-local_dir = os.path.abspath("~/etl_test")
+home = str(Path.home())
+local_dir = os.path.abspath(home+"antsoi/etl_test")
 #local_directory = os.fsencode("~/etl_test/")
 
 
