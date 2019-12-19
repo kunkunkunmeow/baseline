@@ -109,8 +109,8 @@ if __name__ == "__main__":
             )
         upload_blob(
             bucket,
+            os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv"),
             os.path.abspath(
-                local_dir + "/" + blob_fn.split(".")[0] + ".csv",
-                "Working_folder/AT/ETL_test_upload/" + blob_fn.split(".")[0] + ".csv",
+                "Working_folder/AT/ETL_test_upload/" + blob_fn.split(".")[0] + ".csv"
             ),
         )
