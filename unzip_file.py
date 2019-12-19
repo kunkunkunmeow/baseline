@@ -19,7 +19,7 @@ bucket = "erk-data-feed"
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test/")
 
 blob_list = [blob.name for blob in blobs]
-print(type(blob_list))
+print(blob_list)
 
 home = str(Path.home())
 local_dir = os.path.abspath(home+"/etl_test")
