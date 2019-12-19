@@ -94,10 +94,19 @@ if __name__ == "__main__":
     for blob in blob_list:
         blob_fn = blob.split("/")[-1]
         download_blob(bucket, blob, os.path.abspath(local_dir + "/" + blob_fn))
-        gunzip(
-            os.path.abspath(local_dir + "/" + blob_fn),
-            os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv"),
-        )
+        if path.exists(
+            os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv")
+        ):
+            print(
+                "File {} already unzipped".format(
+                    os.path.abspath(local_dir + "/" + blob_fn)
+                )
+            )
+        else:
+            gunzip(
+                os.path.abspath(local_dir + "/" + blob_fn),
+                os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv"),
+            )
         upload_blob(
             bucket,
             os.path.abspath(
