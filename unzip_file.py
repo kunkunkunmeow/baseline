@@ -16,7 +16,7 @@ storage_client = storage.Client()
 
 bucket = "erk-data-feed"
 
-blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test", delimiter="/")
+blobs = storage_client.list_blobs(bucket, prefix=bucket+"/Working_folder/AT/ETL_test", delimiter="/")
 
 blobs = [blob.name for blob in blobs]
 print(len(blobs))
