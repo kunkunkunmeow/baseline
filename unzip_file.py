@@ -9,12 +9,6 @@ from pathlib import Path
 # Instantiates a client
 storage_client = storage.Client()
 
-# The name for the new bucket
-# bucket_name = 'my-new-bucket'
-
-# Creates the new bucket
-# bucket = storage_client.create_bucket(bucket_name)
-
 bucket = "erk-data-feed"
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test/")
 
