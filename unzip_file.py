@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import logging
 import re
-import fuzzywuzzy
+import fuzzywuzzy as fuzz
 
 # Instantiates a client
 storage_client = storage.Client()
@@ -121,7 +121,7 @@ def csv_checks(csv_filename, dataset_schema):
     fn = re.sub(r"\d+", "", fn)
     table_name_list = [re.sub(r"\d+", "", x) for x in table_name_list]
     # calculate token sort ratio
-    token_sort_ratio = [fuzzywuzzy.fuzz.token_sort_ratio(fn, string) for string in table_name_list]
+    token_sort_ratio = [fuzz.token_sort_ratio(fn, string) for string in table_name_list]
     maxRatio = max(token_sort_ratio)
     # find best match
     [i for i, j in enumerate(token_sort_ratio) if j == maxRatio]
