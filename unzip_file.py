@@ -105,6 +105,12 @@ def change_extension(old_extension, new_extension, directory):
             continue
 
 
+def csv_checks(csv_filename):
+    """Checks format of csv files"""
+    csv_data = pd.read_csv(csv_filename)
+    logger.info(csv_data.describe())
+
+
 if __name__ == "__main__":
     logger = initialise_logger()
     for blob in blob_list:
@@ -114,6 +120,7 @@ if __name__ == "__main__":
             logger.info(
                 "File {} already unzipped".format(os.path.abspath(local_dir + "/" + blob_fn))
             )
+            csv_checks(os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv"))
         else:
             gunzip(
                 os.path.abspath(local_dir + "/" + blob_fn),
