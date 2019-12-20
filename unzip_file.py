@@ -9,10 +9,14 @@ import pandas_gbq
 import pandas as pd
 import numpy as np
 import logging
+import re
+import fuzzywuzzy
 
 # Instantiates a client
 storage_client = storage.Client()
 
+project_id = "gum-eroski-dev"
+dataset_id = "source_data"
 bucket = "erk-data-feed"
 blobs = storage_client.list_blobs(bucket, prefix="Working_folder/AT/ETL_test/")
 
@@ -105,14 +109,39 @@ def change_extension(old_extension, new_extension, directory):
             continue
 
 
-def csv_checks(csv_filename):
+def csv_checks(csv_filename, dataset_schema):
     """Checks format of csv files"""
+    # read csv file into dataframe
     csv_data = pd.read_csv(csv_filename)
-    logger.info(csv_data.describe())
+    logger.info(csv_data.describe(include="all"))
+    # check for matching table in Bigquery
+    fn = csv_filename.split("/")[-1].split(".")[0]
+    table_name_list = dataset_schema.table_name.unique()
+    # remove digits from both strings
+    fn = re.sub(r"\d+", "", fn)
+    table_name_list = [re.sub(r"\d+", "", x) for x in table_name_list]
+    # calculate token sort ratio
+    token_sort_ratio = [fuzzywuzzy.fuzz.token_sort_ratio(fn, string) for string in table_name_list]
+    maxRatio = max(token_sort_ratio)
+    # find best match
+    [i for i, j in enumerate(token_sort_ratio) if j == maxRatio]
+    assert len(i) == 1
+    logger.info("csv file name = {} matched with {}".format(fn, token_sort_ratio[0]))
+
+
+def get_bq_schemas(dataset_id):
+    # get table names and columns
+    sql_str = """
+    SELECT table_name, column_name, data_type FROM `gum-eroski-dev`.source_data.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS
+    """
+    # read from Bigquery
+    dataset_schema = pandas_gbq.read_gbq(sql_str, project_id=project_id)
+    return dataset_schema
 
 
 if __name__ == "__main__":
     logger = initialise_logger()
+    dataset_schema = get_bq_schemas(dataset_id)
     for blob in blob_list:
         blob_fn = blob.split("/")[-1]
         download_blob(bucket, blob, os.path.abspath(local_dir + "/" + blob_fn))
@@ -120,7 +149,9 @@ if __name__ == "__main__":
             logger.info(
                 "File {} already unzipped".format(os.path.abspath(local_dir + "/" + blob_fn))
             )
-            csv_checks(os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv"))
+            csv_checks(
+                os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv"), dataset_schema
+            )
         else:
             gunzip(
                 os.path.abspath(local_dir + "/" + blob_fn),
