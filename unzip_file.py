@@ -106,7 +106,7 @@ def change_extension(old_extension, new_extension, directory):
 
 
 if __name__ == "__main__":
-    initialise_logger()
+    logger = initialise_logger()
     for blob in blob_list:
         blob_fn = blob.split("/")[-1]
         download_blob(bucket, blob, os.path.abspath(local_dir + "/" + blob_fn))
