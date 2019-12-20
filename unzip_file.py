@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import logging
 import re
-import fuzzywuzzy as fuzz
+from fuzzywuzzy import process, fuzz
 
 # Instantiates a client
 storage_client = storage.Client()
@@ -121,12 +121,9 @@ def csv_checks(csv_filename, dataset_schema):
     fn = re.sub(r"\d+", "", fn)
     table_name_list = [re.sub(r"\d+", "", x) for x in table_name_list]
     # calculate token sort ratio
-    token_sort_ratio = [fuzz.token_sort_ratio(fn, string) for string in table_name_list]
-    maxRatio = max(token_sort_ratio)
-    # find best match
-    [i for i, j in enumerate(token_sort_ratio) if j == maxRatio]
-    assert len(i) == 1
-    logger.info("csv file name = {} matched with {}".format(fn, token_sort_ratio[0]))
+    matched_table = process.extractOne(fn, table_name_list, scorer=fuzz.token_sort_ratio)
+
+    logger.info("csv file name = {} matched with {}".format(fn, matched_table[0]))
 
 
 def get_bq_schemas(dataset_id):
