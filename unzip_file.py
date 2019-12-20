@@ -137,7 +137,7 @@ def csv_checks(csv_filename, dataset_schema):
         table_columns = matched_table_schema.column_name.tolist()
         logger.info(table_columns)
     except:
-        logger.debug("csv file: {} did not read properly".format(csv_filename))
+        logger.info("csv file: {} did not read properly".format(csv_filename))
 
 
 def get_bq_schemas(dataset_id):
