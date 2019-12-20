@@ -132,9 +132,10 @@ def csv_checks(csv_filename, dataset_schema):
         dataset_schema.table_name == table_name_list[matched_table[2]]
     ]
     # check if csv header matches Bigquery table
-    csv_header = csv_data.head(1)
+    if csv_data:
+        csv_header = csv_data.head(1)
+        logger.info(csv_header)
     table_columns = matched_table_schema.column_name.tolist()
-    logger.info(csv_header)
     logger.info(table_columns)
 
 
