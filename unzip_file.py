@@ -60,17 +60,13 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
     # source_blob_name = "storage-object-name"
     # destination_file_name = "local/path/to/file"
 
-    # check if file exists
-    if os.path.exists(destination_file_name):
-        logger.info("Blob {} already exists in {}.".format(source_blob_name, destination_file_name))
-    else:
-        storage_client = storage.Client()
+    storage_client = storage.Client()
 
-        bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(source_blob_name)
-        blob.download_to_filename(destination_file_name)
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(source_blob_name)
+    blob.download_to_filename(destination_file_name)
 
-        logger.info("Blob {} downloaded to {}.".format(source_blob_name, destination_file_name))
+    logger.info("Blob {} downloaded to {}.".format(source_blob_name, destination_file_name))
 
 
 def gunzip(source_filepath, dest_filepath, block_size=65536):
@@ -115,15 +111,15 @@ def csv_checks(csv_filename, dataset_schema):
     csv_data = pd.read_csv(csv_filename)
     # logger.info(csv_data.describe(include="all"))
     # check for matching table in Bigquery
-    fn = csv_filename.split("/")[-1].split(".")[0]
+    fn = csv_filename.split("/")[-1]
     table_name_list = dataset_schema.table_name.unique()
     # remove digits and replace underscores from both strings
-    fn = re.sub(r"\d+", "", fn).replace("_", " ")
-    table_name_str = [re.sub(r"\d+", "", x).replace("_", " ") for x in table_name_list]
+    fn_str = re.sub(r"\d+", "", fn.split(".")[0]).replace("_", " ").lower()
+    table_name_str = [re.sub(r"\d+", "", x).replace("_", " ").lower() for x in table_name_list]
     # create dictionary of table names with indexes
     table_name_dict = {idx: el for idx, el in enumerate(table_name_str)}
     # find top match Bigquery table
-    matched_table = process.extractOne(fn, table_name_dict, scorer=fuzz.token_sort_ratio)
+    matched_table = process.extractOne(fn_str, table_name_dict, scorer=fuzz.token_sort_ratio)
     logger.info("csv file name = {} matched with {}".format(fn, table_name_list[matched_table[2]]))
     # select subset dataset_schema
     matched_table_schema = dataset_schema.loc[
@@ -151,7 +147,13 @@ if __name__ == "__main__":
     dataset_schema = get_bq_schemas(dataset_id)
     for blob in blob_list:
         blob_fn = blob.split("/")[-1]
-        download_blob(bucket, blob, os.path.abspath(local_dir + "/" + blob_fn))
+        # check if file exists
+        if os.path.exists(os.path.abspath(local_dir + "/" + blob_fn)):
+            logger.info(
+                "Blob {} already exists in {}.".format(source_blob_name, destination_file_name)
+            )
+        else:
+            download_blob(bucket, blob, os.path.abspath(local_dir + "/" + blob_fn))
         if os.path.exists(os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv")):
             logger.info(
                 "File {} already unzipped".format(os.path.abspath(local_dir + "/" + blob_fn))
