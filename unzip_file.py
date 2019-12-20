@@ -149,9 +149,7 @@ if __name__ == "__main__":
         blob_fn = blob.split("/")[-1]
         # check if file exists
         if os.path.exists(os.path.abspath(local_dir + "/" + blob_fn)):
-            logger.info(
-                "Blob {} already exists in {}.".format(source_blob_name, destination_file_name)
-            )
+            logger.info("Blob {} already exists in {}.".format(blob, destination_file_name))
         else:
             download_blob(bucket, blob, os.path.abspath(local_dir + "/" + blob_fn))
         if os.path.exists(os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv")):
