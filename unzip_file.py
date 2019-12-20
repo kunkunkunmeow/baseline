@@ -110,33 +110,34 @@ def csv_checks(csv_filename, dataset_schema):
     # read csv file into dataframe
     try:
         csv_data = pd.read_csv(csv_filename, nrows=2)
-    except:
-        logger.debug("csv file: {} did not read properly".format(csv_filename))
-    # logger.info(csv_data.describe(include="all"))
-    # check for matching table in Bigquery
-    fn = csv_filename.split("/")[-1]
-    table_name_list = dataset_schema.table_name.unique()
-    # remove digits and replace underscores from both strings
-    fn_str = re.sub(r"\d+", "", fn.split(".")[0]).replace("_", " ").lower()
-    table_name_str = [
-        re.sub(r"\d+", "", x).replace("_", " ").lower().replace("estructura", "")
-        for x in table_name_list
-    ]
-    # create dictionary of table names with indexes
-    table_name_dict = {idx: el for idx, el in enumerate(table_name_str)}
-    # find top match Bigquery table
-    matched_table = process.extractOne(fn_str, table_name_dict, scorer=fuzz.token_sort_ratio)
-    logger.info("csv file name = {} matched with {}".format(fn, table_name_list[matched_table[2]]))
-    # select subset dataset_schema
-    matched_table_schema = dataset_schema.loc[
-        dataset_schema.table_name == table_name_list[matched_table[2]]
-    ]
-    # check if csv header matches Bigquery table
-    if csv_data:
+        # logger.info(csv_data.describe(include="all"))
+        # check for matching table in Bigquery
+        fn = csv_filename.split("/")[-1]
+        table_name_list = dataset_schema.table_name.unique()
+        # remove digits and replace underscores from both strings
+        fn_str = re.sub(r"\d+", "", fn.split(".")[0]).replace("_", " ").lower()
+        table_name_str = [
+            re.sub(r"\d+", "", x).replace("_", " ").lower().replace("estructura", "")
+            for x in table_name_list
+        ]
+        # create dictionary of table names with indexes
+        table_name_dict = {idx: el for idx, el in enumerate(table_name_str)}
+        # find top match Bigquery table
+        matched_table = process.extractOne(fn_str, table_name_dict, scorer=fuzz.token_sort_ratio)
+        logger.info(
+            "csv file name = {} matched with {}".format(fn, table_name_list[matched_table[2]])
+        )
+        # select subset dataset_schema
+        matched_table_schema = dataset_schema.loc[
+            dataset_schema.table_name == table_name_list[matched_table[2]]
+        ]
+        # check if csv header matches Bigquery table
         csv_header = csv_data.head(1)
         logger.info(csv_header)
-    table_columns = matched_table_schema.column_name.tolist()
-    logger.info(table_columns)
+        table_columns = matched_table_schema.column_name.tolist()
+        logger.info(table_columns)
+    except:
+        logger.debug("csv file: {} did not read properly".format(csv_filename))
 
 
 def get_bq_schemas(dataset_id):
