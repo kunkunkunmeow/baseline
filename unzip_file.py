@@ -110,7 +110,7 @@ def change_extension(old_extension, new_extension, directory):
 
 
 def csv_checks(csv_filename, dataset_schema):
-    """Checks format of csv files"""
+    """Checks format of csv files with Bigquery tables"""
     # read csv file into dataframe
     csv_data = pd.read_csv(csv_filename)
     logger.info(csv_data.describe(include="all"))
@@ -120,10 +120,16 @@ def csv_checks(csv_filename, dataset_schema):
     # remove digits from both strings
     fn = re.sub(r"\d+", "", fn)
     table_name_list = [re.sub(r"\d+", "", x) for x in table_name_list]
-    # calculate token sort ratio
+    # find top match Bigquery table
     matched_table = process.extractOne(fn, table_name_list, scorer=fuzz.token_sort_ratio)
-
     logger.info("csv file name = {} matched with {}".format(fn, matched_table[0]))
+    # select subset dataset_schema
+    matched_table_schema = dataset_schema.loc[dataset_schema.table_name == matched_table[0]]
+    # check if csv header matches Bigquery table
+    csv_header = csv_data.head(1)
+    table_columns = matched_table_schema.column_name.tolist()
+    logger.info(csv_header)
+    logger.info(table_columns)
 
 
 def get_bq_schemas(dataset_id):
