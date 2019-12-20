@@ -117,9 +117,9 @@ def csv_checks(csv_filename, dataset_schema):
     # check for matching table in Bigquery
     fn = csv_filename.split("/")[-1].split(".")[0]
     table_name_list = dataset_schema.table_name.unique()
-    # remove digits from both strings
-    fn = re.sub(r"\d+", "", fn)
-    table_name_list = [re.sub(r"\d+", "", x) for x in table_name_list]
+    # remove digits and replace underscores from both strings
+    fn = re.sub(r"\d+", "", fn).replace("_", " ")
+    table_name_list = [re.sub(r"\d+", "", x).replace("_", " ") for x in table_name_list]
     # find top match Bigquery table
     matched_table = process.extractOne(fn, table_name_list, scorer=fuzz.token_sort_ratio)
     logger.info("csv file name = {} matched with {}".format(fn, matched_table[0]))
