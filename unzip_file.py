@@ -108,7 +108,7 @@ def change_extension(old_extension, new_extension, directory):
 def csv_checks(csv_filename, dataset_schema):
     """Checks format of csv files with Bigquery tables"""
     # read csv file into dataframe
-    csv_data = pd.read_csv(csv_filename)
+    csv_data = pd.read_csv(csv_filename, nrows=2)
     # logger.info(csv_data.describe(include="all"))
     # check for matching table in Bigquery
     fn = csv_filename.split("/")[-1]
