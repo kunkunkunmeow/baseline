@@ -115,7 +115,10 @@ def csv_checks(csv_filename, dataset_schema):
     table_name_list = dataset_schema.table_name.unique()
     # remove digits and replace underscores from both strings
     fn_str = re.sub(r"\d+", "", fn.split(".")[0]).replace("_", " ").lower()
-    table_name_str = [re.sub(r"\d+", "", x).replace("_", " ").lower() for x in table_name_list]
+    table_name_str = [
+        re.sub(r"\d+", "", x).replace("_", " ").lower().replace("estructura", "")
+        for x in table_name_list
+    ]
     # create dictionary of table names with indexes
     table_name_dict = {idx: el for idx, el in enumerate(table_name_str)}
     # find top match Bigquery table
