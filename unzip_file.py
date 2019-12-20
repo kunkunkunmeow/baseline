@@ -47,6 +47,8 @@ def initialise_logger():
     logger.addHandler(fh)
     logger.addHandler(ch)
 
+    return logger
+
 
 def download_blob(bucket_name, source_blob_name, destination_file_name):
     """Downloads a blob from the bucket."""
