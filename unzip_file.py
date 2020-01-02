@@ -125,7 +125,7 @@ def csv_checks(csv_filename, dataset_schema):
     except:
         logger.info("csv file: {} did not read properly".format(csv_filename))
 
-    if csv_data:
+    if csv_data.dropna().empty == False:
         # logger.info(csv_data.describe(include="all"))
         # check for matching table in Bigquery
         fn = csv_filename.split("/")[-1]
