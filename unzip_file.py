@@ -122,6 +122,10 @@ def csv_checks(csv_filename, dataset_schema):
     # read csv file into dataframe
     try:
         csv_data = pd.read_csv(csv_filename, sep="|", engine="python", nrows=2)
+    except:
+        logger.info("csv file: {} did not read properly".format(csv_filename))
+
+    if csv_data:
         # logger.info(csv_data.describe(include="all"))
         # check for matching table in Bigquery
         fn = csv_filename.split("/")[-1]
@@ -148,8 +152,15 @@ def csv_checks(csv_filename, dataset_schema):
         logger.info(csv_header)
         table_columns = matched_table_schema.column_name.tolist()
         logger.info(table_columns)
-    except:
-        logger.info("csv file: {} did not read properly".format(csv_filename))
+        if len(csv_header) == len(table_columns) and len(csv_header) == sum(
+            [1 for i, j in zip(csv_header, table_columns) if i == j]
+        ):
+            print("The lists are identical")
+        else:
+            print("The lists are not identical")
+
+    else:
+        logger.info("Did not attempt to upload {} to Bigquery".format(csv_filename))
 
 
 def get_bq_schemas(dataset_id):
