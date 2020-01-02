@@ -1,4 +1,9 @@
-# python script to decompress .dat.gz files
+# python script to
+# 1. download all data .gz files from GCS
+# 2. decompress files and save locally as csv
+# 3. read csv files into dataframe and check for errors
+# 4. upload csv to GCS
+# 5. upload dataframe to Bigquery
 
 from google.cloud import storage
 import os
@@ -30,6 +35,8 @@ local_dir = os.path.abspath(home + "/etl_test/")
 
 
 def initialise_logger():
+    """Initialise logger settings"""
+
     # Set logger properties
     logger = logging.getLogger("auto_etl_to_bq")
     logger.setLevel(logging.DEBUG)
@@ -70,6 +77,8 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
 
 
 def gunzip(source_filepath, dest_filepath, block_size=65536):
+    """Unzips .gz files and writes to persistent disk"""
+
     with gzip.open(source_filepath, "rb") as s_file, open(dest_filepath, "wb") as d_file:
         while True:
             block = s_file.read(block_size)
@@ -81,7 +90,7 @@ def gunzip(source_filepath, dest_filepath, block_size=65536):
 
 
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
+    """Uploads a file to the bucket"""
     # bucket_name = "your-bucket-name"
     # source_file_name = "local/path/to/file"
     # destination_blob_name = "storage-object-name"
@@ -96,6 +105,8 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
 
 
 def change_extension(old_extension, new_extension, directory):
+    """Change file extensions for files in directory"""
+
     for file in os.listdir(directory):
         pre, ext = os.path.splitext(file)
         if ext == old_extension:
@@ -107,6 +118,7 @@ def change_extension(old_extension, new_extension, directory):
 
 def csv_checks(csv_filename, dataset_schema):
     """Checks format of csv files with Bigquery tables"""
+
     # read csv file into dataframe
     try:
         csv_data = pd.read_csv(csv_filename, nrows=2)
@@ -132,7 +144,7 @@ def csv_checks(csv_filename, dataset_schema):
             dataset_schema.table_name == table_name_list[matched_table[2]]
         ]
         # check if csv header matches Bigquery table
-        csv_header = csv_data.head(1)
+        csv_header = csv_data.head(1).tolist()
         logger.info(csv_header)
         table_columns = matched_table_schema.column_name.tolist()
         logger.info(table_columns)
@@ -141,6 +153,8 @@ def csv_checks(csv_filename, dataset_schema):
 
 
 def get_bq_schemas(dataset_id):
+    """Returns Bigquery dataset information"""
+
     # get table names and columns
     sql_str = """
     SELECT table_name, column_name, data_type FROM `gum-eroski-dev`.source_data.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS
@@ -181,3 +195,6 @@ if __name__ == "__main__":
         #     os.path.abspath(local_dir + "/" + blob_fn.split(".")[0] + ".csv"),
         #     "Working_folder/AT/ETL_test_upload/" + blob_fn.split(".")[0] + ".csv",
         # )
+
+        # upload dataframe to Bigquery
+        # pandas_gbq.to_gbq(blob_dataframe, )
