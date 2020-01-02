@@ -121,7 +121,7 @@ def csv_checks(csv_filename, dataset_schema):
 
     # read csv file into dataframe
     try:
-        csv_data = pd.read_csv(csv_filename, nrows=2)
+        csv_data = pd.read_csv(csv_filename, sep="|", engine="python", nrows=2)
         # logger.info(csv_data.describe(include="all"))
         # check for matching table in Bigquery
         fn = csv_filename.split("/")[-1]
