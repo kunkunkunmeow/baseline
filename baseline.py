@@ -201,7 +201,7 @@ def baseline_id(frame, id: str, summary_table, baseline_ref, bl_l, ext_week, sec
         if table.loc[i, 'change_flag'] ==2:
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i - 1, 'sale_qty_bl'] * table.loc[i, 'sale_qty_pct'],
                                                     2)
-        if table.loc[i, 'change_flag'] ==3 and table.loc[i-1, 'change_flag'] ==2 :
+        if table.loc[i, 'change_flag'] ==3 and table.loc[i-1, 'change_flag'] in [1,2] :
             table.loc[i, 'sale_qty_bl'] = round(table.loc[i-1, 'pf_after_bl_qty'],
                                                     2)
         if table.loc[i, 'change_flag'] ==3 and table.loc[i-1, 'change_flag'] ==3 :
